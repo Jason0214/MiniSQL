@@ -1,0 +1,7 @@
+E:\ZJU\dbs\miniSQL\MiniSQL\Parser\bin\Release\Parser.dll
+E:\ZJU\dbs\miniSQL\MiniSQL\Parser\bin\Release\Parser.pdb
+E:\ZJU\dbs\miniSQL\MiniSQL\Parser\obj\Release\Parser.dll
+E:\ZJU\dbs\miniSQL\MiniSQL\Parser\obj\Release\Parser.pdb
+E:\ZJU\dbs\miniSQL\MiniSQL\Parser\bin\Release\Lexer.dll
+E:\ZJU\dbs\miniSQL\MiniSQL\Parser\bin\Release\Lexer.pdb
+E:\ZJU\dbs\miniSQL\MiniSQL\Parser\obj\Release\Parser.csprojResolveAssemblyReference.cache

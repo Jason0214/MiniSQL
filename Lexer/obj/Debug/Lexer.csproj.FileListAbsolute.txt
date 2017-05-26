@@ -1,0 +1,9 @@
+E:\ZJU\dbs\miniSQL\Lexer\Lexer\bin\Debug\Lexer.dll
+E:\ZJU\dbs\miniSQL\Lexer\Lexer\bin\Debug\Lexer.pdb
+E:\ZJU\dbs\miniSQL\Lexer\Lexer\obj\Debug\Lexer.dll
+E:\ZJU\dbs\miniSQL\Lexer\Lexer\obj\Debug\Lexer.pdb
+E:\ZJU\dbs\miniSQL\Lexer\Lexer\obj\Debug\Lexer.csprojResolveAssemblyReference.cache
+E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\bin\Debug\Lexer.dll
+E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\bin\Debug\Lexer.pdb
+E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\obj\Debug\Lexer.dll
+E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\obj\Debug\Lexer.pdb
