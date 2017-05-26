@@ -1,9 +1,0 @@
-E:\ZJU\dbs\miniSQL\Lexer\Lexer\bin\Release\Lexer.dll
-E:\ZJU\dbs\miniSQL\Lexer\Lexer\bin\Release\Lexer.pdb
-E:\ZJU\dbs\miniSQL\Lexer\Lexer\obj\Release\Lexer.dll
-E:\ZJU\dbs\miniSQL\Lexer\Lexer\obj\Release\Lexer.pdb
-E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\bin\Release\Lexer.dll
-E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\bin\Release\Lexer.pdb
-E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\obj\Release\Lexer.dll
-E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\obj\Release\Lexer.pdb
-E:\ZJU\dbs\miniSQL\MiniSQL\Lexer\obj\Release\Lexer.csprojResolveAssemblyReference.cache
