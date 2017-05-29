@@ -86,7 +86,8 @@ namespace Compiler.Parser
                 }
 
                 // 没有消耗新的词汇
-                return new Result<T>(scanner.CurrentIndex, new Lexeme("special", ""), scanner);
+                return new Result<T>(Math.Max(result1.Error.ErrorIndex, result2.Error.ErrorIndex)
+                    , new Lexeme("special", ""), scanner);
             });
         }
     }

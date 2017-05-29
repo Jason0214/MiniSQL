@@ -5,7 +5,7 @@ namespace Compiler.Parser
 
     public class Parser<T>
     {
-        public ParserFunc<T> ParserFunction { get; internal set; }
+        public ParserFunc<T> ParserFunction { get; set; }
 
         public Parser(ParserFunc<T> function)
         {
