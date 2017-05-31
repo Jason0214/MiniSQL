@@ -22,39 +22,47 @@ public:
 
 class BufferManager{
 public:
-	BufferManager();
-	~BufferManager();
-	Block* GetBlock(unsigned int blk_index);
-	Block* CreateBlock() {
-		Block* block_ptr = new Block();
-		block_ptr->Init(this->AllocNewBlock());
-		this->AddBlock(block_ptr);
-		return block_ptr;
+	static BufferManager & Instance(){
+		//TODO: add a exclusive lock to support multi-thread
+		static BufferManager theBufferManager;
+		return theBufferManager;
 	}
+	~BufferManager();
+
+	Block* GetBlock(uint32_t blk_index);
 	void DeleteFromDisc(Block*);
+	Block* CreateBlock();
 private:
-	unsigned int AllocNewBlock(); // reserve a block in the db file 
+	BufferManager();
+	BufferManager(const BufferManager &);
+	BufferManager & operator=(const BufferManager &);
+
+
+	uint32_t AllocNewBlock(); // reserve a block in the db file 
 	void WriteBack(BlockNode* blk_node_ptr){
-		blk_node_ptr->data->WriteToDisc(this->SRC_FILE_NAME);
+		this->WriteToDisc(blk_node_ptr->data);
 		blk_node_ptr->is_modified = false;
 	}
+
+	void LoadFromDisc(uint32_t block_index, Block* block_ptr);
+	void WriteToDisc(Block* block_ptr);
 
 	void CreateSrcFile();
 	void LoadSrcFile();
 
-	const unsigned int MAX_BLOCK_NUM;
+	const uint32_t MAX_BLOCK_NUM;
 	const std::string SRC_FILE_NAME;
 
-	void AddBlock(Block*, bool to_pin=false); // to a block buffer
+	void AddBlock(Block*, bool to_pin=false); 
 	void RemoveBlock(BlockNode*);
 // list structure for buffer-disc interchange
 	BlockNode* block_list_head; 
 	BlockNode* block_list_tail;
-	unsigned int block_num;
+	uint32_t block_num;
 
 //  table for fast access block
-	unsigned long long int hash(unsigned int blk_index);
-	BlockNode* & GetBlockNode(unsigned int blk_index); // find block node through hash table
+	uint64_t hash(uint32_t blk_index);
+	BlockNode* & GetBlockNode(uint32_t blk_index); // find block node through hash table
 	BlockNode* block_table[BLOCK_NUM*2];
 };
 
