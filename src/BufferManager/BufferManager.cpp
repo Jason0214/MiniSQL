@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 using namespace std;
 
+
 BufferManager::BufferManager():SRC_FILE_NAME(DB_FILE),MAX_BLOCK_NUM(BLOCK_NUM){
 	this->block_list_head = NULL;
 	this->block_list_tail = NULL;
@@ -27,20 +28,20 @@ BufferManager::~BufferManager() {
 	}
 }
 
-unsigned long long int BufferManager::hash(unsigned int blk_index){
+uint64_t BufferManager::hash(uint32_t blk_index){
 	// sdmb hash, reference: http://www.cse.yorku.ca/~oz/hash.html
 	char* byte_ptr = (char*)&(blk_index);
 	unsigned long long hash = 0;
-	for(int i = 0; i < sizeof(unsigned int); i++){
+	for(int i = 0; i < sizeof(uint32_t); i++){
 		hash = *byte_ptr + (hash << 6) + (hash << 16) - hash;
 		byte_ptr++;
 	}
-	return hash%(BLOCK_NUM << 1);
+	return hash % (BLOCK_NUM << 1);
 }
 
-BlockNode* & BufferManager::GetBlockNode(unsigned int block_index){
+BlockNode* & BufferManager::GetBlockNode(uint32_t block_index){
 	bool flag = false;
-	unsigned long long int index = this->hash(block_index);
+	uint64_t index = this->hash(block_index);
 	while(this->block_table[index]){
 		if(this->block_table[index]->data->BlockIndex() == block_index) break;
 		index++;
@@ -52,27 +53,27 @@ void BufferManager::CreateSrcFile(){
 	SchemaBlock* block_zero = new SchemaBlock();
 	block_zero->Init();
 	this->AddBlock(block_zero, true);
-	block_zero->WriteToDisc(this->SRC_FILE_NAME);
+	this->WriteToDisc(block_zero);
 
 	Block* usr_block = new Block();
 	usr_block->Init(this->AllocNewBlock(),DB_USER_BLOCK);
 	// point to the table of usr block
 	block_zero->UserMetaAddr() = usr_block->BlockIndex();
-	usr_block->WriteToDisc(this->SRC_FILE_NAME);
 	this->AddBlock(usr_block);
+	this->WriteToDisc(usr_block);
 
 	Block* db_block = new Block();
 	db_block->Init(this->AllocNewBlock(),DB_DATABASE_BLOCK);
 	// point to the table of databases info
 	block_zero->DBMetaAddr() = db_block->BlockIndex();
-	db_block->WriteToDisc(this->SRC_FILE_NAME);
 	this->AddBlock(db_block);
-
+	this->WriteToDisc(db_block);
+	
 	block_zero->EmptyPtr() = block_zero->EmptyPtr() + 12;
-	block_zero->WriteToDisc(this->SRC_FILE_NAME);
+	this->WriteToDisc(block_zero);
 }
 
-Block* BufferManager::GetBlock(unsigned int block_index){
+Block* BufferManager::GetBlock(uint32_t block_index){
 	BlockNode* block_node_ptr = this->GetBlockNode(block_index);
 	if(block_node_ptr){
 		// move to the head of list
@@ -105,23 +106,58 @@ Block* BufferManager::GetBlock(unsigned int block_index){
 	}
 	else{
 		Block* block_ptr = new Block();
-		block_ptr->ReadFromFile(this->SRC_FILE_NAME, block_index);
+		this->LoadFromDisc(block_index, block_ptr);
 		this->AddBlock(block_ptr);
 		return block_ptr;
 	}
 }
 
+Block* BufferManager::CreateBlock() {
+	Block* block_ptr = new Block();
+	block_ptr->Init(this->AllocNewBlock());
+	this->AddBlock(block_ptr);
+	this->WriteToDisc(block_ptr);
+	return block_ptr;
+}
+
+void BufferManager::LoadFromDisc(uint32_t blk_index, Block* block_ptr){
+	FILE* fp = fopen(this->SRC_FILE_NAME.c_str(),"rb");
+	//XXX: possible solution: https://stackoverflow.com/questions/6980063/how-to-handle-file-whose-size-is-more-than-2-gb
+	fseek(fp, 0, SEEK_SET);
+	while(blk_index >= (1 << 19)){
+		fseek(fp, (int)((uint32_t)(1 << 31) - 1), SEEK_CUR);
+		blk_index -= (1 << 19);
+	}
+	fseek(fp, blk_index << 12, SEEK_CUR);
+	fread(block_ptr->block_data, BLOCK_SIZE, 1, fp);
+	fclose(fp);
+}
+
+void BufferManager::WriteToDisc(Block* block_ptr){
+	uint32_t blk_index = block_ptr->BlockIndex();
+	FILE* fp = fopen(this->SRC_FILE_NAME.c_str(),"rb+");
+	//XXX: possible solution: https://stackoverflow.com/questions/6980063/how-to-handle-file-whose-size-is-more-than-2-gb
+	fseek(fp, 0, SEEK_SET);
+	while(blk_index >= (1 << 19)){
+		fseek(fp, (int)((uint32_t)(1 << 31) - 1), SEEK_CUR);
+		blk_index -= (1 << 19);
+	}
+	fseek(fp, blk_index << 12, SEEK_CUR);
+	fwrite(block_ptr->block_data, BLOCK_SIZE, 1, fp);
+	fclose(fp);	
+}
+
 void BufferManager::LoadSrcFile(){
 	SchemaBlock* block_zero = new SchemaBlock();
-	block_zero->ReadFromFile(this->SRC_FILE_NAME, 0);
+	this->LoadFromDisc( 0, block_zero);
 	this->AddBlock(block_zero, true);
 
 	Block* usr_block = new Block();
-	usr_block->ReadFromFile(this->SRC_FILE_NAME, block_zero->UserMetaAddr());
+	this->LoadFromDisc(block_zero->UserMetaAddr(),usr_block);
 	this->AddBlock(usr_block);
 
 	Block* db_block = new Block();
-	db_block->ReadFromFile(this->SRC_FILE_NAME, block_zero->DBMetaAddr());
+	this->LoadFromDisc(block_zero->DBMetaAddr(),db_block);
 	this->AddBlock(db_block);
 }
 
@@ -135,6 +171,9 @@ void BufferManager::AddBlock(Block* blk_to_add, bool to_pin){
 		BlockNode* last_node_ptr = this->block_list_tail;
 		last_node_ptr->pre->next = NULL;
 		this->block_list_tail = last_node_ptr->pre;
+		while(last_node_ptr->is_pined){
+			last_node_ptr = last_node_ptr->pre;			
+		}
 		this->RemoveBlock(last_node_ptr);
 	}
 	if(!this->block_list_head){
@@ -173,18 +212,18 @@ void BufferManager::RemoveBlock(BlockNode* node_to_remove){
 	delete node_to_remove;
 }
 
-unsigned int BufferManager::AllocNewBlock(){
+uint32_t BufferManager::AllocNewBlock(){
 	BlockNode* schema_node = this->block_table[0]; // smdb always hash 0 -> 0
 	SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(schema_node->data);
-	unsigned int empty_block_addr = schema_block->EmptyBlockAddr();
+	uint32_t empty_block_addr = schema_block->EmptyBlockAddr();
 	if(empty_block_addr == 0){
 		// no empty block in db file, have to expand the db file
-		unsigned long long int size;
+		uint64_t size;
 		struct __stat64 st;
 		_stat64(this->SRC_FILE_NAME.c_str(), &st);
 		size = st.st_size;
 		// reference: https://stackoverflow.com/questions/2361385/how-to-get-a-files-size-which-is-greater-than-4-gb
-		return (unsigned int)(size >> 12);
+		return (uint32_t)(size >> 12);
 	}
 	else{
 		// empty block in db file, allocate this block
@@ -199,7 +238,7 @@ void BufferManager::DeleteFromDisc(Block* block_to_delete){
 	BlockNode* schema_node = this->block_table[0]; // smdb always hash 0 -> 0
 	SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(schema_node->data);
 	/* do not forget to set the next field of the previous block */
-	block_to_delete->BlockType() = (unsigned char)DB_DELETED_BLOCK;
+	block_to_delete->BlockType() = (uint8_t)DB_DELETED_BLOCK;
 	block_to_delete->NextBlockIndex() = schema_block->EmptyBlockAddr();
 	// update schema
 	schema_block->EmptyBlockAddr() = block_to_delete->BlockIndex();
