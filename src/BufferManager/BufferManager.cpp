@@ -52,7 +52,7 @@ BlockNode* & BufferManager::GetBlockNode(uint32_t block_index){
 void BufferManager::CreateSrcFile(){
 	SchemaBlock* block_zero = new SchemaBlock();
 	block_zero->Init();
-	this->AddBlock(block_zero, true);
+	this->AddBlock(block_zero);
 	this->WriteToDisc(block_zero);
 
 	Block* usr_block = new Block();
@@ -71,6 +71,20 @@ void BufferManager::CreateSrcFile(){
 	
 	block_zero->EmptyPtr() = block_zero->EmptyPtr() + 12;
 	this->WriteToDisc(block_zero);
+}
+
+void BufferManager::LoadSrcFile(){
+	SchemaBlock* block_zero = new SchemaBlock();
+	this->LoadFromDisc( 0, block_zero);
+	this->AddBlock(block_zero);
+
+	Block* usr_block = new Block();
+	this->LoadFromDisc(block_zero->UserMetaAddr(),usr_block);
+	this->AddBlock(usr_block);
+
+	Block* db_block = new Block();
+	this->LoadFromDisc(block_zero->DBMetaAddr(),db_block);
+	this->AddBlock(db_block);
 }
 
 Block* BufferManager::GetBlock(uint32_t block_index){
@@ -102,22 +116,31 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 			this->block_list_head->pre = block_node_ptr;
 			this->block_list_head = block_node_ptr;
 		}
+		block_node_ptr->is_modified = true;
+		block_node_ptr->is_pined = true;
 		return block_node_ptr->data;
 	}
 	else{
 		Block* block_ptr = new Block();
 		this->LoadFromDisc(block_index, block_ptr);
-		this->AddBlock(block_ptr);
+		block_node_ptr = this->AddBlock(block_ptr);
+		block_node_ptr->is_modified = true;
+		block_node_ptr->is_pined = true;		
 		return block_ptr;
 	}
 }
+	
+void BufferManager::ReleaseBlock(uint32_t block_index){
+	BlockNode* block_node_ptr = this->GetBlockNode(block_index);
+	block_node_ptr->is_pined = false;
+}
 
-Block* BufferManager::CreateBlock() {
+uint32_t BufferManager::CreateBlock() {
 	Block* block_ptr = new Block();
 	block_ptr->Init(this->AllocNewBlock());
 	this->AddBlock(block_ptr);
 	this->WriteToDisc(block_ptr);
-	return block_ptr;
+	return block_ptr->BlockIndex();
 }
 
 void BufferManager::LoadFromDisc(uint32_t blk_index, Block* block_ptr){
@@ -147,24 +170,9 @@ void BufferManager::WriteToDisc(Block* block_ptr){
 	fclose(fp);	
 }
 
-void BufferManager::LoadSrcFile(){
-	SchemaBlock* block_zero = new SchemaBlock();
-	this->LoadFromDisc( 0, block_zero);
-	this->AddBlock(block_zero, true);
-
-	Block* usr_block = new Block();
-	this->LoadFromDisc(block_zero->UserMetaAddr(),usr_block);
-	this->AddBlock(usr_block);
-
-	Block* db_block = new Block();
-	this->LoadFromDisc(block_zero->DBMetaAddr(),db_block);
-	this->AddBlock(db_block);
-}
-
-void BufferManager::AddBlock(Block* blk_to_add, bool to_pin){
+BlockNode* BufferManager::AddBlock(Block* blk_to_add){
 	BlockNode* new_node = new BlockNode();
 	new_node->data = blk_to_add;
-	new_node->is_pined = to_pin;
 
 	this->GetBlockNode(blk_to_add->BlockIndex()) = new_node;
 	if(this->block_num >= this->MAX_BLOCK_NUM){
@@ -186,9 +194,11 @@ void BufferManager::AddBlock(Block* blk_to_add, bool to_pin){
 		this->block_list_head = new_node;
 	}
 	this->block_num++;
+	return new_node;
 }
 
 void BufferManager::RemoveBlock(BlockNode* node_to_remove){
+//	if(!node_to_remove) return;
 	if(node_to_remove->is_modified){
 		this->WriteBack(node_to_remove);
 	}
@@ -234,18 +244,22 @@ uint32_t BufferManager::AllocNewBlock(){
 	}
 }
 
-void BufferManager::DeleteFromDisc(Block* block_to_delete){
-	BlockNode* schema_node = this->block_table[0]; // smdb always hash 0 -> 0
-	SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(schema_node->data);
+void BufferManager::DeleteBlock(uint32_t index_of_block){
 	/* do not forget to set the next field of the previous block */
-	block_to_delete->BlockType() = (uint8_t)DB_DELETED_BLOCK;
-	block_to_delete->NextBlockIndex() = schema_block->EmptyBlockAddr();
-	// update schema
-	schema_block->EmptyBlockAddr() = block_to_delete->BlockIndex();
-	schema_node->is_modified = true;
-	BlockNode* block_node_ptr = this->GetBlockNode(block_to_delete->BlockIndex());	
-	block_node_ptr->is_modified = true;
+	BlockNode* block_node_ptr = this->GetBlockNode(index_of_block);
 	if(block_node_ptr){
+		Block* block_to_delete = block_node_ptr->data;
+		
+		// update schema	
+		BlockNode* schema_node = this->block_table[0]; // smdb always hash 0 -> 0
+		SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(schema_node->data);
+		schema_block->EmptyBlockAddr() = block_to_delete->BlockIndex();
+		schema_node->is_modified = true;
+
+		block_to_delete->BlockType() = (uint8_t)DB_DELETED_BLOCK;
+		block_to_delete->NextBlockIndex() = schema_block->EmptyBlockAddr();
+
+		block_node_ptr->is_modified = true;
 		this->RemoveBlock(block_node_ptr);
 	}
 }

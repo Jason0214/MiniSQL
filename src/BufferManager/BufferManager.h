@@ -30,8 +30,9 @@ public:
 	~BufferManager();
 
 	Block* GetBlock(uint32_t blk_index);
-	void DeleteFromDisc(Block*);
-	Block* CreateBlock();
+	void ReleaseBlock(uint32_t blk_index);
+	void DeleteBlock(uint32_t blk_index);
+	uint32_t CreateBlock();
 private:
 	BufferManager();
 	BufferManager(const BufferManager &);
@@ -53,7 +54,7 @@ private:
 	const uint32_t MAX_BLOCK_NUM;
 	const std::string SRC_FILE_NAME;
 
-	void AddBlock(Block*, bool to_pin=false); 
+	BlockNode* AddBlock(Block*); 
 	void RemoveBlock(BlockNode*);
 // list structure for buffer-disc interchange
 	BlockNode* block_list_head; 
