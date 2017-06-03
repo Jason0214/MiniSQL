@@ -7,7 +7,11 @@ typedef enum {
 	DB_USER_BLOCK,
 	DB_DATABASE_BLOCK,
 	DB_DELETED_BLOCK,
-	
+	DB_TABLE_BLOCK,
+
+	DB_VARCHAR_TYPE = 100,
+	DB_INT_TYPE = 354,
+	DB_FLOAT_TYPE,
 }DBenum;
 
 // STATIC_ASSERT(sizeof(enum e_DBenum) == 1);
