@@ -57,31 +57,16 @@ public:
 	}
 	//print out all leaf nodes
 	void printAll() {
-		BPlusNode<T, order>* theNode = root,*firstNode;
+		BPlusNode<T, order>* theNode = root;
 		if (!theNode) return;
 		while (!theNode->isLeaf()) {
-			firstNode = theNode;
-			while (true) {
-				for (int i = 0;i < theNode->dataCnt();i++) {
-					std::cout << theNode->data()[i] << " ";
-				}
-				if (theNode->ptrs()[order]) {
-					std::cout << "|";
-					theNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[order]));
-				}
-				else {
-					break;
-				}
-			}
-			std::cout << std::endl;
-			theNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(firstNode->ptrs()[0]));
+			theNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[0]));
 		}
 		while (true) {
 			for (int i = 0;i < theNode->dataCnt();i++) {
 				std::cout << theNode->data()[i] << " ";
 			}
 			if (theNode->ptrs()[order]) {
-				std::cout << "|";
 				theNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[order]));
 			}
 			else {
