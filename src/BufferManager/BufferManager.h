@@ -9,7 +9,7 @@
 
 class BlockNode{
 public:
-	BlockNode():pre(NULL),next(NULL),is_pined(false),data(NULL),is_modified(false){}
+	BlockNode():pre(NULL),next(NULL),data(NULL),is_modified(false),is_pined(false){}
 	~BlockNode(){
 		delete data;
 	}
@@ -30,9 +30,9 @@ public:
 	~BufferManager();
 
 	Block* GetBlock(uint32_t blk_index);
-	void ReleaseBlock(uint32_t blk_index);
-	void DeleteBlock(uint32_t blk_index);
-	uint32_t CreateBlock();
+	Block* CreateBlock();
+	void ReleaseBlock(Block* & block_ptr);
+	void DeleteBlock(Block* & block_ptr);
 private:
 	BufferManager();
 	BufferManager(const BufferManager &);

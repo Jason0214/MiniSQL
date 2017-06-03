@@ -130,17 +130,20 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 	}
 }
 	
-void BufferManager::ReleaseBlock(uint32_t block_index){
-	BlockNode* block_node_ptr = this->GetBlockNode(block_index);
+void BufferManager::ReleaseBlock(Block* & block_ptr){
+	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
+	block_ptr = NULL;
 	block_node_ptr->is_pined = false;
 }
 
-uint32_t BufferManager::CreateBlock() {
+Block* BufferManager::CreateBlock() {
 	Block* block_ptr = new Block();
 	block_ptr->Init(this->AllocNewBlock());
-	this->AddBlock(block_ptr);
 	this->WriteToDisc(block_ptr);
-	return block_ptr->BlockIndex();
+	BlockNode* block_node_ptr = this->AddBlock(block_ptr);
+	block_node_ptr->is_modified = true;
+	block_node_ptr->is_pined = true;	
+	return block_ptr;
 }
 
 void BufferManager::LoadFromDisc(uint32_t blk_index, Block* block_ptr){
@@ -237,27 +240,29 @@ uint32_t BufferManager::AllocNewBlock(){
 	}
 	else{
 		// empty block in db file, allocate this block
-		schema_block->EmptyPtr() = this->GetBlock(empty_block_addr)->NextBlockIndex();
+		schema_block->EmptyBlockAddr() = this->GetBlock(empty_block_addr)->NextBlockIndex();
 		// schema being changed
 		schema_node->is_modified = true;
 		return empty_block_addr;
 	}
 }
 
-void BufferManager::DeleteBlock(uint32_t index_of_block){
+void BufferManager::DeleteBlock(Block* & block_ptr){
 	/* do not forget to set the next field of the previous block */
-	BlockNode* block_node_ptr = this->GetBlockNode(index_of_block);
+	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
+	block_ptr = NULL;
 	if(block_node_ptr){
 		Block* block_to_delete = block_node_ptr->data;
 		
 		// update schema	
 		BlockNode* schema_node = this->block_table[0]; // smdb always hash 0 -> 0
 		SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(schema_node->data);
+
+		block_to_delete->NextBlockIndex() = schema_block->EmptyBlockAddr();
+		block_to_delete->BlockType() = (uint8_t)DB_DELETED_BLOCK;
+		
 		schema_block->EmptyBlockAddr() = block_to_delete->BlockIndex();
 		schema_node->is_modified = true;
-
-		block_to_delete->BlockType() = (uint8_t)DB_DELETED_BLOCK;
-		block_to_delete->NextBlockIndex() = schema_block->EmptyBlockAddr();
 
 		block_node_ptr->is_modified = true;
 		this->RemoveBlock(block_node_ptr);
