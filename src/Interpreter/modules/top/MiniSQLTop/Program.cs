@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MiniSQL.Errors;
 using MiniSQL.Executor;
 using MiniSQL.Executor.Validator;
 using MiniSQL.SQLAnalyzer;
-using MiniSQL.SQLAnalyzer.Structures;
 
 namespace MiniSQL
 {
@@ -51,7 +47,7 @@ namespace MiniSQL
                     tmp = Console.ReadLine();
                     input += tmp + "\n";
                     trim = tmp.TrimEnd();
-                } while (trim.Length > 0 && trim[trim.Length - 1] != ';');
+                } while (trim.Length == 0 || trim[trim.Length - 1] != ';');
 
                 try
                 {
