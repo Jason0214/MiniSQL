@@ -64,6 +64,7 @@ namespace MiniSQL
                     if (Errors.Count > 0) goto NextInput;
 
                     SQLExecutor executor = SQLExecutor.GetExecutor(parser.resultStatement, Console.Out);
+                    executor.Execute();
                 }
                 catch (Exception ex)
                 {
