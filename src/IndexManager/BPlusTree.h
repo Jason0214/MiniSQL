@@ -2,43 +2,35 @@
 #include<iostream>
 #include "../BufferManager/Block.h"
 #include "../BufferManager/BufferManager.h"
+#include "IndexManager.h"
 
 template<class T, int order>
 class BPlusNode :public Block {
 public:
-	bool & isLeaf() {
+	inline bool & isLeaf() {
 		return *(bool*)(&block_data[BLOCK_HEAD_SIZE]);
 	}
-	uint32_t & parent() {
+	inline uint32_t & parent() {
 		return *(uint32_t*)(&block_data[BLOCK_HEAD_SIZE + 1]);
 	}
 	//unsigned int & order() {
 	//return *(unsigned int*)(&block_data[BLOCK_HEAD_SIZE + 5]);
 	//}
-	int & dataCnt() {
+	inline int & dataCnt() {
 		return *(int*)(&block_data[BLOCK_HEAD_SIZE + 9]);
 	}
-	T *data() {
+	inline T *data() {
 		return (T*)(&block_data[BLOCK_HEAD_SIZE + 13]);
 	}
-	uint32_t *ptrs() {
+	inline uint32_t *ptrs() {
 		return (uint32_t*)(&block_data[BLOCK_HEAD_SIZE + 13 + order * sizeof(T)]);//not order-1: one more position for split easily
 	}
 };
 
-//search result class
-//contains the block and the index of the result
 template<class T, int order>
-class BPlusTreeSearchResult {
+class BPlusTree: public IndexMethod<T>{
 public:
-	int index;
-	BPlusNode<T, order>* node;
-};
-
-template<class T, int order>
-class BPlusTree {
-public:
-	BPlusTree(BPlusNode<T, order> *root = nullptr, unsigned int keyLen = 25) :root(root), keyLen(keyLen) {
+	BPlusTree(BPlusNode<T, order> *root = nullptr, unsigned int keyLen = 25): root(root),keyLen(keyLen) {
 		bufferManager = &BufferManager::Instance();
 	};
 	virtual ~BPlusTree() {}
@@ -68,7 +60,7 @@ public:
 	//return a pointer to BPlusTreeSearchResult object
 	//the result if the first matched key in the linked list
 	//or the smallest larger one
-	BPlusTreeSearchResult<T, order>* search(T key) {
+	SearchResult* search(T key) {
 		int index;
 		BPlusNode<T, order>* theNode = root;
 		//retunr null pointer if the tree is empty
@@ -80,7 +72,7 @@ public:
 			theNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[index]));
 		}
 		index = findFirstInBlock(key, theNode);
-		BPlusTreeSearchResult<T, order>* result = new BPlusTreeSearchResult<T, order>();
+		SearchResult* result = new SearchResult();
 		result->index = index;
 		result->node = theNode;
 		return result;
@@ -105,10 +97,16 @@ public:
 		}
 		std::cout << std::endl;
 	}
+	//get root block pointer
+	Block* getRoot() {
+		return root;
+	}
 	//remove a entry from the b+tree
-	void remove(T key, uint32_t addr);
+	void remove(T key, uint32_t addr) {
+	}
 	//remove the whole b+tree
-	void removeAll();
+	void removeAll() {
+	}
 protected:
 	BPlusNode<T, order>* root;
 	unsigned int keyLen;
