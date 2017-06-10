@@ -4,6 +4,7 @@
 #define BLOCK_SIZE 4096
 #define BLOCK_HEAD_SIZE 10
 #include "../CONSTANT.h"
+#include "../EXCEPTION.h"
 #include <cstdint>
 #include <cstring>
 
@@ -11,9 +12,14 @@
 // other successor only provide addtional method
 class Block{
 public:
-	Block(){}
-	virtual ~Block(){}
-	virtual void Init(uint32_t index, DBenum block_type=DB_TEMP_BLOCK); //for new block build by upper level 
+	Block(){
+		this->block_data = new uint8_t[BLOCK_SIZE];
+	}
+	Block(uint8_t* buf):block_data(buf){}
+	virtual ~Block(){
+		delete [] this->block_data;
+	}
+	virtual void Init(uint32_t index, DBenum block_type); 
 	uint8_t & BlockType(){
 		return *((uint8_t*)&(this->block_data[0]));
 	}
@@ -25,20 +31,23 @@ public:
 	}
 	uint32_t & NextBlockIndex(){
 		return *((uint32_t*)&(this->block_data[6]));
-	}	
-	uint8_t block_data[BLOCK_SIZE];
+	}
+
+	uint8_t* block_data;
 };
 
 class SchemaBlock:public Block{
 public:
-	SchemaBlock():Block(){}
-	~SchemaBlock() {}
-	void Init();
+	SchemaBlock():Block(){
+		this->EmptyPtr() = BLOCK_HEAD_SIZE;
+		this->EmptyBlockAddr() = 0;
+		this->UserMetaAddr() = 0;
+		this->DBMetaAddr() = 0;		
+	}
+	SchemaBlock(uint8_t* buf):Block(buf){}
+	virtual ~SchemaBlock() {}
 	uint16_t & EmptyPtr(){
 		return *((uint16_t*)&(this->block_data[BLOCK_HEAD_SIZE]));
-	}
-	uint16_t EmptyLen(){
-		return BLOCK_SIZE - this->EmptyPtr();
 	}
 	uint32_t & EmptyBlockAddr(){
 		return *((uint32_t*)&(this->block_data[BLOCK_HEAD_SIZE + 2]));
@@ -49,70 +58,84 @@ public:
 	uint32_t & UserMetaAddr(){
 		return *((uint32_t*)&(this->block_data[BLOCK_HEAD_SIZE + 10]));
 	}
-	uint32_t & PrivilegeMetaAddr(){
+	uint32_t & IndexMetaAddr(){
 		return *((uint32_t*)&(this->block_data[BLOCK_HEAD_SIZE + 14]));
+	}
+	uint16_t EmptyLen(){
+		return BLOCK_SIZE - this->EmptyPtr();
 	}
 };
 
 class TableBlock:public Block{
 public:
-	TableBlock();
-	~TableBlock();
-	void Init(uint32_t blk_index){
-		this->Block::Init(blk_index, DB_TABLE_BLOCK);
+	TableBlock():Block(){
 		this->RecordNum() = 0;
-		this->StackPtr() = BLOCK_SIZE - 1;
+		this->StackPtr() = BLOCK_SIZE - 1;		
 	}
+	TableBlock(uint8_t* buf):Block(buf){}
+	virtual ~TableBlock(){}
 	uint16_t & RecordNum(){
 		return *((uint16_t*)&(this->block_data[BLOCK_HEAD_SIZE]));
-	}
-	// 33B table_name 4B table_addr 1B attr_num 2B data offset  
-	// 32B attr_name 2B attr_type
-	void InsertToHead(const char* table_name, uint32_t table_addr, uint8_t attr_num){
-		uint16_t table_offset = DATA_BEG + TABLE_RECORD_SIZE*this->RecordNum();
-		strcpy((char*)&(this->block_data[table_offset]), table_name);
-		*((uint32_t*)&(this->block_data[table_offset+32])) = table_addr;
-		*((uint16_t*)&(this->block_data[table_offset+36])) = this->StackPtr();
-		*((uint8_t*)&(this->block_data[table_offset+38])) = attr_num;		
-		*((uint32_t*)&(this->block_data[table_offset+39])) = 0;		
-		this->RecordNum()++;
-	}
-	void InsertToTail(const char* attr_name_list[], DBenum* attr_type_list, DBenum* attr_constrain_list, uint8_t attr_num){
-		for(uint8_t i = 0; i < attr_num; i++){
-			this->StackPtr() -= 32;
-			strcpy((char*)&(this->block_data[this->StackPtr()]), attr_name_list[i]);
-			this->StackPtr() -= 2;
-			*((uint16_t*)&(this->block_data[this->StackPtr()])) = (uint16_t)attr_type_list[i];
-			this->StackPtr() -= 2;
-			*((uint16_t*)&(this->block_data[this->StackPtr()])) = (uint16_t)attr_constrain_list[i];
-			this->StackPtr() -= 4;
-			*((uint32_t*)&(this->block_data[this->StackPtr()])) = 0;
-		}
-	}
-	short EmptySize(){
-		return this->StackPtr()+1 - DATA_BEG - this->RecordNum() * TABLE_RECORD_SIZE;
 	}
 	uint16_t & StackPtr(){
 		return *((uint16_t*)&(this->block_data[BLOCK_HEAD_SIZE + 2]));
 	}
+	short EmptySize(){
+		return this->StackPtr()+1 - DATA_BEG - this->RecordNum() * TABLE_RECORD_SIZE;
+	}
+	char* GetTableName(unsigned short row){
+		return (char*)&(this->block_data[DATA_BEG + (row)*TABLE_RECORD_SIZE]);	
+	}
+	void InsertTable(const char* table_name, uint32_t table_addr, uint32_t index_addr, uint8_t attr_num, uint8_t key_index);
+	void InsertAttr(const char* attr_name, DBenum attr_type);
+	unsigned short FindRecordIndex(const char* table_name);
+	void DropTable(const char* table_name);
+	void GetTableMeta(const char* table_name, uint32_t &, uint32_t &, uint8_t&, uint16_t&, uint8_t&);
+	void GetAttrMeta(char* attr_name, DBenum & attr_type, uint16_t attr_addr);
 	static const size_t DATA_BEG = BLOCK_HEAD_SIZE + 4;
-	static const size_t TABLE_RECORD_SIZE =  43;
-	static const size_t ATTR_RECORD_SIZE = 40;
+	static const size_t TABLE_RECORD_SIZE =  48;
+	static const size_t ATTR_RECORD_SIZE = 36;
 };
 
 class RecordBlock:public Block{
 public:
-	RecordBlock();
-	~RecordBlock();
-	void Init();
-	uint32_t & RecordNum(){
-		return *((uint32_t*)&(this->block_data[BLOCK_HEAD_SIZE]));
+	RecordBlock():Block(){
+		this->RecordNum() = 0;
+		this->size = NULL;
+		this->type = NULL;
 	}
-	uint8_t* GetDataPtr(unsigned int offset){
-		return ((uint8_t*)&(this->block_data[BLOCK_HEAD_SIZE+offset]));
+	RecordBlock(uint8_t* buf):Block(buf){
+		this->size = NULL;
+		this->type = NULL;
 	}
+	virtual ~RecordBlock(){
+		delete [] this->size;
+		delete [] this->type;
+	}
+	void Format(DBenum* attr_type, uint16_t attr_num, unsigned short key);
+	uint16_t & RecordNum(){
+		return *(uint16_t*)&(this->block_data[BLOCK_HEAD_SIZE]);
+	}
+	bool CheckEmptySpace(){
+		if(BLOCK_SIZE - BLOCK_HEAD_SIZE - 2 - this->RecordNum() * this->tuple_size < this->tuple_size){
+			return false;
+		}
+		else{
+			return true;
+		}
+	}
+	uint8_t* GetDataPtr(unsigned short row, unsigned short colomn);
+	unsigned short FindTupleIndex(const void* key_data);
+	int InsertTuple(const void** data_list);
+	void RemoveTuple(const void* key_data);
+	int Compare(uint8_t* data_1_ptr, uint8_t* data_2_ptr, unsigned short data_index);
 private:
-
+	static const size_t DATA_BEG = BLOCK_HEAD_SIZE + 2;
+	unsigned short* size;
+	DBenum* type;
+	unsigned short key_index;
+	unsigned short attr_num;
+	unsigned short tuple_size;
 };
 
 #endif
