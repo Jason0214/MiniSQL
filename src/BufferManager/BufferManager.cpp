@@ -4,30 +4,43 @@
 #include <sys/stat.h>
 using namespace std;
 
-
+// make a new SRC_FILE
+// or load the existing one
 BufferManager::BufferManager():SRC_FILE_NAME(DB_FILE),MAX_BLOCK_NUM(BLOCK_NUM){
 	this->block_list_head = NULL;
 	this->block_list_tail = NULL;
 	this->block_num = 0;
 	memset(this->block_table,0,sizeof(BlockNode*)*(BLOCK_NUM<<1));
 	if(_access(this->SRC_FILE_NAME.c_str(),0) == -1){
-		// db file not exist
 		FILE* fp = fopen(this->SRC_FILE_NAME.c_str(), "w");
 		fclose(fp);
 		this->CreateSrcFile();
 	}
 	else{
-		// load db file
 		this->LoadSrcFile();
 	}
 }
+void BufferManager::CreateSrcFile() {
+	SchemaBlock* block_zero = new SchemaBlock();
+	block_zero->Init(0,DB_SCHEMA_BLOCK);
+	this->AddBlock(block_zero);
+	this->WriteToDisc(block_zero);
+}
 
+void BufferManager::LoadSrcFile() {
+	Block* block_zero = this->LoadFromDisc(0);
+	this->AddBlock(block_zero);
+}
+
+
+// before exit, check and write back all the blocks
 BufferManager::~BufferManager() {
 	while (this->block_list_head) {
 		this->RemoveBlock(this->block_list_head);
 	}
 }
 
+// hash block index to fit into the hash table
 uint64_t BufferManager::hash(uint32_t blk_index){
 	// sdmb hash, reference: http://www.cse.yorku.ca/~oz/hash.html
 	char* byte_ptr = (char*)&(blk_index);
@@ -39,6 +52,7 @@ uint64_t BufferManager::hash(uint32_t blk_index){
 	return hash % (BLOCK_NUM << 1);
 }
 
+// found a block node when given the block index
 BlockNode* & BufferManager::GetBlockNode(uint32_t block_index){
 	bool flag = false;
 	uint64_t index = this->hash(block_index);
@@ -49,49 +63,12 @@ BlockNode* & BufferManager::GetBlockNode(uint32_t block_index){
 	return this->block_table[index];
 }
 
-void BufferManager::CreateSrcFile(){
-	SchemaBlock* block_zero = new SchemaBlock();
-	block_zero->Init();
-	this->AddBlock(block_zero);
-	this->WriteToDisc(block_zero);
-
-	Block* usr_block = new Block();
-	usr_block->Init(this->AllocNewBlock(),DB_USER_BLOCK);
-	// point to the table of usr block
-	block_zero->UserMetaAddr() = usr_block->BlockIndex();
-	this->AddBlock(usr_block);
-	this->WriteToDisc(usr_block);
-
-	Block* db_block = new Block();
-	db_block->Init(this->AllocNewBlock(),DB_DATABASE_BLOCK);
-	// point to the table of databases info
-	block_zero->DBMetaAddr() = db_block->BlockIndex();
-	this->AddBlock(db_block);
-	this->WriteToDisc(db_block);
-	
-	block_zero->EmptyPtr() = block_zero->EmptyPtr() + 12;
-	this->WriteToDisc(block_zero);
-}
-
-void BufferManager::LoadSrcFile(){
-	SchemaBlock* block_zero = new SchemaBlock();
-	this->LoadFromDisc( 0, block_zero);
-	this->AddBlock(block_zero);
-
-	Block* usr_block = new Block();
-	this->LoadFromDisc(block_zero->UserMetaAddr(),usr_block);
-	this->AddBlock(usr_block);
-
-	Block* db_block = new Block();
-	this->LoadFromDisc(block_zero->DBMetaAddr(),db_block);
-	this->AddBlock(db_block);
-}
-
+// interface for outer model to get a block
+// if block in buffer, move it to the head of the list and return it
+// otherwise read it from src file and insert to the head of list and return
 Block* BufferManager::GetBlock(uint32_t block_index){
 	BlockNode* block_node_ptr = this->GetBlockNode(block_index);
 	if(block_node_ptr){
-		// move to the head of list
-		// remove
 		if(block_node_ptr->pre){
 			block_node_ptr->pre->next = block_node_ptr->next;
 		}
@@ -104,7 +81,6 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 		else{
 			this->block_list_tail = block_node_ptr->pre;
 		}
-		//add back
 		block_node_ptr->pre = NULL;
 		if(!this->block_list_head){
 			block_node_ptr->next=NULL;
@@ -121,24 +97,34 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 		return block_node_ptr->data;
 	}
 	else{
-		Block* block_ptr = new Block();
-		this->LoadFromDisc(block_index, block_ptr);
+		Block* block_ptr = this->LoadFromDisc(block_index);
 		block_node_ptr = this->AddBlock(block_ptr);
 		block_node_ptr->is_modified = true;
 		block_node_ptr->is_pined = true;		
 		return block_ptr;
 	}
 }
-	
+
+// interface for outer program to return a block
+// when outer program get a block, it will be 'pinned'
+// which means the block won't be freed by buffer manager
+// here release the 'pinned' flag
 void BufferManager::ReleaseBlock(Block* & block_ptr){
 	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
 	block_ptr = NULL;
 	block_node_ptr->is_pined = false;
 }
 
-Block* BufferManager::CreateBlock() {
-	Block* block_ptr = new Block();
-	block_ptr->Init(this->AllocNewBlock());
+// interface for outer program to get an empty block which not on the disc
+Block* BufferManager::CreateBlock(DBenum block_type) {
+	Block* block_ptr = NULL;
+	switch (block_type) {
+	case(DB_TABLE_BLOCK) : block_ptr = new TableBlock(); break;
+	case(DB_SCHEMA_BLOCK) : block_ptr = new SchemaBlock(); break;
+	case(0) : block_ptr = new Block(); break;
+	default: block_ptr = new RecordBlock(); break;
+	}
+	block_ptr->Init(this->AllocNewBlock(),block_type);
 	this->WriteToDisc(block_ptr);
 	BlockNode* block_node_ptr = this->AddBlock(block_ptr);
 	block_node_ptr->is_modified = true;
@@ -146,8 +132,11 @@ Block* BufferManager::CreateBlock() {
 	return block_ptr;
 }
 
-void BufferManager::LoadFromDisc(uint32_t blk_index, Block* block_ptr){
+// load a block from disc
+Block* BufferManager::LoadFromDisc(uint32_t blk_index){
 	FILE* fp = fopen(this->SRC_FILE_NAME.c_str(),"rb");
+	Block* block_ptr = NULL;
+	uint8_t* buf = new uint8_t[BLOCK_SIZE];
 	//XXX: possible solution: https://stackoverflow.com/questions/6980063/how-to-handle-file-whose-size-is-more-than-2-gb
 	fseek(fp, 0, SEEK_SET);
 	while(blk_index >= (1 << 19)){
@@ -155,10 +144,19 @@ void BufferManager::LoadFromDisc(uint32_t blk_index, Block* block_ptr){
 		blk_index -= (1 << 19);
 	}
 	fseek(fp, blk_index << 12, SEEK_CUR);
-	fread(block_ptr->block_data, BLOCK_SIZE, 1, fp);
+	fread(buf, BLOCK_SIZE, 1, fp);
+	switch ((DBenum)*(uint8_t*)buf) {
+		case(DB_TABLE_BLOCK) : block_ptr = new TableBlock(buf); break;
+		case(DB_SCHEMA_BLOCK) : block_ptr = new SchemaBlock(buf); break;
+		case(DB_DELETED_BLOCK) : block_ptr = new Block(buf); break;
+		default: block_ptr = new RecordBlock(buf); break;
+	}
 	fclose(fp);
+	return block_ptr;
 }
 
+// write a block's data to disc, 
+// however it doesn't free the block from the buffer
 void BufferManager::WriteToDisc(Block* block_ptr){
 	uint32_t blk_index = block_ptr->BlockIndex();
 	FILE* fp = fopen(this->SRC_FILE_NAME.c_str(),"rb+");
@@ -173,6 +171,7 @@ void BufferManager::WriteToDisc(Block* block_ptr){
 	fclose(fp);	
 }
 
+// add a block to the head of the list
 BlockNode* BufferManager::AddBlock(Block* blk_to_add){
 	BlockNode* new_node = new BlockNode();
 	new_node->data = blk_to_add;
@@ -200,12 +199,11 @@ BlockNode* BufferManager::AddBlock(Block* blk_to_add){
 	return new_node;
 }
 
+// free a block from buffer
 void BufferManager::RemoveBlock(BlockNode* node_to_remove){
-//	if(!node_to_remove) return;
 	if(node_to_remove->is_modified){
 		this->WriteBack(node_to_remove);
 	}
-	// remove from list
 	if(node_to_remove->pre){
 		node_to_remove->pre->next = node_to_remove->next;
 	}
@@ -219,34 +217,38 @@ void BufferManager::RemoveBlock(BlockNode* node_to_remove){
 		this->block_list_tail = node_to_remove->pre;
 	}
 	this->block_num--;
-	// remote from hash table
+	// remove from hash table
 	this->GetBlockNode(node_to_remove->data->BlockIndex()) = NULL;
 	// free memory
 	delete node_to_remove;
 }
 
+// reserve a new block on the disc and return the block index of the new block
 uint32_t BufferManager::AllocNewBlock(){
-	BlockNode* schema_node = this->block_table[0]; // smdb always hash 0 -> 0
-	SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(schema_node->data);
-	uint32_t empty_block_addr = schema_block->EmptyBlockAddr();
-	if(empty_block_addr == 0){
+	SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(this->GetBlock(0));
+	uint32_t deleted_block_addr = schema_block->EmptyBlockAddr();
+	if(deleted_block_addr == 0){
 		// no empty block in db file, have to expand the db file
 		uint64_t size;
 		struct __stat64 st;
 		_stat64(this->SRC_FILE_NAME.c_str(), &st);
 		size = st.st_size;
 		// reference: https://stackoverflow.com/questions/2361385/how-to-get-a-files-size-which-is-greater-than-4-gb
+		this->ReleaseBlock((Block* &)schema_block);
 		return (uint32_t)(size >> 12);
 	}
 	else{
 		// empty block in db file, allocate this block
-		schema_block->EmptyBlockAddr() = this->GetBlock(empty_block_addr)->NextBlockIndex();
+		Block* deleted_block = this->GetBlock(deleted_block_addr);
+		schema_block->EmptyBlockAddr() = deleted_block->NextBlockIndex();
 		// schema being changed
-		schema_node->is_modified = true;
-		return empty_block_addr;
+		this->ReleaseBlock((Block* &)schema_block);
+		this->RemoveBlock(this->GetBlockNode(deleted_block->BlockIndex()));
+		return deleted_block_addr;
 	}
 }
 
+// interface for outer program to delete a block currently on the disc
 void BufferManager::DeleteBlock(Block* & block_ptr){
 	/* do not forget to set the next field of the previous block */
 	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
@@ -255,16 +257,15 @@ void BufferManager::DeleteBlock(Block* & block_ptr){
 		Block* block_to_delete = block_node_ptr->data;
 		
 		// update schema	
-		BlockNode* schema_node = this->block_table[0]; // smdb always hash 0 -> 0
-		SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(schema_node->data);
+		SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(this->GetBlock(0));
 
 		block_to_delete->NextBlockIndex() = schema_block->EmptyBlockAddr();
 		block_to_delete->BlockType() = (uint8_t)DB_DELETED_BLOCK;
 		
 		schema_block->EmptyBlockAddr() = block_to_delete->BlockIndex();
-		schema_node->is_modified = true;
+		this->ReleaseBlock((Block* &)schema_block);
 
 		block_node_ptr->is_modified = true;
-		this->RemoveBlock(block_node_ptr);
+		block_node_ptr->is_pined = false;
 	}
 }
