@@ -24,7 +24,7 @@ public:
 	virtual SearchResult* search(T key) = 0;
 	virtual void printAll() = 0;
 	virtual Block* getRoot() = 0;
-	virtual void remove(T key, uint32_t addr)=0;
+	virtual void remove(SearchResult* pos)=0;
 	virtual void removeAll()=0;
 };
 

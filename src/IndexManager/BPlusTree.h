@@ -1,5 +1,6 @@
 #pragma once
 #include<iostream>
+#include<cmath>
 #include "../BufferManager/Block.h"
 #include "../BufferManager/BufferManager.h"
 #include "IndexManager.h"
@@ -13,9 +14,9 @@ public:
 	inline uint32_t & parent() {
 		return *(uint32_t*)(&block_data[BLOCK_HEAD_SIZE + 1]);
 	}
-	//unsigned int & order() {
-	//return *(unsigned int*)(&block_data[BLOCK_HEAD_SIZE + 5]);
-	//}
+	inline uint32_t & rightSibling() {
+		return *(uint32_t*)(&block_data[BLOCK_HEAD_SIZE + 5]);
+	}
 	inline int & dataCnt() {
 		return *(int*)(&block_data[BLOCK_HEAD_SIZE + 9]);
 	}
@@ -28,15 +29,16 @@ public:
 };
 
 template<class T, int order>
-class BPlusTree: public IndexMethod<T>{
+class BPlusTree : public IndexMethod<T> {
 public:
-	BPlusTree(BPlusNode<T, order> *root = nullptr, unsigned int keyLen = 25): root(root),keyLen(keyLen) {
+	BPlusTree(BPlusNode<T, order> *root = nullptr, unsigned int keyLen = 25) : root(root), keyLen(keyLen) {
 		bufferManager = &BufferManager::Instance();
 	};
-	virtual ~BPlusTree() {}
+	virtual ~BPlusTree() {
+		writeToDisk(root);
+	}
 	//insert a entry into the b+tree
 	void insert(T key, uint32_t addr) {
-		//std::cout << key;
 		BPlusNode<T, order>* theNode;
 		// if the root hasn't been created
 		if (!root) {
@@ -45,8 +47,8 @@ public:
 			theNode->dataCnt() = 1;
 			theNode->parent() = 0;
 			theNode->data()[0] = key;
-			theNode->ptrs()[0] = addr;
-			theNode->ptrs()[order] = 0;
+			theNode->ptrs()[1] = addr;
+			theNode->rightSibling() = 0;
 			return;
 		}
 		//normal case
@@ -88,8 +90,8 @@ public:
 			for (int i = 0;i < theNode->dataCnt();i++) {
 				std::cout << theNode->data()[i] << " ";
 			}
-			if (theNode->ptrs()[order]) {
-				theNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[order]));
+			if (theNode->rightSibling()) {
+				theNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->rightSibling()));
 			}
 			else {
 				break;
@@ -102,7 +104,10 @@ public:
 		return root;
 	}
 	//remove a entry from the b+tree
-	void remove(T key, uint32_t addr) {
+	//pos must be in the tree or an error will occur
+	void remove(SearchResult* pos) {
+		BPlusNode<T, order>* theNode = static_cast<BPlusNode<T, order>*>(pos->node);
+		removeInBlock(theNode, pos->index);
 	}
 	//remove the whole b+tree
 	void removeAll() {
@@ -115,22 +120,13 @@ protected:
 	void insertInBlock(T key, uint32_t addr, BPlusNode<T, order>* theNode) {
 		//std::cout << '<'<<theNode->dataCnt() << '>';
 		int idx = this->findLargerInBlock(key, theNode);
-		if (theNode->isLeaf()) {
-			for (int i = theNode->dataCnt() - 1;i >= idx;i--) {
-				theNode->data()[i + 1] = theNode->data()[i];
-				theNode->ptrs()[i + 1] = theNode->ptrs()[i];
-			}
-			theNode->data()[idx] = key;
-			theNode->ptrs()[idx] = addr;
+		for (int i = theNode->dataCnt() - 1;i >= idx;i--) {
+			theNode->data()[i + 1] = theNode->data()[i];
+			theNode->ptrs()[i + 2] = theNode->ptrs()[i + 1];
 		}
-		else {
-			for (int i = theNode->dataCnt() - 1;i >= idx;i--) {
-				theNode->data()[i + 1] = theNode->data()[i];
-				theNode->ptrs()[i + 2] = theNode->ptrs()[i + 1];
-			}
-			theNode->data()[idx] = key;
-			theNode->ptrs()[idx + 1] = addr;
-		}
+		theNode->data()[idx] = key;
+		theNode->ptrs()[idx + 1] = addr;
+
 		theNode->dataCnt()++;
 		//if needed, split the node
 		if (theNode->dataCnt() >= order) {
@@ -160,51 +156,38 @@ protected:
 		while (index > 0 && theNode->data()[index - 1] == key) index--;
 		return index;
 	}
-	//find the data in the block
-	int findInBlock(T key, BPlusNode<T, order>* theNode) {
-		int low = 0, mid, high = theNode->dataCnt() - 1;
-
-		// true binary search
-		while (low <= high) {
-			mid = (low + high) >> 1;
-			T e = theNode->data()[mid];
-			if (e < key) low = mid + 1;
-			else if (e > key) high = mid - 1;
-			else return mid;
-		}
-		// not found, return -1
-		return -1;
-	}
 	//split the current node
 	void split(BPlusNode<T, order>* theNode) {
 		BPlusNode<T, order>* newNode = static_cast<BPlusNode<T, order>*>(bufferManager->CreateBlock());
+		//maintain linked list
+		newNode->rightSibling() = theNode->rightSibling();
+		theNode->rightSibling() = newNode->BlockIndex();
 		//if the node is the root
-		if (!theNode->parent()) {
+		if (theNode==root) {
 			//create a new root
 			root = static_cast<BPlusNode<T, order>*>(bufferManager->CreateBlock());
 			root->isLeaf() = false;
 			root->dataCnt() = 0;
 			root->ptrs()[0] = theNode->BlockIndex();
 			root->parent() = 0;
-			root->ptrs()[order] = 0;
+			root->rightSibling() = 0;
 			theNode->parent() = root->BlockIndex();
 		}
 		//leaf node
 		if (theNode->isLeaf()) {
+			//copy data to new node
 			memcpy(&(newNode->data()[0]), &(theNode->data()[order - order / 2]), order / 2 * sizeof(T));
-			memcpy(&(newNode->ptrs()[0]), &(theNode->ptrs()[order - order / 2]), order / 2 * sizeof(T));
+			memcpy(&(newNode->ptrs()[1]), &(theNode->ptrs()[order - order / 2 + 1]), order / 2 * sizeof(T));
 			newNode->isLeaf() = true;
 			newNode->parent() = theNode->parent();
 			newNode->dataCnt() = order / 2;
 			theNode->dataCnt() = order - order / 2;
-			//maintain linked list
-			newNode->ptrs()[order] = theNode->ptrs()[order];
-			theNode->ptrs()[order] = newNode->BlockIndex();
 			//insert new entry to parent
 			insertInBlock(newNode->data()[0], newNode->BlockIndex(), static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(newNode->parent())));
 		}
 		//non-leaf node
 		else {
+			//copy data to new node
 			memcpy(&(newNode->data()[0]), &(theNode->data()[order / 2 + 1]), (order - order / 2 - 1) * sizeof(T));
 			memcpy(&(newNode->ptrs()[0]), &(theNode->ptrs()[order / 2 + 1]), (order - order / 2) * sizeof(T));
 			newNode->isLeaf() = false;
@@ -214,6 +197,115 @@ protected:
 			//insert new entry to parent
 			insertInBlock(theNode->data()[order / 2], newNode->BlockIndex(), static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(newNode->parent())));
 		}
+	}
+	//delete an entry from the block
+	void removeInBlock(BPlusNode<T, order>* theNode, unsigned int index) {
+		for (int i = index;i < theNode->dataCnt() - 1;i++) {
+			theNode->data()[i] = theNode->data()[i + 1];
+			theNode->ptrs()[i + 1] = theNode->ptrs()[i + 2];
+		}
+		theNode->dataCnt()--;
+		//check if there's too few data
+		int minCnt = getMinCnt(theNode);
+		if (theNode->dataCnt() < minCnt) {
+			merge(theNode);
+		}
+	}
+	//merge the current node to other node
+	void merge(BPlusNode<T, order>* theNode) {
+		BPlusNode<T, order>* rightNode;
+		//if the node is the root, let its only child to be the new root
+		if (theNode==root) {
+			Block* oldRoot = root;
+			//if root is a leaf, empty the tree
+			if (theNode->isLeaf()) root = nullptr;
+			//assign new root
+			else root = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[0]));
+			//delete the block
+			bufferManager->DeleteBlock(oldRoot);
+			return;
+		}
+		BPlusNode<T, order>* parentNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->parent()));
+		//if the node is the last child of parent node, assign the node to be its left sibling
+		if (parentNode->ptrs()[parentNode->dataCnt()] == theNode->BlockIndex()) {
+			rightNode = theNode;
+			theNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(parentNode->ptrs()[parentNode->dataCnt() - 1]));
+		}
+		//normally right node is the right sibling of the node
+		else {
+			rightNode = static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->rightSibling()));
+		}
+		int totalCnt = theNode->dataCnt() + rightNode->dataCnt();
+		//cannot put in one node, redistribute entries
+		if (totalCnt > order - 1) {
+			T oldKey = rightNode->data()[0];
+			int offset = totalCnt / 2 - theNode->dataCnt();
+			if (offset>0) {
+				// move some data in right node to the node
+				for (int i = theNode->dataCnt();i < totalCnt / 2;i++) {
+					theNode->data()[i] = rightNode->data()[i - theNode->dataCnt()];
+					theNode->ptrs()[i + 1] = rightNode->ptrs()[i - theNode->dataCnt() + 1];
+				}
+				// shift right node
+				for (int i = offset;i < rightNode->dataCnt();i++) {
+					rightNode->data()[i - offset] = rightNode->data()[i];
+					rightNode->ptrs()[i - offset + 1] = rightNode->ptrs()[i + 1];
+				}
+			}
+			else {
+				offset = -offset;
+				// move some data in the node to right node
+				for (int i = rightNode->dataCnt()-1;i >= offset;i--) {
+					rightNode->data()[i] = rightNode->data()[i - offset];
+					rightNode->ptrs()[i + 1] = rightNode->ptrs()[i - offset + 1];
+				}
+				// shift the node
+				for (int i = 0;i < offset;i++) {
+					rightNode->data()[i] = theNode->data()[totalCnt / 2 + i];
+					rightNode->ptrs()[i + 1] = theNode->data()[totalCnt / 2 + i + 1];
+				}
+			}
+			//update entry in parent node
+			int indexInParent = findFirstInBlock(oldKey, parentNode);
+			while (parentNode->ptrs()[indexInParent + 1] != rightNode->BlockIndex()) indexInParent++;
+			parentNode->data()[indexInParent] = rightNode->data()[0];
+			//update dataCnt
+			theNode->dataCnt() = totalCnt / 2;
+			rightNode->dataCnt() = totalCnt - totalCnt / 2;
+		}
+		// put all data in one node
+		else {
+			// merge data
+			for (int i = theNode->dataCnt();i < totalCnt;i++) {
+				theNode->data()[i] = rightNode->data()[i - theNode->dataCnt()];
+			}
+			// delete entry of right node in parent node
+			int indexInParent = findFirstInBlock(rightNode->data()[0], parentNode);
+			while (parentNode->ptrs()[indexInParent + 1] != rightNode->BlockIndex()) indexInParent++;
+			removeInBlock(parentNode, indexInParent);
+			//update dataCnt
+			theNode->dataCnt() = totalCnt;
+			//delete block
+			Block* tmp = rightNode;
+			bufferManager->DeleteBlock(tmp);
+		}
+	}
+	int getMinCnt(BPlusNode<T, order>* theNode) {
+		int minCnt;
+		if (theNode->isLeaf()) minCnt = ceil((order - 1)*0.5);
+		else if (root == theNode) minCnt = 1;
+		else minCnt = ceil(order*0.5) - 1;
+		return minCnt;
+	}
+	//write the node and it's children recursively to the disk
+	void writeToDisk(BPlusNode<T, order>* theNode) {
+		if (!theNode->isLeaf()) {
+			for (int i = 0;i < theNode->dataCnt() + 1;i++) {
+				writeToDisk(static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[i])));
+			}
+		}
+		Block* tmp = theNode;
+		bufferManager->ReleaseBlock(tmp);//cannot convert type here since reference cannot attach rvalue
 	}
 };
 
