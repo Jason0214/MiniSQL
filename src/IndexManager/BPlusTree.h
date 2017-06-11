@@ -31,7 +31,8 @@ public:
 template<class T, int order>
 class BPlusTree : public IndexMethod<T> {
 public:
-	BPlusTree(BPlusNode<T, order> *root = nullptr, unsigned int keyLen = 25) : root(root), keyLen(keyLen) {
+	BPlusTree(Block *root = nullptr, unsigned int keyLen = 25) : keyLen(keyLen) {
+		this->root = static_cast<BPlusNode<T, order>*>(root);
 		bufferManager = &BufferManager::Instance();
 	};
 	virtual ~BPlusTree() {
