@@ -30,7 +30,7 @@ public:
 	~BufferManager();
 
 	Block* GetBlock(uint32_t blk_index);
-	Block* CreateBlock();
+	Block* CreateBlock(DBenum = (DBenum)0);
 	void ReleaseBlock(Block* & block_ptr);
 	void DeleteBlock(Block* & block_ptr);
 private:
@@ -39,13 +39,13 @@ private:
 	BufferManager & operator=(const BufferManager &);
 
 
-	uint32_t AllocNewBlock(); // reserve a block in the db file 
+	uint32_t AllocNewBlock();  
 	void WriteBack(BlockNode* blk_node_ptr){
 		this->WriteToDisc(blk_node_ptr->data);
 		blk_node_ptr->is_modified = false;
 	}
 
-	void LoadFromDisc(uint32_t block_index, Block* block_ptr);
+	Block* LoadFromDisc(uint32_t block_index);
 	void WriteToDisc(Block* block_ptr);
 
 	void CreateSrcFile();
@@ -63,7 +63,7 @@ private:
 
 //  table for fast access block
 	uint64_t hash(uint32_t blk_index);
-	BlockNode* & GetBlockNode(uint32_t blk_index); // find block node through hash table
+	BlockNode* & GetBlockNode(uint32_t blk_index); 
 	BlockNode* block_table[BLOCK_NUM*2];
 };
 
