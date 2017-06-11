@@ -35,7 +35,7 @@ public:
 		bufferManager = &BufferManager::Instance();
 	};
 	virtual ~BPlusTree() {
-		writeToDisk(root);
+		operateTree(root, &BufferManager::ReleaseBlock);
 	}
 	//insert a entry into the b+tree
 	void insert(T key, uint32_t addr) {
@@ -111,6 +111,8 @@ public:
 	}
 	//remove the whole b+tree
 	void removeAll() {
+		operateTree(root, &BufferManager::DeleteBlock);
+		root = nullptr;
 	}
 protected:
 	BPlusNode<T, order>* root;
@@ -297,15 +299,15 @@ protected:
 		else minCnt = ceil(order*0.5) - 1;
 		return minCnt;
 	}
-	//write the node and it's children recursively to the disk
-	void writeToDisk(BPlusNode<T, order>* theNode) {
+	//operate the whole tree recursively
+	void operateTree(BPlusNode<T, order>* theNode,void (BufferManager::*func)(Block*&) ) {
 		if (!theNode->isLeaf()) {
 			for (int i = 0;i < theNode->dataCnt() + 1;i++) {
-				writeToDisk(static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[i])));
+				operateTree(static_cast<BPlusNode<T, order>*>(bufferManager->GetBlock(theNode->ptrs()[i])),func);
 			}
 		}
 		Block* tmp = theNode;
-		bufferManager->ReleaseBlock(tmp);//cannot convert type here since reference cannot attach rvalue
+		(bufferManager->*func)(tmp);//cannot convert type here since reference cannot attach rvalue
 	}
 };
 
