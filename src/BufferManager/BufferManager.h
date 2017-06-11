@@ -9,7 +9,7 @@
 
 class BlockNode{
 public:
-	BlockNode():pre(NULL),next(NULL),data(NULL),is_modified(false),is_pined(false){}
+	BlockNode():pre(NULL),next(NULL),data(NULL),is_pined(false){}
 	~BlockNode(){
 		delete data;
 	}
@@ -17,7 +17,6 @@ public:
 	BlockNode* next;
 	Block* data;
 	bool is_pined; // if a block is pined, it cannot be remove from buffer
-	bool is_modified;
 };
 
 class BufferManager{
@@ -31,6 +30,7 @@ public:
 
 	Block* GetBlock(uint32_t blk_index);
 	Block* CreateBlock(DBenum = (DBenum)0);
+	void WriteToDisc(Block* block_ptr);
 	void ReleaseBlock(Block* & block_ptr);
 	void DeleteBlock(Block* & block_ptr);
 private:
@@ -42,11 +42,9 @@ private:
 	uint32_t AllocNewBlock();  
 	void WriteBack(BlockNode* blk_node_ptr){
 		this->WriteToDisc(blk_node_ptr->data);
-		blk_node_ptr->is_modified = false;
 	}
 
 	Block* LoadFromDisc(uint32_t block_index);
-	void WriteToDisc(Block* block_ptr);
 
 	void CreateSrcFile();
 	void LoadSrcFile();

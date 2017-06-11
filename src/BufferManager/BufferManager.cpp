@@ -23,13 +23,11 @@ BufferManager::BufferManager():SRC_FILE_NAME(DB_FILE),MAX_BLOCK_NUM(BLOCK_NUM){
 void BufferManager::CreateSrcFile() {
 	SchemaBlock* block_zero = new SchemaBlock();
 	block_zero->Init(0,DB_SCHEMA_BLOCK);
-	this->AddBlock(block_zero);
 	this->WriteToDisc(block_zero);
 }
 
 void BufferManager::LoadSrcFile() {
 	Block* block_zero = this->LoadFromDisc(0);
-	this->AddBlock(block_zero);
 }
 
 
@@ -92,14 +90,12 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 			this->block_list_head->pre = block_node_ptr;
 			this->block_list_head = block_node_ptr;
 		}
-		block_node_ptr->is_modified = true;
 		block_node_ptr->is_pined = true;
 		return block_node_ptr->data;
 	}
 	else{
 		Block* block_ptr = this->LoadFromDisc(block_index);
 		block_node_ptr = this->AddBlock(block_ptr);
-		block_node_ptr->is_modified = true;
 		block_node_ptr->is_pined = true;		
 		return block_ptr;
 	}
@@ -127,7 +123,6 @@ Block* BufferManager::CreateBlock(DBenum block_type) {
 	block_ptr->Init(this->AllocNewBlock(),block_type);
 	this->WriteToDisc(block_ptr);
 	BlockNode* block_node_ptr = this->AddBlock(block_ptr);
-	block_node_ptr->is_modified = true;
 	block_node_ptr->is_pined = true;	
 	return block_ptr;
 }
@@ -169,6 +164,7 @@ void BufferManager::WriteToDisc(Block* block_ptr){
 	fseek(fp, blk_index << 12, SEEK_CUR);
 	fwrite(block_ptr->block_data, BLOCK_SIZE, 1, fp);
 	fclose(fp);	
+	block_ptr->is_dirty = false;
 }
 
 // add a block to the head of the list
@@ -201,7 +197,7 @@ BlockNode* BufferManager::AddBlock(Block* blk_to_add){
 
 // free a block from buffer
 void BufferManager::RemoveBlock(BlockNode* node_to_remove){
-	if(node_to_remove->is_modified){
+	if(node_to_remove->data->is_dirty){
 		this->WriteBack(node_to_remove);
 	}
 	if(node_to_remove->pre){
@@ -242,6 +238,7 @@ uint32_t BufferManager::AllocNewBlock(){
 		Block* deleted_block = this->GetBlock(deleted_block_addr);
 		schema_block->EmptyBlockAddr() = deleted_block->NextBlockIndex();
 		// schema being changed
+		schema_block->is_dirty = true;
 		this->ReleaseBlock((Block* &)schema_block);
 		this->RemoveBlock(this->GetBlockNode(deleted_block->BlockIndex()));
 		return deleted_block_addr;
@@ -263,9 +260,10 @@ void BufferManager::DeleteBlock(Block* & block_ptr){
 		block_to_delete->BlockType() = (uint8_t)DB_DELETED_BLOCK;
 		
 		schema_block->EmptyBlockAddr() = block_to_delete->BlockIndex();
+		schema_block->is_dirty = true;
 		this->ReleaseBlock((Block* &)schema_block);
 
-		block_node_ptr->is_modified = true;
+		block_to_delete->is_dirty = true;
 		block_node_ptr->is_pined = false;
 	}
 }

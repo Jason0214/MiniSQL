@@ -34,6 +34,7 @@ public:
 	}
 
 	uint8_t* block_data;
+	bool is_dirty; //dirty tag
 };
 
 class SchemaBlock:public Block{

@@ -8,6 +8,7 @@ void Block::Init(uint32_t index, DBenum block_type){
 	this->ReservedBytes() = 0;
 	this->BlockIndex() = index;
 	this->NextBlockIndex() = 0;
+	this->is_dirty = false;
 }
 
 // Insert a table's meta data order by table_name
