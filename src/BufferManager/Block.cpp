@@ -112,6 +112,7 @@ void TableBlock::GetAttrMeta(char* attr_name, DBenum & attr_type, uint16_t attr_
 // make access element convient
 void RecordBlock::Format(DBenum* attr_type, uint16_t attr_num, unsigned short key){
 	this->tuple_size = 0;
+	this->key_index = key;
 	this->attr_num = attr_num;
 	this->size = new unsigned short[attr_num];
 	this->type = new DBenum[attr_num];
@@ -120,9 +121,9 @@ void RecordBlock::Format(DBenum* attr_type, uint16_t attr_num, unsigned short ke
 			case DB_TYPE_INT: this->size[i] = sizeof(int); break;
 			case DB_TYPE_FLOAT: this->size[i] = sizeof(float); break;
 			default: this->size[i] = attr_type[i] - DB_TYPE_VARCHAR + 1; break;
-			this->tuple_size += size[i];
 		}
 		this->type[i] = attr_type[i];
+		this->tuple_size += size[i];
 	}
 	// if(this->tuple_size > BLOCK_SIZE - DATA_BEG){
 	// 	throw TooLargeTuple();
@@ -136,7 +137,7 @@ uint8_t* RecordBlock::GetDataPtr(unsigned short row, unsigned short colomn){
 	for(unsigned short i = 0; i < colomn; i++){
 		target_row_size += size[i];
 	}
-	return &(this->block_data[DATA_BEG + (row)*tuple_size + target_row_size]);
+	return &(this->block_data[DATA_BEG + row*tuple_size + target_row_size]);
 }
 
 // binary search:
@@ -156,16 +157,16 @@ unsigned short RecordBlock::FindTupleIndex(const void* key_data){
 
 // given a tuple's data list
 // insert it into the right position in the block
-int RecordBlock::InsertTuple(const void** data_list){
+int RecordBlock::InsertTuple(uint8_t** data_list){
 	unsigned short target_index = this->FindTupleIndex(data_list[this->key_index]);
 	uint8_t* addr = this->GetDataPtr(this->RecordNum(), 0);
-	for(unsigned short i = this->RecordNum(); i >= target_index; i--){
+	for(unsigned short i = target_index; i < this->RecordNum() ; i++){
 		memcpy(addr, addr - this->tuple_size, this->tuple_size);
 		addr -= this->tuple_size;
 	}
 	addr = this->GetDataPtr(target_index, 0);
 	for(unsigned short i = 0; i < this->attr_num; i++){
-		memcpy(addr, (uint8_t*)data_list[i], this->size[i]);
+		memcpy(addr, data_list[i], this->size[i]);
 		addr += this->size[i];
 	}
 	this->RecordNum()++;
@@ -175,7 +176,7 @@ int RecordBlock::InsertTuple(const void** data_list){
 // given a key and delete its corresponding tuple
 // also fill the deleted tuple position with other tuple
 // still keep the tuples ordered by key 
-void RecordBlock::RemoveTuple(const void* key_data){
+void RecordBlock::RemoveTuple(const uint8_t* key_data){
 	unsigned short target_index = this->FindTupleIndex(key_data);
 	uint8_t* addr = this->GetDataPtr(target_index, 0);
 	for(unsigned short i = target_index; i < this->RecordNum(); i++){
