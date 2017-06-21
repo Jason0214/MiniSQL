@@ -265,7 +265,7 @@ protected:
 				// shift the node
 				for (int i = 0;i < offset;i++) {
 					rightNode->data()[i] = theNode->data()[totalCnt / 2 + i];
-					rightNode->ptrs()[i + 1] = theNode->data()[totalCnt / 2 + i + 1];
+					rightNode->ptrs()[i + 1] = theNode->ptrs()[totalCnt / 2 + i + 1];
 				}
 			}
 			//update entry in parent node
@@ -293,6 +293,7 @@ protected:
 			bufferManager->DeleteBlock(tmp);
 		}
 	}
+	//get minimal dataCnt in a node
 	int getMinCnt(BPlusNode<T, order>* theNode) {
 		int minCnt;
 		if (theNode->isLeaf()) minCnt = ceil((order - 1)*0.5);
