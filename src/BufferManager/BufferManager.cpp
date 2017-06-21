@@ -57,6 +57,7 @@ BlockNode* & BufferManager::GetBlockNode(uint32_t block_index){
 	while(this->block_table[index]){
 		if(this->block_table[index]->data->BlockIndex() == block_index) break;
 		index++;
+		if (index == BLOCK_NUM << 1) index = 0;
 	}
 	return this->block_table[index];
 }

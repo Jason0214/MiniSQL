@@ -32,12 +32,12 @@ public:
 
 	void CreateDatabase(const std::string & db_name);
 	void UseDatabase(const std::string & db_name);
-<<<<<<< HEAD
+
 	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index);
 	void GetTableAttr(TableMeta & table_meta);
 	void CreateIndex(const std::string & table_name, int8_t secondary_key_index);
 	uint32_t Catelog::GetIndex(const std::string & table_name, int8_t secondary_key_index);
-=======
+
 	void CreateTable(std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, unsigned int attr_num, int key_index);
 	void GetTableAttr(std::string & table_name, uint32_t & table_addr, uint32_t & index_addr,
 		std::string* attr_name_list, DBenum* attr_type_list, unsigned int & attr_num, unsigned int & key_index);
@@ -52,7 +52,6 @@ public:
 	int BlockCount();
 	int BlockFactor(); // the number of distinct values that appear in the relation r for attribute A
 	
->>>>>>> ba1a8288c001599b17f3fb266b24c10bd110e792
 private:
 	Catelog();
 	Catelog(const Catelog&);

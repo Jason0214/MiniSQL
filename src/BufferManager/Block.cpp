@@ -120,7 +120,7 @@ void RecordBlock::Format(DBenum* attr_type, uint16_t attr_num, unsigned short ke
 		switch(attr_type[i]){
 			case DB_TYPE_INT: this->size[i] = sizeof(int); break;
 			case DB_TYPE_FLOAT: this->size[i] = sizeof(float); break;
-			default: this->size[i] = attr_type[i] - DB_TYPE_VARCHAR + 1; break;
+			default: this->size[i] = attr_type[i] - DB_TYPE_CHAR + 1; break;
 		}
 		this->type[i] = attr_type[i];
 		this->tuple_size += size[i];
@@ -157,7 +157,7 @@ unsigned short RecordBlock::FindTupleIndex(const void* key_data){
 
 // given a tuple's data list
 // insert it into the right position in the block
-int RecordBlock::InsertTuple(uint8_t** data_list){
+int RecordBlock::InsertTuple(const void** data_list){
 	unsigned short target_index = this->FindTupleIndex(data_list[this->key_index]);
 	uint8_t* addr = this->GetDataPtr(this->RecordNum(), 0);
 	for(unsigned short i = target_index; i < this->RecordNum() ; i++){

@@ -127,7 +127,7 @@ public:
 	}
 	uint8_t* GetDataPtr(unsigned short row, unsigned short colomn);
 	unsigned short FindTupleIndex(const void* key_data);
-	int InsertTuple(uint8_t** data_list);
+	int InsertTuple(const void** data_list);
 	void RemoveTuple(const uint8_t* key_data);
 	int Compare(uint8_t* data_1_ptr, uint8_t* data_2_ptr, unsigned short data_index);
 private:
