@@ -13,9 +13,9 @@ public:
 
 	void CreateDatabase(const std::string & db_name);	
 	void UseDatabase(const std::string & db_name);
-	void CreateTable(string & table_name, string* attr_name_list, DBenum* attr_type_list, unsigned int attr_num, int key_index);
-	void GetTableAttr(string & table_name, uint32_t & table_addr, uint32_t & index_addr,
-		string* attr_name_list, DBenum* attr_type_list, unsigned int & attr_num, unsigned int & key_index);
+	void CreateTable(std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, unsigned int attr_num, int key_index);
+	void GetTableAttr(std::string & table_name, uint32_t & table_addr, uint32_t & index_addr,
+		std::string* attr_name_list, DBenum* attr_type_list, unsigned int & attr_num, unsigned int & key_index);
 //TODO
 	void CreateUser(const std::string user_name, const std::string passwd);
 

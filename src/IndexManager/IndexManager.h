@@ -68,15 +68,21 @@ public:
 		method->removeAll();
 		delete method;
 	}
+	//print out the data in the index
+	void printAll(Block* root, MethodType type, unsigned int keyLen) {
+		IndexMethod<T>* method = createMethod(type, keyLen, root);
+		method->printAll();
+		delete method;
+	}
 protected:
 	IndexMethod<T>* createMethod(MethodType type, unsigned int keyLen,Block* root) {
 		IndexMethod<T>* method;
 		if (type == BPTree) {
 			if (keyLen <= 4) {
-				method = new BPlusTree<int, 508>(root);
+				method = new BPlusTree<T, 508>(root);
 			}
 			else {
-				method = new BPlusTree<int, 508>(root);
+				method = new BPlusTree<T, 200>(root);
 			}
 		}
 		return method;
