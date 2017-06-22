@@ -35,22 +35,10 @@ public:
 
 	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index);
 	void GetTableAttr(TableMeta & table_meta);
+
 	void CreateIndex(const std::string & table_name, int8_t secondary_key_index);
 	uint32_t Catelog::GetIndex(const std::string & table_name, int8_t secondary_key_index);
 
-	void CreateTable(std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index);
-	void GetTableAttr(TableMeta & table_meta);
-//TODO
-	void CreateUser(const std::string user_name, const std::string passwd);
-
-	bool AuthenUser();
-	void SetPrivilege();
-
-	int TupleCount();
-	int TupleLen();
-	int BlockCount();
-	int BlockFactor(); // the number of distinct values that appear in the relation r for attribute A
-	
 private:
 	Catelog();
 	Catelog(const Catelog&);
