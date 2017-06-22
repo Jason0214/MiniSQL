@@ -34,7 +34,7 @@ public:
 	void UseDatabase(const std::string & db_name);
 
 	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index);
-	void GetTableAttr(TableMeta & table_meta);
+	TableMeta* GetTableMeta(const std::string table_name);
 
 	void CreateIndex(const std::string & table_name, int8_t secondary_key_index);
 	uint32_t Catalog::GetIndex(const std::string & table_name, int8_t secondary_key_index);
