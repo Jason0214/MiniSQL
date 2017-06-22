@@ -30,14 +30,27 @@ public:
 	virtual void removeAll()=0;
 };
 
-template<class T>
+//virtual class to derive TypedIndexManager of different types
 class IndexManager {
 public:
 	IndexManager() {};
 	virtual ~IndexManager() {};
+	virtual Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, unsigned int num) = 0;
+	virtual Block* removeEntry(Block* root, MethodType type, SearchResult* pos) = 0;
+	virtual SearchResult* searchEntry(Block* root, MethodType type, void* key_void) = 0;
+	virtual void removeIndex(Block* root, MethodType type) = 0;
+	virtual void printAll(Block* root, MethodType type) = 0;
+};
+
+template<class T>
+class TypedIndexManager:public IndexManager {
+public:
+	TypedIndexManager() {};
+	virtual ~TypedIndexManager() {};
 	//insert an array of entries
 	//use root = nullptr to create a new index
-	Block* insertEntryArray(Block* root, MethodType type, T* keys, uint32_t* addrs, unsigned int num) {
+	Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, unsigned int num) {
+		T* keys = (T*)(keys_void);
 		IndexMethod<T>* method = createMethod(type, root);
 		for (int i = 0;i < num;i++) {
 			//insert entries
@@ -56,7 +69,8 @@ public:
 		return root;
 	}
 	//search an entry in existing index
-	SearchResult* searchEntry(Block* root, MethodType type, T key) {
+	SearchResult* searchEntry(Block* root, MethodType type, void* key_void) {
+		T key = *(T*)(key_void);
 		IndexMethod<T>* method = createMethod(type, root);
 		SearchResult* result = method->search(key);
 		delete method; //destructor will write data to disk

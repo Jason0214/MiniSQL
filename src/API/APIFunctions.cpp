@@ -2,6 +2,8 @@
 #include "APIStructures.h"
 #include "APIFunctions.h"
 #include "IO.h"
+#include "../CatelogManager/Catelog.h"
+#include "../IndexManager/IndexManager.h"
 
 // call Flush() after cout.
 // Do not call cin, call GetString() / GetInt() / GetFloat() if necessary
@@ -14,7 +16,8 @@ void BeginQuery()
 void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	const string& resultTableName, const ComparisonVector& cmpVec)
 {
-
+	IndexManager* indexManager;
+	
 }
 
 void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
