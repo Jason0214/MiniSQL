@@ -6,7 +6,7 @@
 #include<cmath>
 #include "../BufferManager/Block.h"
 #include "../BufferManager/BufferManager.h"
-#include "IndexManager.h"
+#include "IndexMethod.h"
 
 template<class T>
 class BPlusNode :public Block {
