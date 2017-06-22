@@ -2,7 +2,7 @@
 #include "APIStructures.h"
 #include "APIFunctions.h"
 #include "IO.h"
-#include "../CatelogManager/Catelog.h"
+#include "../CatalogManager/Catalog.h"
 #include "../IndexManager/IndexManager.h"
 
 // call Flush() after cout.
@@ -13,14 +13,13 @@ void BeginQuery()
 
 }
 
-void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
+void ExeSelect(TableAliasMap& tableAlias, const string& sourceTableName,
 	const string& resultTableName, const ComparisonVector& cmpVec)
 {
-	IndexManager* indexManager;
 	
 }
 
-void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
+void ExeProject(TableAliasMap& tableAlias, const string& sourceTableName,
 	const string& resultTableName, const AttrNameAliasVector& attrVec)
 {
 
@@ -48,37 +47,37 @@ void EndQuery()
 
 }
 
-void ExeInsert(const string& tableName, InsertValueVector& values)
+void ExeInsert(const std::string& tableName, InsertValueVector& values)
 {
 	// Print result information in one line
 }
 
-void ExeUpdate(const string& tableName, const string& attrName, const string& value)
+void ExeUpdate(const std::string& tableName, const std::string& attrName, const std::string& value)
 {
 	// Print result information in one line
 }
 
-void ExeDelete(const string& tableName, const ComparisonVector& cmpVec)
+void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 {
 	// Print result information in one line
 }
 
-void ExeDropIndex(const string& tableName, const string& indexName)
+void ExeDropIndex(const std::string& tableName, const std::string& indexName)
 {
 	// Print result information in one line
 }
 
-void ExeDropTable(const string& tableName)
+void ExeDropTable(const std::string& tableName)
 {
 	// Print result information in one line
 }
 
-void ExeCreateIndex(const string& tableName, const string& attrName, const string& indexName)
+void ExeCreateIndex(const std::string& tableName, const std::string& attrName, const std::string& indexName)
 {
 	// Print result information in one line
 }
 
-void ExeCreateTable(const string& tableName, const AttrDefinitionVector& defVec)
+void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& defVec)
 {
 	// Print result information in one line
 }

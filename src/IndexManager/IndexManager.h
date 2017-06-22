@@ -2,33 +2,8 @@
 #include "../BufferManager/Block.h"
 #include "../BufferManager/BufferManager.h"
 #include "BPlusTree.h"
+#include "IndexMethod.h"
 
-//indexing type
-enum MethodType {
-	BPTree = 0
-};
-
-//search result class
-//contains the block and the index of the result
-class SearchResult {
-public:
-	int index;
-	Block* node;
-};
-
-//virtual class to derive indexing methods like b+tree
-template<class T>
-class IndexMethod {
-public:
-	IndexMethod() {};
-	virtual ~IndexMethod() {};
-	virtual void insert(T key, uint32_t addr) = 0;
-	virtual SearchResult* search(T key) = 0;
-	virtual void printAll() = 0;
-	virtual Block* getRoot() = 0;
-	virtual void remove(SearchResult* pos)=0;
-	virtual void removeAll()=0;
-};
 
 //virtual class to derive TypedIndexManager of different types
 class IndexManager {
@@ -36,6 +11,7 @@ public:
 	IndexManager() {};
 	virtual ~IndexManager() {};
 	virtual Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, unsigned int num) = 0;
+	virtual Block* insertEntry(Block* root, MethodType type, void* key_void, uint32_t addr) = 0;
 	virtual Block* removeEntry(Block* root, MethodType type, SearchResult* pos) = 0;
 	virtual SearchResult* searchEntry(Block* root, MethodType type, void* key_void) = 0;
 	virtual void removeIndex(Block* root, MethodType type) = 0;
@@ -56,6 +32,17 @@ public:
 			//insert entries
 			method->insert(keys[i], addrs[i]);
 		}
+		root = method->getRoot();
+		delete method; //destructor will write data to disk
+		return root;
+	}
+	//insert an  entry
+	//use root = nullptr to create a new index
+	Block* insertEntry(Block* root, MethodType type, void* key_void, uint32_t addr) {
+		T key = *(T*)(key_void);
+		IndexMethod<T>* method = createMethod(type, root);
+		//insert entry
+		method->insert(key, addr);
 		root = method->getRoot();
 		delete method; //destructor will write data to disk
 		return root;
