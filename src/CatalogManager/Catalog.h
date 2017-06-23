@@ -1,6 +1,8 @@
 #ifndef _Catalog_H_
 #define _Catalog_H_
 #include "../CONSTANT.h"
+#include "../EXCEPTION.h"
+#include <IndexManager\IndexManager.h>
 #include <string>
 
 class TableMeta{
