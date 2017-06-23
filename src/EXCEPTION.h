@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 using namespace std;
 
@@ -15,10 +16,25 @@ public:
 	TableNotFound(const char*){}
 };
 
+class IndexNotFound: public Exception{
+public:
+	IndexNotFound(const char*, int key){}
+};
+
+class DuplicatedIndex: public Exception{
+public:
+	DuplicatedIndex(const char*, int key){}
+};
+
+
 class DiscFailure : public Exception {
 
 };
 
 class DatabaseNotFound : public Exception {
+
+};
+
+class DatabaseNotSelected : public Exception {
 
 };
