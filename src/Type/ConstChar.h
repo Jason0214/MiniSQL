@@ -7,7 +7,7 @@
 template<int len>
 class ConstChar {
 public:
-	ConstChar(char* data="") {
+	ConstChar(const char* data="") {
 		strcpy(str_data, data);
 	}
 	ConstChar(const ConstChar<len> &r) {
