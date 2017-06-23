@@ -1,6 +1,8 @@
 #ifndef _Catalog_H_
 #define _Catalog_H_
 #include "../CONSTANT.h"
+#include "../EXCEPTION.h"
+#include <IndexManager\IndexManager.h>
 #include <string>
 
 class TableMeta{
@@ -22,6 +24,11 @@ public:
 	DBenum & GetAttrType(int index){return this->attr_type_list[index];}
 };
 
+typedef struct record_result_struct{
+	RecordBlock* block_ptr;
+	unsigned short index;
+}RecordResult;
+
 class Catalog{
 public:
 	static Catalog & Instance(){
@@ -36,13 +43,20 @@ public:
 	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index);
 	TableMeta* GetTableMeta(const std::string table_name);
 
-	void CreateIndex(const std::string & table_name, int8_t secondary_key_index);
+	void CreateIndex(const string & index_name, const std::string & table_name, int8_t secondary_key_index);
 	uint32_t Catalog::GetIndex(const std::string & table_name, int8_t secondary_key_index);
 
 private:
 	Catalog();
 	Catalog(const Catalog&);
 	Catalog & operator=(const Catalog&);
+
+	TableBlock* SplitTableBlock(TableBlock* origin_block_ptr);
+	RecordBlock* SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key);
+
+	void UpdateDatabaseTableIndex(const std::string & database_name, uint32_t new_addr);
+	void UpdateDatabaseIndexIndex(const std::string & database_name, uint32_t new_addr);
+	RecordResult* FindDatabaseBlock(const std::string & database_name);
 
 	uint32_t database_block_addr;
 	uint32_t user_block_addr;
@@ -53,6 +67,7 @@ private:
 	uint32_t index_data_addr;
 	uint32_t index_index_addr;
 
+	std::string current_database_name;
 	bool database_selected;
 };
 
