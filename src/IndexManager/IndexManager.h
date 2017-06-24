@@ -76,9 +76,9 @@ public:
 		method->printAll();
 		delete method;
 	}
-	void initRootBlock(Block* block, MethodType type) {
+	void initRootBlock(Block* root, MethodType type) {
 		IndexMethod<T>* method = createMethod(type, root);
-		method->initBlock(block);
+		method->initBlock(root);
 		delete method;
 	}
 protected:
