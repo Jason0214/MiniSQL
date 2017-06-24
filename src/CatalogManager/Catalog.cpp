@@ -4,7 +4,7 @@
 #include "../IndexManager/IndexManager.h"
 #include "../Type/ConstChar.h"
 
-// #define SINGLE_DATABSE
+#define SINGLE_DATABSE
 
 using namespace std;
 
@@ -69,7 +69,7 @@ void Catalog::CreateDatabase(const string & db_name){
 		database_block_ptr = next_block_ptr;
 		database_block_ptr->Format(type_list, 5, 0);
 	}
-	const void* data_list[3];
+	const void* data_list[5];
 	Block* table_data_ptr = buffer_manager.CreateBlock(DB_TABLE_BLOCK);
 	Block* table_index_ptr = buffer_manager.CreateBlock();
 	Block* index_data_ptr = buffer_manager.CreateBlock(DB_RECORD_BLOCK);
@@ -159,7 +159,7 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 	short size = TableBlock::TABLE_RECORD_SIZE + TableBlock::ATTR_RECORD_SIZE * attr_num;
 	TableBlock* table_block_ptr = NULL;
 	if(result_ptr){
-		BPlusNode<ConstChar<32> >* leaf_node = dynamic_cast<BPlusNode<ConstChar<32> >*>(result_ptr->node);
+		BPlusNode<ConstChar<32> >* leaf_node = static_cast<BPlusNode<ConstChar<32> >*>(result_ptr->node);
 		ConstChar<32> & key = leaf_node->data()[result_ptr->index];
 		if(key ==  ConstChar<32>(table_name.c_str())){
 			buffer_manager.ReleaseBlock((Block* &)index_tree_root);
@@ -179,7 +179,7 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 			if(size > table_block_ptr->EmptySize()){
 				TableBlock* new_block_ptr = this->SplitTableBlock(table_block_ptr);
 				index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, 
-								&ConstChar<32>(new_block_ptr->GetTableName(0)), new_block_ptr->BlockIndex());
+								&ConstChar<32>((char*)new_block_ptr->GetTableInfoPtr(0)), new_block_ptr->BlockIndex());
 				buffer_manager.ReleaseBlock((Block* &)new_block_ptr);
 			}
 		}
@@ -238,7 +238,7 @@ TableBlock* Catalog::SplitTableBlock(TableBlock* table_block_ptr){
 	uint8_t _key_index;
 	// split the old, always remove the last record to the new table block
 	for(unsigned int i = 0; i < table_block_ptr->RecordNum()/2; i++){
-		memcpy(_table_name, table_block_ptr->GetTableName(table_block_ptr->RecordNum()-1), 32);
+		memcpy(_table_name, table_block_ptr->GetTableInfoPtr(table_block_ptr->RecordNum()-1), 32);
 		table_block_ptr->GetTableMeta(_table_name, _table_addr, _index_addr, _attr_num, _attr_addr, _key_index);
 		new_block_ptr->InsertTable(_table_name, _table_addr, _index_addr, _attr_num, _key_index);
 		for(unsigned int j = 0; j < _attr_num; j++){
@@ -253,7 +253,7 @@ TableBlock* Catalog::SplitTableBlock(TableBlock* table_block_ptr){
 	return new_block_ptr;
 }
 
-TableMeta* Catalog::GetTableMeta(const string table_name){
+uint32_t Catalog::FindTableBlock(const std::string & table_name){
 	if(!this->database_selected) throw DatabaseNotSelected();
 /* find the record of `table_name` */
 	TypedIndexManager<ConstChar<32> > index_manager;
@@ -264,7 +264,7 @@ TableMeta* Catalog::GetTableMeta(const string table_name){
 		buffer_manager.ReleaseBlock((Block* &)index_tree_root);
 		throw TableNotFound(table_name.c_str());
 	}
-	BPlusNode<ConstChar<32> >* leaf_node = dynamic_cast<BPlusNode<ConstChar<32> >*>(result_ptr->node);
+	BPlusNode<ConstChar<32> >* leaf_node = static_cast<BPlusNode<ConstChar<32> >*>(result_ptr->node);
 	ConstChar<32> & key = leaf_node->data()[result_ptr->index];
 	uint32_t table_block_addr;
 	if(key == ConstChar<32>(table_name.c_str())){
@@ -280,10 +280,29 @@ TableMeta* Catalog::GetTableMeta(const string table_name){
 	}
 	buffer_manager.ReleaseBlock(index_tree_root);
 	delete result_ptr;
+	return table_block_addr;
+}
 
+
+void Catalog::UpdataTablePrimaryIndex(const std::string & table_name, uint32_t new_addr){
+	uint32_t table_block_addr = this->FindTableBlock(table_name);
+	TableBlock* table_block_ptr = dynamic_cast<TableBlock*>(buffer_manager.GetBlock(table_block_addr));
+/*  load data to TableMeta structure*/
+
+	unsigned short row = table_block_ptr->FindRecordIndex(table_name.c_str());
+	if(strcmp(table_name.c_str(), (char*)table_block_ptr->GetTableInfoPtr(row)) != 0){
+		buffer_manager.ReleaseBlock((Block* &) table_block_ptr);
+		throw TableNotFound(table_name.c_str());
+	}
+	uint32_t* table_index_ptr = (uint32_t*)(table_block_ptr->GetTableInfoPtr(row) + 40);
+	buffer_manager.ReleaseBlock((Block* &)table_block_ptr);	
+}
+
+TableMeta* Catalog::GetTableMeta(const string &  table_name){
+	uint32_t table_block_addr = this->FindTableBlock(table_name);
+	TableBlock* table_block_ptr = dynamic_cast<TableBlock*>(buffer_manager.GetBlock(table_block_addr));
 /*  load data to TableMeta structure*/
 	TableMeta ret(table_name);	
-	TableBlock* table_block_ptr = dynamic_cast<TableBlock*>(buffer_manager.GetBlock(table_block_addr));
 	uint16_t attr_addr = 0;
 	uint8_t attr_num, key_index;
 	try{
@@ -324,7 +343,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 
 	RecordBlock* record_block_ptr = NULL;
 	if(result_ptr){
-		BPlusNode<ConstChar<33> >* leaf_node = dynamic_cast<BPlusNode<ConstChar<33> >*>(result_ptr->node);
+		BPlusNode<ConstChar<33> >* leaf_node = static_cast<BPlusNode<ConstChar<33> >*>(result_ptr->node);
 		ConstChar<33> & key = leaf_node->data()[result_ptr->index];
 		if(key == ConstChar<33>(table_name_mix_key.c_str())){
 			buffer_manager.ReleaseBlock(index_tree_root);
@@ -357,12 +376,12 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 		this->UpdateDatabaseIndexIndex(this->current_database_name, index_tree_root->BlockIndex());
 	}
 	buffer_manager.ReleaseBlock((Block* &)index_tree_root);
+	delete result_ptr;
 
 /* do real insertion record */
 	Block* new_block_ptr = buffer_manager.CreateBlock(DB_RECORD_BLOCK);
 	uint32_t new_block_addr = new_block_ptr->BlockIndex();
 	buffer_manager.ReleaseBlock(new_block_ptr);
-	delete result_ptr;
 
 	const void* data_list[3];
 	data_list[0] = table_name_mix_key.c_str();
@@ -390,22 +409,18 @@ RecordBlock* Catalog::SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* ty
 	return new_block_ptr;
 }
 
-
-uint32_t Catalog::GetIndex(const string & table_name, int8_t secondary_key_index){
+uint32_t Catalog::FindIndexBlock(const std::string & table_name_mix_key){
 	if(!this->database_selected) throw DatabaseNotSelected();
 /* find through index */
-	string table_name_mix_key = table_name;
-	table_name_mix_key.append((char*)&secondary_key_index);
-
 	TypedIndexManager<ConstChar<32> > index_manager;
 	Block* index_tree_root = buffer_manager.GetBlock(this->index_index_addr);
 	SearchResult* result_ptr = index_manager.searchEntry(index_tree_root, BPTree, &ConstChar<33>(table_name_mix_key.c_str()));
 	if(!result_ptr){
 		buffer_manager.ReleaseBlock(index_tree_root);
-		throw IndexNotFound(table_name.c_str(), secondary_key_index);
+		throw IndexNotFound();
 	}
 	uint32_t record_block_addr;
-	BPlusNode<ConstChar<33> >* leaf_node = dynamic_cast<BPlusNode<ConstChar<33> >*>(result_ptr->node);
+	BPlusNode<ConstChar<33> >* leaf_node = static_cast<BPlusNode<ConstChar<33> >*>(result_ptr->node);
 	if(leaf_node->data()[result_ptr->index] == ConstChar<33>(table_name_mix_key.c_str())){
 		record_block_addr = leaf_node->ptrs()[result_ptr->index];
 	}
@@ -414,10 +429,55 @@ uint32_t Catalog::GetIndex(const string & table_name, int8_t secondary_key_index
 	}
 	else{
 		buffer_manager.ReleaseBlock(index_tree_root);
-		throw IndexNotFound(table_name.c_str(), secondary_key_index);		
+		throw IndexNotFound();		
 	}
 	buffer_manager.ReleaseBlock(index_tree_root);
 	delete result_ptr;
+	return record_block_addr;
+}
+
+void Catalog::UpdataTableSecondaryIndex(const std::string & table_name, int8_t key_index, uint32_t new_addr){
+	string table_name_mix_key = table_name;
+	table_name_mix_key.append((char*)&key_index);
+	uint32_t record_block_addr;
+	try {
+		 record_block_addr = this->FindIndexBlock(table_name_mix_key);
+	}
+	catch(IndexNotFound & e){
+		e.table_name = table_name;
+		e.key_index = key_index;
+		throw e;
+	}
+	DBenum type_list[3];
+	type_list[0] = (DBenum)(DB_TYPE_CHAR + 32);
+	type_list[1] = (DBenum)(DB_TYPE_CHAR + 31);
+	type_list[2] = DB_TYPE_INT;
+
+	RecordBlock* record_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(record_block_addr));
+	record_block_ptr->Format(type_list, 3, 0);
+	unsigned short i = record_block_ptr->FindTupleIndex(table_name_mix_key.c_str());
+	if(strcmp(table_name_mix_key.c_str(), (char*)record_block_ptr->GetDataPtr(i, 0)) != 0){
+		buffer_manager.ReleaseBlock((Block* &)record_block_ptr);
+		throw IndexNotFound(table_name, key_index);
+	}
+
+	*(uint32_t*)record_block_ptr->GetDataPtr(i, 2) = new_addr;
+	buffer_manager.ReleaseBlock((Block* &)record_block_ptr);
+}
+
+
+uint32_t Catalog::GetIndex(const string & table_name, int8_t secondary_key_index){
+	string table_name_mix_key = table_name;
+	table_name_mix_key.append((char*)&secondary_key_index);
+	uint32_t record_block_addr;
+	try {
+		 record_block_addr = this->FindIndexBlock(table_name_mix_key);
+	}
+	catch(IndexNotFound & e){
+		e.table_name = table_name;
+		e.key_index = secondary_key_index;
+		throw e;
+	}
 
 	DBenum type_list[3];
 	type_list[0] = (DBenum)(DB_TYPE_CHAR + 32);
@@ -426,14 +486,13 @@ uint32_t Catalog::GetIndex(const string & table_name, int8_t secondary_key_index
 	uint32_t ret;
 	RecordBlock* record_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(record_block_addr));
 	record_block_ptr->Format(type_list, 3, 0);
-	try{
-		unsigned short i = record_block_ptr->FindTupleIndex(table_name_mix_key.c_str());
-		ret = *(uint32_t*)record_block_ptr->GetDataPtr(i, 2);
-	}
-	catch (const Exception & e){
+
+	unsigned short i = record_block_ptr->FindTupleIndex(table_name_mix_key.c_str());
+	if(strcmp(table_name_mix_key.c_str(), (char*)record_block_ptr->GetDataPtr(i, 0)) != 0){
 		buffer_manager.ReleaseBlock((Block* &)record_block_ptr);
-		throw e;
+		throw IndexNotFound(table_name, secondary_key_index);
 	}
+	ret = *(uint32_t*)record_block_ptr->GetDataPtr(i, 2);
 	buffer_manager.ReleaseBlock((Block* &)record_block_ptr);
 	return ret;
 }

@@ -2,7 +2,7 @@
 #define _Catalog_H_
 #include "../CONSTANT.h"
 #include "../EXCEPTION.h"
-#include <IndexManager\IndexManager.h>
+#include "../IndexManager/IndexManager.h"
 #include <string>
 
 class TableMeta{
@@ -41,10 +41,13 @@ public:
 	void UseDatabase(const std::string & db_name);
 
 	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index);
-	TableMeta* GetTableMeta(const std::string table_name);
+	TableMeta* GetTableMeta(const std::string & table_name);
 
 	void CreateIndex(const string & index_name, const std::string & table_name, int8_t secondary_key_index);
 	uint32_t Catalog::GetIndex(const std::string & table_name, int8_t secondary_key_index);
+
+	void UpdataTablePrimaryIndex(const std::string & table_name, uint32_t new_addr);
+	void UpdataTableSecondaryIndex(const std::string & table_name, int8_t key_index, uint32_t new_addr);
 
 private:
 	Catalog();
@@ -56,7 +59,10 @@ private:
 
 	void UpdateDatabaseTableIndex(const std::string & database_name, uint32_t new_addr);
 	void UpdateDatabaseIndexIndex(const std::string & database_name, uint32_t new_addr);
+	
 	RecordResult* FindDatabaseBlock(const std::string & database_name);
+	uint32_t FindTableBlock(const std::string & table_name);
+	uint32_t FindIndexBlock(const std::string & table_name_mix_key);
 
 	uint32_t database_block_addr;
 	uint32_t user_block_addr;

@@ -84,8 +84,8 @@ public:
 	short EmptySize(){
 		return this->StackPtr()+1 - DATA_BEG - this->RecordNum() * TABLE_RECORD_SIZE;
 	}
-	char* GetTableName(unsigned short row){
-		return (char*)&(this->block_data[DATA_BEG + (row)*TABLE_RECORD_SIZE]);	
+	uint8_t* GetTableInfoPtr(unsigned short row){
+		return (uint8_t*)&(this->block_data[DATA_BEG + (row)*TABLE_RECORD_SIZE]);	
 	}
 	void InsertTable(const char* table_name, uint32_t table_addr, uint32_t index_addr, uint8_t attr_num, uint8_t key_index);
 	void InsertAttr(const char* attr_name, DBenum attr_type);
@@ -130,13 +130,13 @@ public:
 	int InsertTuple(const void** data_list);
 	void RemoveTuple(const uint8_t* key_data);
 	int Compare(uint8_t* data_1_ptr, uint8_t* data_2_ptr, unsigned short data_index);
+	unsigned short tuple_size;
 private:
 	static const size_t DATA_BEG = BLOCK_HEAD_SIZE + 2;
 	unsigned short* size;
 	DBenum* type;
 	unsigned short key_index;
 	unsigned short attr_num;
-	unsigned short tuple_size;
 };
 
 #endif
