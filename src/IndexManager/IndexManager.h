@@ -16,7 +16,7 @@ public:
 	virtual SearchResult* searchEntry(Block* root, MethodType type, void* key_void) = 0;
 	virtual void removeIndex(Block* root, MethodType type) = 0;
 	virtual void printAll(Block* root, MethodType type) = 0;
-	virtual void initBlock(Block* block) = 0;
+	virtual void initRootBlock(Block* block, MethodType type) = 0;
 };
 
 template<class T>
@@ -74,6 +74,11 @@ public:
 	void printAll(Block* root, MethodType type) {
 		IndexMethod<T>* method = createMethod(type, root);
 		method->printAll();
+		delete method;
+	}
+	void initRootBlock(Block* block, MethodType type) {
+		IndexMethod<T>* method = createMethod(type, root);
+		method->initBlock(block);
 		delete method;
 	}
 protected:

@@ -25,4 +25,5 @@ public:
 	virtual Block* getRoot() = 0;
 	virtual void remove(SearchResult* pos) = 0;
 	virtual void removeAll() = 0;
+	virtual void initBlock(Block* block) = 0;
 };
