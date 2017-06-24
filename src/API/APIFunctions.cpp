@@ -61,6 +61,37 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableName)
 {
 	// Print "end_result" in the last line to stop
+
+
+	// if table on disk
+	Catalog* catalog = &Catalog::Instance();
+	BufferManager* bufferManager = &BufferManager::Instance();
+	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias[sourceTableName]);
+	unsigned short record_key = tableMeta->primay_key_index < 0 ? 0 : tableMeta->primay_key_index;	
+
+	RecordBlock* result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
+	result_block_ptr.Format(tableMeta->attr_type_list, tableMeta->attr_num, record_key);
+	while(true){
+		for(unsigned int i = 0; i < result_block_ptr->RecordNum(); i++){
+			for(unsigned int j = 0; j < tableMeta->attr_num; j++){
+				switch(tableMeta->attr_type_list[j]){
+					case DB_TYPE_INT: `cout <<  *(int*)result_block_ptr->GetDataPtr(i, j); ` break;
+					case DB_TYPE_FLOAT: `cout <<  *(float*)result_block_ptr->GetDataPtr(i, j); ` break;
+					default: `cout <<  (char*)result_block_ptr->GetDataPtr(i, j); ` break;
+				}
+			}
+		}
+		uint32_t next = result_block_ptr->NextBlockIndex();
+		if(next == 0){ 
+			bufferManager.ReleaseBlock((Block* &)result_block_ptr);
+			break;
+		}
+		bufferManager.ReleaseBlock((Block* &)result_block_ptr);
+		result_block_ptr =  dynamic_cast<RecordBlock*>(bufferManager.GetBlock(next));
+	}
+
+	// if table is a temperary table not on disk
+		//TODO
 }
 
 void EndQuery()
