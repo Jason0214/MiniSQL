@@ -16,6 +16,7 @@ public:
 	virtual SearchResult* searchEntry(Block* root, MethodType type, void* key_void) = 0;
 	virtual void removeIndex(Block* root, MethodType type) = 0;
 	virtual void printAll(Block* root, MethodType type) = 0;
+	virtual void initBlock(Block* block) = 0;
 };
 
 template<class T>

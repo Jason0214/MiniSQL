@@ -74,7 +74,7 @@ public:
 		int index;
 		BPlusNode<T>* theNode = root;
 		//retunr null pointer if the tree is empty
-		if (!root) {
+		if (!root||!root->dataCnt()) {
 			return nullptr;
 		}
 		while (!theNode->isLeaf()) {
@@ -121,6 +121,15 @@ public:
 	void removeAll() {
 		operateTree(root, &BufferManager::DeleteBlock);
 		root = nullptr;
+	}
+	//initialize a block (always the root node)
+	void initBlock(Block* block) {
+		BPlusNode<T>* theNode = static_cast<BPlusNode<T>*>(block);
+		theNode->isLeaf() = true;
+		theNode->order() = order;
+		theNode->dataCnt() = 0;
+		theNode->parent() = 0;
+		theNode->rightSibling() = 0;
 	}
 protected:
 	BPlusNode<T>* root;
