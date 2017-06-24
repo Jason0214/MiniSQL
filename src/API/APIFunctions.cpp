@@ -4,6 +4,7 @@
 #include "IO.h"
 #include "../CatalogManager/Catalog.h"
 #include "../IndexManager/IndexManager.h"
+#include <string>
 
 // call Flush() after cout.
 // Do not call cin, call GetString() / GetInt() / GetFloat() if necessary
@@ -16,13 +17,33 @@ void BeginQuery()
 void ExeSelect(TableAliasMap& tableAlias, const string& sourceTableName,
 	const string& resultTableName, const ComparisonVector& cmpVec)
 {
+	//Assumption: the first operand is always attribute
+	//the second is always a constant
+	Catalog* catalog = &Catalog::Instance();
+	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias[sourceTableName]);
+	int index = -1; //record the index
+	string primaryKeyName = tableMeta->GetAttrName(tableMeta->primay_key_index);
+	for (auto i = cmpVec.begin();i < cmpVec.end();i++) {
+		if (primaryKeyName == (*i).Comparand1.Content) {
+			index = tableMeta->primay_key_index;
+			break;
+		}
+		else {
+			//TODO
+		}
+	}
 	
+	//catalog->GetTableAttr()
+	//catalog->GetIndex(TableAlias[sourceTableName],)
 }
 
 void ExeProject(TableAliasMap& tableAlias, const string& sourceTableName,
 	const string& resultTableName, const AttrNameAliasVector& attrVec)
 {
-
+	Catalog* catalog = &Catalog::Instance();
+	BufferManager* bufferManager = &BufferManager::Instance();
+	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias[sourceTableName]);
+	Block* block = bufferManager->GetBlock(tableMeta->table_addr);
 }
 
 void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableName1,
