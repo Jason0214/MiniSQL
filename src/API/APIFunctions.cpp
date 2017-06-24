@@ -4,25 +4,86 @@
 #include "IO.h"
 #include "../CatalogManager/Catalog.h"
 #include "../IndexManager/IndexManager.h"
+#include "../Type/ConstChar.h"
 #include <string>
-
+#include <sstream>
 
 //may add to record manager
+RecordBlock* insertTupleSafe(void** tuple, int attr_num, RecordBlock* srcBlock,
+	int line, RecordBlock* dstBlock,BufferManager* bufferManager) {
+	if (!dstBlock->CheckEmptySpace()) {
+		RecordBlock* newBlock = dynamic_cast<RecordBlock*>(bufferManager->CreateBlock(DB_RECORD_BLOCK));
+		dstBlock->NextBlockIndex() = newBlock->BlockIndex();
+		bufferManager->ReleaseBlock((Block*&)(dstBlock));
+		dstBlock = newBlock;
+	}
+	for (int i = 0;i < attr_num;i++) {
+		tuple[i] = srcBlock->GetDataPtr(line,i);
+		dstBlock->InsertTuple(tuple);
+	}
+	return dstBlock;
+}
+//may add to record manager
+//compare template function
+template <class T>
+inline bool compare(const void* a, const void* b, const std::string &operation) {
+	if (operation == ">") {
+		return *(T*)a > *(T*)b;
+	}
+	else if (operation == ">=") {
+		return *(T*)a >= *(T*)b;
+	}
+	else if (operation == "<") {
+		return *(T*)a < *(T*)b;
+	}
+	else if (operation == "<=") {
+		return *(T*)a <= *(T*)b;
+	}
+	else if (operation == "=") {
+		return *(T*)a == *(T*)b;
+	}
+	else if (operation == "<>"||operation=="!=") {
+		return *(T*)a != *(T*)b;
+	}
+	else {
+		return false;
+	}
+}
+//may add to record manager
 //check if a tuple is valid
-inline bool checkTuple(RecordBlock* block, int line,TableMeta* tableMeta,const ComparisonVector& cmpVec) {
+//cmpVec is sorted
+inline bool checkTuple(RecordBlock* block, int line,TableMeta* tableMeta,const ComparisonVector& sortedCmpVec) {
+	const ComparisonVector& cmpVec = sortedCmpVec;
 	std::string cmpOperator;
-	for (auto i = cmpVec.begin();i < cmpVec.end(); i++) {
-		std::string cmpOperator = (*i).Operation;
+	for (int i = 0,j = 0;cmpVec.begin()+i < cmpVec.end(); i++) {
+		std::string cmpOperator = cmpVec[i].Operation;
 		//TODO
-		for (unsigned int i = 0; i < tableMeta->attr_num; i++) {
-
-			switch (tableMeta->attr_type_list[j]) {
-			case DB_TYPE_INT: cout << *(int*)block->GetDataPtr(i, j);  break;
-			case DB_TYPE_FLOAT: cout << *(float*)block->GetDataPtr(i, j);  break;
-			default: cout << (char*)block->GetDataPtr(i, j);  break;
+		for (; j < tableMeta->attr_num; j++) {
+			bool result=true;
+			if (cmpVec[i].Comparand1.Content == tableMeta->GetAttrName(j)) {
+				stringstream ss(cmpVec[i].Comparand2.Content);
+				switch (tableMeta->attr_type_list[j]) {
+					case DB_TYPE_INT:
+						int num;
+						ss >> num;
+						result = compare<int>(block->GetDataPtr(line, j),&num,cmpOperator); 
+						break;
+					case DB_TYPE_FLOAT:
+						float num;
+						ss >> num;
+						result = compare<float>(block->GetDataPtr(line, j), &num, cmpOperator);
+						break;
+					default:
+						ConstChar<256> str;
+						ss >> str;
+						result = compare<ConstChar<256>>(block->GetDataPtr(line, j), &str, cmpOperator);
+						break;
+				}
+				if (!result) return result;
 			}
 		}	
-	}	
+	}
+	return true;
 }
 
 // call Flush() after cout.
@@ -51,6 +112,8 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 		throw(e);
 	}
 	TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+	void** tuple;
+	tuple = new void*[tableMeta->attr_num];
 
 	//create new temp table
 	std::string *newNameList;
@@ -58,17 +121,18 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	newNameList = new std::string[tableMeta->attr_num];
 	newTypeList = new DBenum[tableMeta->attr_num];
 	for (int i = 0;i < tableMeta->attr_num;i++) {
-		newNameList[i] = tableMeta->GetAttrName[i];
-		newTypeList[i] = tableMeta->GetAttrType[i];
+		newNameList[i] = tableMeta->GetAttrName(i);
+		newTypeList[i] = tableMeta->GetAttrType(i);
 	}
 	catalog->CreateTable(resultTableName, newNameList, newTypeList, tableMeta->attr_num, tableMeta->primay_key_index);
-	RecordBlock* resultData = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(catalog->GetTableMeta(resultTableName)->table_addr));
-
+	RecordBlock* dstBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(catalog->GetTableMeta(resultTableName)->table_addr));
+	dstBlock->Format(tableMeta->attr_type_list, tableMeta->attr_num, 0);
 
 	//try to find a proper index
 	Block* indexRoot = nullptr;
 	bool isPrimary = false; //if it is a primary index
-	std::string primaryKeyName = tableMeta->GetAttrName(tableMeta->primay_key_index);
+	std::string primaryKeyName = (tableMeta->primay_key_index >= 0) ?
+		tableMeta->GetAttrName(tableMeta->primay_key_index) : "";
 	for (auto i = cmpVec.begin();i < cmpVec.end();i++) {
 		//check if the attribute is a primary index
 		if (primaryKeyName == (*i).Comparand1.Content) {
@@ -85,15 +149,39 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 				}
 			}
 		}
-		//index found
-		if (indexRoot) {
-			
-		}
-		//no index found
-		else {
-			
+	}
+
+	//index found
+	if (indexRoot) {
+
+	}
+	//no index found
+	else {
+		RecordBlock* srcBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
+		srcBlock->Format(tableMeta->attr_type_list, tableMeta->attr_num, tableMeta->primay_key_index);
+		while (true) {
+			for (int i = 0; i < srcBlock->RecordNum(); i++) {
+				//if the tuple fit the comparisonVector
+				if (checkTuple(srcBlock, i, tableMeta, cmpVec)) {
+					for (int j = 0;j < tableMeta->attr_num;j++) {
+						tuple[j] = srcBlock->GetDataPtr(i, j);
+					}
+					//safe insert
+					dstBlock = insertTupleSafe(tuple, tableMeta->attr_num, srcBlock, i, dstBlock, bufferManager);
+				}
+			}
+			uint32_t next = srcBlock->NextBlockIndex();
+			if (next == 0) {
+				bufferManager->ReleaseBlock((Block* &)srcBlock);
+				break;
+			}
+			bufferManager->ReleaseBlock((Block* &)srcBlock);
+			srcBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
 		}
 	}
+	//delete allocated memory
+	bufferManager->ReleaseBlock((Block* &)dstBlock);
+	delete[] tuple;
 }
 
 void ExeProject(TableAliasMap& tableAlias, const string& sourceTableName,
