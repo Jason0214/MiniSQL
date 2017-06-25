@@ -13,7 +13,7 @@ public:
 		delete [] this->attr_name_list;
 		delete [] this->attr_type_list;
 	}
-	const std::string table_name;
+	std::string table_name;
 	uint32_t table_addr;
 	int attr_num;
 	std::string* attr_name_list;
@@ -40,29 +40,45 @@ public:
 	void CreateDatabase(const std::string & db_name);
 	void UseDatabase(const std::string & db_name);
 
-	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index);
+	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int & key_index);
 	TableMeta* GetTableMeta(const std::string & table_name);
+	void DropTable(const std::string & table_name);
 
-	void CreateIndex(const string & index_name, const std::string & table_name, int8_t secondary_key_index);
-	uint32_t Catalog::GetIndex(const std::string & table_name, int8_t secondary_key_index);
+	void CreateIndex(const std::string & index_name, const std::string & table_name, int8_t secondary_key_index, DBenum type);
+	uint32_t GetIndex(const std::string & table_name, int8_t secondary_key_index);
+	void DropIndex(const std::string & index_name);
 
-	void UpdataTablePrimaryIndex(const std::string & table_name, uint32_t new_addr);
-	void UpdataTableSecondaryIndex(const std::string & table_name, int8_t key_index, uint32_t new_addr);
+	void UpdateTablePrimaryIndex(const std::string & table_name, uint32_t new_addr);
+	void UpdateTableSecondaryIndex(const std::string & table_name, int8_t key_index, uint32_t new_addr);
+	void UpdateTableDataAddr(const std::string & table_name, uint32_t new_addr);
 
+	RecordBlock* SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key);
 private:
 	Catalog();
 	Catalog(const Catalog&);
 	Catalog & operator=(const Catalog&);
 
 	TableBlock* SplitTableBlock(TableBlock* origin_block_ptr);
-	RecordBlock* SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key);
 
-	void UpdateDatabaseTableIndex(const std::string & database_name, uint32_t new_addr);
-	void UpdateDatabaseIndexIndex(const std::string & database_name, uint32_t new_addr);
+	void UpdateDatabaseInfo(const std::string & database_name, unsigned int info_type, uint32_t new_addr);
+	void UpdateDatabaseTableIndex(const std::string & database_name, uint32_t new_addr){
+		this->UpdateDatabaseInfo(database_name, 1, new_addr);
+	}
+	void UpdateDatabaseTableData(const std::string & database_name, uint32_t new_addr){
+		this->UpdateDatabaseInfo(database_name, 0, new_addr);
+	}
+	void UpdateDatabaseIndexIndex(const std::string & database_name, uint32_t new_addr){
+		this->UpdateDatabaseInfo(database_name, 3, new_addr);
+	}
+	void UpdateDatabaseIndexData(const std::string & database_name, uint32_t new_addr){
+		this->UpdateDatabaseInfo(database_name, 2, new_addr);
+	}
 	
 	RecordResult* FindDatabaseBlock(const std::string & database_name);
 	uint32_t FindTableBlock(const std::string & table_name);
 	uint32_t FindIndexBlock(const std::string & table_name_mix_key);
+
+	void InitBPIndexRoot(Block* root, DBenum type);
 
 	uint32_t database_block_addr;
 	uint32_t user_block_addr;
