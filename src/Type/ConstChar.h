@@ -45,6 +45,5 @@ public:
 		os << obj.str_data;
 		return os;
 	}
-private:
 	char str_data[len];
 };
