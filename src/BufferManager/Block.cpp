@@ -8,6 +8,7 @@ void Block::Init(uint32_t index, DBenum block_type){
 	this->ReservedBytes() = 0;
 	this->BlockIndex() = index;
 	this->NextBlockIndex() = 0;
+	this->PreBlockIndex() = 0;
 	this->is_dirty = false;
 }
 
@@ -143,11 +144,12 @@ uint8_t* RecordBlock::GetDataPtr(unsigned short row, unsigned short colomn){
 // binary search:
 // if not found,
 // return the smallest of the larger entry
-unsigned short RecordBlock::FindTupleIndex(const void* key_data){
+int RecordBlock::FindTupleIndex(const void* key_data){
+	if(this->RecordNum() == 0) return -1;
 	int low = 0, mid, high = this->RecordNum()-1;
 	while(low <= high){
 		mid = (low + high) >> 1;
-		int cmp = this->Compare((uint8_t*)key_data,this->GetDataPtr(mid, 0), this->key_index);
+		int cmp = this->Compare((uint8_t*)key_data,this->GetDataPtr(mid, this->key_index), this->key_index);
 		if(cmp > 0) low = mid + 1;
 		else if(cmp < 0) high = mid - 1;
 		else return mid;
@@ -158,14 +160,15 @@ unsigned short RecordBlock::FindTupleIndex(const void* key_data){
 // given a tuple's data list
 // insert it into the right position in the block
 int RecordBlock::InsertTuple(const void** data_list){
-	unsigned short target_index = this->FindTupleIndex(data_list[this->key_index]);
+	int target_index = this->FindTupleIndex(data_list[this->key_index]);
+	if (target_index < 0)  target_index = 0;
 	uint8_t* addr = this->GetDataPtr(this->RecordNum(), 0);
-	for(unsigned short i = target_index; i < this->RecordNum() ; i++){
+	for (unsigned short i = target_index; i < this->RecordNum(); i++) {
 		memcpy(addr, addr - this->tuple_size, this->tuple_size);
 		addr -= this->tuple_size;
 	}
 	addr = this->GetDataPtr(target_index, 0);
-	for(unsigned short i = 0; i < this->attr_num; i++){
+	for (unsigned short i = 0; i < this->attr_num; i++) {
 		memcpy(addr, data_list[i], this->size[i]);
 		addr += this->size[i];
 	}
@@ -176,13 +179,13 @@ int RecordBlock::InsertTuple(const void** data_list){
 // given a key and delete its corresponding tuple
 // also fill the deleted tuple position with other tuple
 // still keep the tuples ordered by key 
-void RecordBlock::RemoveTuple(const uint8_t* key_data){
-	unsigned short target_index = this->FindTupleIndex(key_data);
-	uint8_t* addr = this->GetDataPtr(target_index, 0);
-	for(unsigned short i = target_index; i < this->RecordNum(); i++){
+void RecordBlock::RemoveTuple(unsigned short row){
+	uint8_t* addr = this->GetDataPtr(row, 0);
+	for(unsigned short i = row; i < this->RecordNum(); i++){
 		memcpy(addr, addr + this->tuple_size, this->tuple_size);
 		addr += this->tuple_size;
 	}
+	this->RecordNum()--;
 }
 
 // given two data pointers and attribute index

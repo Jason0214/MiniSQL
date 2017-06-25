@@ -2,13 +2,13 @@
 #define _BLOCK_H_
 
 #define BLOCK_SIZE 4096
-#define BLOCK_HEAD_SIZE 10
+#define BLOCK_HEAD_SIZE 14
 #include "../CONSTANT.h"
 #include "../EXCEPTION.h"
 #include <cstdint>
 #include <cstring>
 
-// only class Block has real data, 
+// only class Block has real data,
 // other successor only provide addtional method
 class Block{
 public:
@@ -32,9 +32,14 @@ public:
 	uint32_t & NextBlockIndex(){
 		return *((uint32_t*)&(this->block_data[6]));
 	}
-
+	uint32_t & PreBlockIndex(){
+		return *(uint32_t*)&(this->block_data[10]);
+	}
 	uint8_t* block_data;
 	bool is_dirty; //dirty tag
+protected:
+	Block(const Block &);
+	Block & operator=(const Block &);
 };
 
 class SchemaBlock:public Block{
@@ -126,9 +131,9 @@ public:
 		}
 	}
 	uint8_t* GetDataPtr(unsigned short row, unsigned short colomn);
-	unsigned short FindTupleIndex(const void* key_data);
+	int FindTupleIndex(const void* key_data);
 	int InsertTuple(const void** data_list);
-	void RemoveTuple(const uint8_t* key_data);
+	void RemoveTuple(unsigned short row);
 	int Compare(uint8_t* data_1_ptr, uint8_t* data_2_ptr, unsigned short data_index);
 	unsigned short tuple_size;
 private:
