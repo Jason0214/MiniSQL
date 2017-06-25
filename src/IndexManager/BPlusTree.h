@@ -229,7 +229,10 @@ protected:
 		theNode->dataCnt()--;
 		//check if there's too few data
 		int minCnt = getMinCnt(theNode);
-		if (theNode->dataCnt() < minCnt) {
+		if (!theNode->dataCnt() && theNode == root && theNode->isLeaf()) {
+			return;
+		}
+		else if (theNode->dataCnt() < minCnt) {
 			merge(theNode);
 		}
 	}
