@@ -315,8 +315,8 @@ protected:
 	//get minimal dataCnt in a node
 	int getMinCnt(BPlusNode<T>* theNode) {
 		int minCnt;
-		if (theNode->isLeaf()) minCnt = ceil((order - 1)*0.5);
-		else if (root == theNode) minCnt = 1;
+		if (root == theNode) minCnt = 1;
+		else if (theNode->isLeaf()) minCnt = ceil((order - 1)*0.5);
 		else minCnt = ceil(order*0.5) - 1;
 		return minCnt;
 	}
