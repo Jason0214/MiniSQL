@@ -8,7 +8,7 @@
 class TableMeta{
 public:
 	TableMeta(const std::string & table_name):table_name(table_name),attr_name_list(NULL),attr_type_list(NULL),
-					attr_num(0),table_addr(0),primay_key_index(-1),primary_index_addr(0){}
+					attr_num(0),table_addr(0),key_index(-1),primary_index_addr(0){}
 	~TableMeta(){
 		delete [] this->attr_name_list;
 		delete [] this->attr_type_list;
@@ -18,16 +18,14 @@ public:
 	int attr_num;
 	std::string* attr_name_list;
 	DBenum* attr_type_list;
-	int primay_key_index;
+	int key_index;
 	uint32_t primary_index_addr; // address of primary index
 	std::string & GetAttrName(int index){return this->attr_name_list[index];}
 	DBenum & GetAttrType(int index){return this->attr_type_list[index];}
+private:
+	TableMeta(const TableMeta &);
+	TableMeta & operator=(const TableMeta &);
 };
-
-typedef struct record_result_struct{
-	RecordBlock* block_ptr;
-	unsigned short index;
-}RecordResult;
 
 class Catalog{
 public:
@@ -40,11 +38,12 @@ public:
 	void CreateDatabase(const std::string & db_name);
 	void UseDatabase(const std::string & db_name);
 
-	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int & key_index);
+	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index = -1);
 	TableMeta* GetTableMeta(const std::string & table_name);
 	void DropTable(const std::string & table_name);
+	void DeleteTable(const std::string & table_name);
 
-	void CreateIndex(const std::string & index_name, const std::string & table_name, int8_t secondary_key_index, DBenum type);
+	uint32_t CreateIndex(const std::string & index_name, const std::string & table_name, int8_t secondary_key_index, DBenum type);
 	uint32_t GetIndex(const std::string & table_name, int8_t secondary_key_index);
 	void DropIndex(const std::string & index_name);
 
@@ -74,9 +73,10 @@ private:
 		this->UpdateDatabaseInfo(database_name, 2, new_addr);
 	}
 	
-	RecordResult* FindDatabaseBlock(const std::string & database_name);
+	RecordBlock* FindDatabaseBlock(const std::string & database_name);
 	uint32_t FindTableBlock(const std::string & table_name);
 	uint32_t FindIndexBlock(const std::string & table_name_mix_key);
+	RecordBlock* FindIndexByName(const std::string & index_name);
 
 	void InitBPIndexRoot(Block* root, DBenum type);
 
