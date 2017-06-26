@@ -15,7 +15,9 @@ void Block::Init(uint32_t index, DBenum block_type){
 // Insert a table's meta data order by table_name
 // if duplicated name found, raise exception
 void TableBlock::InsertTable(const char* table_name, uint32_t table_addr, uint32_t index_addr,uint8_t attr_num, uint8_t key_index){
-	uint16_t target_addr = DATA_BEG + TABLE_RECORD_SIZE * this->FindRecordIndex(table_name);
+	int table_index = this->FindRecordIndex(table_name);
+	if (table_index < 0) table_index = 0;
+	uint16_t target_addr = DATA_BEG + TABLE_RECORD_SIZE * table_index;
 	if(!strcmp(table_name, (char*)&this->block_data[target_addr])){
 		throw DuplicatedTableName(table_name);
 	}
@@ -45,7 +47,8 @@ void TableBlock::InsertAttr(const char* attr_name, DBenum attr_type){
 }
 
 // find the offset of the table record in the block
-unsigned short TableBlock::FindRecordIndex(const char* table_name){
+int TableBlock::FindRecordIndex(const char* table_name){
+	if (this->RecordNum() == 0) return -1;
 	int low = 0, mid, high = this->RecordNum()-1;
 	while(low <= high){
 		mid = (low + high) >> 1;
@@ -60,20 +63,21 @@ unsigned short TableBlock::FindRecordIndex(const char* table_name){
 // given a table name, delete all the meta data of the table
 // from the block, if table not found raise exception
 void TableBlock::DropTable(const char* table_name){
-	uint16_t table_index = this->FindRecordIndex(table_name);
+	int table_index = this->FindRecordIndex(table_name);
 	uint16_t table_addr = DATA_BEG + TABLE_RECORD_SIZE*table_index;
-	if(strcmp(table_name, (char*)&this->block_data[table_addr])){
+	if(table_index < 0 || strcmp(table_name, (char*)&this->block_data[table_addr])){
 		throw TableNotFound(table_name);
 	}
 	uint16_t table_offset = DATA_BEG + table_index*TABLE_RECORD_SIZE;
 	uint16_t attr_addr = *(uint16_t*)&this->block_data[table_offset + 32];
-	uint16_t attr_num = *(uint16_t*)&this->block_data[table_offset + 34];
+	uint8_t attr_num = *(uint8_t*)&this->block_data[table_offset + 34];
 	uint16_t attr_size = attr_num * ATTR_RECORD_SIZE;
 	while(attr_addr - attr_size != this->StackPtr()){
 		memcpy(&this->block_data[attr_addr], &this->block_data[attr_addr - attr_size], ATTR_RECORD_SIZE);
 		attr_addr -= ATTR_RECORD_SIZE;
 	}
 	this->StackPtr() += attr_size;
+	this->RecordNum()--;
 
 	for(uint16_t i = table_index; i < this->RecordNum(); i++){
 		memcpy((char*)&this->block_data[table_addr],(char*)&this->block_data[table_addr + TABLE_RECORD_SIZE], TABLE_RECORD_SIZE);
@@ -103,10 +107,10 @@ void TableBlock::GetTableMeta(const char* table_name, uint32_t & table_addr, uin
 
 // get all the info of table attributes
 void TableBlock::GetAttrMeta(char* attr_name, DBenum & attr_type, uint16_t attr_addr){
-		attr_addr -= 32;
-		strcpy(attr_name, (char*)&this->block_data[attr_addr]);
-		attr_addr -= 2;
-		attr_type = (DBenum)*(uint16_t*)&this->block_data[attr_addr];
+	attr_addr -= 32;
+	strcpy(attr_name, (char*)&this->block_data[attr_addr]);
+	attr_addr -= 2;
+	attr_type = (DBenum)*(uint16_t*)&this->block_data[attr_addr];
 }
 
 // use a attributes type list to format block data
@@ -162,18 +166,23 @@ int RecordBlock::FindTupleIndex(const void* key_data){
 int RecordBlock::InsertTuple(const void** data_list){
 	int target_index = this->FindTupleIndex(data_list[this->key_index]);
 	if (target_index < 0)  target_index = 0;
+	return this->InsertTupleByIndex(data_list, target_index);
+}
+
+// insert a tuple into a specific position
+int RecordBlock::InsertTupleByIndex(const void** data_list, int position){
 	uint8_t* addr = this->GetDataPtr(this->RecordNum(), 0);
-	for (unsigned short i = target_index; i < this->RecordNum(); i++) {
+	for (unsigned short i = position; i < this->RecordNum(); i++) {
 		memcpy(addr, addr - this->tuple_size, this->tuple_size);
 		addr -= this->tuple_size;
 	}
-	addr = this->GetDataPtr(target_index, 0);
+	addr = this->GetDataPtr(position, 0);
 	for (unsigned short i = 0; i < this->attr_num; i++) {
 		memcpy(addr, data_list[i], this->size[i]);
 		addr += this->size[i];
 	}
 	this->RecordNum()++;
-	return target_index;
+	return position;
 }
 
 // given a key and delete its corresponding tuple

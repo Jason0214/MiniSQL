@@ -94,7 +94,7 @@ public:
 	}
 	void InsertTable(const char* table_name, uint32_t table_addr, uint32_t index_addr, uint8_t attr_num, uint8_t key_index);
 	void InsertAttr(const char* attr_name, DBenum attr_type);
-	unsigned short FindRecordIndex(const char* table_name);
+	int FindRecordIndex(const char* table_name);
 	void DropTable(const char* table_name);
 	void GetTableMeta(const char* table_name, uint32_t &, uint32_t &, uint8_t&, uint16_t&, uint8_t&);
 	void GetAttrMeta(char* attr_name, DBenum & attr_type, uint16_t attr_addr);
@@ -133,6 +133,7 @@ public:
 	uint8_t* GetDataPtr(unsigned short row, unsigned short colomn);
 	int FindTupleIndex(const void* key_data);
 	int InsertTuple(const void** data_list);
+	int InsertTupleByIndex(const void** data_list, int position);
 	void RemoveTuple(unsigned short row);
 	int Compare(uint8_t* data_1_ptr, uint8_t* data_2_ptr, unsigned short data_index);
 	unsigned short tuple_size;
