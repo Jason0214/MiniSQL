@@ -29,6 +29,7 @@ static void AcceptComparand(Comparand& out_comparand)
 {
 	out_comparand.TypeName = GetString();
 	out_comparand.Content = GetString();
+	out_comparand.TableNameIfIsAttr = GetString();
 }
 
 static void AcceptComparison(Comparison& out_cmp)
