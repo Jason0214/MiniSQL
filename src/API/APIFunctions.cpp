@@ -235,7 +235,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 			pos = indexManager->searchEntry(indexRoot, BPTree, str);
 			break;
 		}
-		ptr = static_cast<BPlusNode<float>*>(pos->node)->ptrs()[pos->index + 1];
+		ptr = *(pos->ptrs + pos->index + 1);
 		srcBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(ptr));
 		delete pos;
 	}
