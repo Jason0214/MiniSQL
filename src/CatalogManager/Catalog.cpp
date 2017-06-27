@@ -478,7 +478,7 @@ TableMeta* Catalog::GetTableMeta(const string & table_name){
 	return ret;
 }
 
-uint32_t Catalog::CreateIndex(const string & index_name, const string & table_name, int8_t secondary_key_index, DBenum type){
+void Catalog::CreateIndex(const string & index_name, const string & table_name, const string & attr_name){
 	if(!this->database_selected) throw DatabaseNotSelected();
 	Block* block_get_by_index_name = NULL;
 	try{
@@ -490,7 +490,19 @@ uint32_t Catalog::CreateIndex(const string & index_name, const string & table_na
 		throw DuplicatedIndexName();
 	}
 
-	uint32_t ret;
+	TableMeta* table_meta = this->GetTableMeta(table_name);
+	int secondary_key_index = -1;
+	DBenum type;
+	for (int i = 0; i < table_meta->attr_num; i++) {
+		if (table_meta->attr_name_list[i] == attr_name) {
+			secondary_key_index = i;
+			type = table_meta->attr_type_list[i];
+		}
+	}
+	if (secondary_key_index < 0) {
+		delete table_meta;
+		throw AttributeNotFound();
+	}
 /* do finding */
 	// mix table name and index key, the combination is distinct
 	string table_name_mix_key = table_name;
@@ -531,11 +543,17 @@ uint32_t Catalog::CreateIndex(const string & index_name, const string & table_na
 	RecordBlock* index_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(index_block_addr));
 	index_block_ptr->Format(type_list, 3, 0);
 
-	Block* new_block_ptr = buffer_manager.CreateBlock();
-	ret = new_block_ptr->BlockIndex();
-	this->InitBPIndexRoot(new_block_ptr, type);
-	uint32_t new_block_addr = new_block_ptr->BlockIndex();
-	buffer_manager.ReleaseBlock(new_block_ptr);
+	Block* index_root = buffer_manager.CreateBlock();
+	this->InitBPIndexRoot(index_root, type);
+	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(table_meta->table_addr));
+	while (true) {
+
+	}
+
+	uint32_t new_block_addr = index_root->BlockIndex();
+	delete table_meta;
+	buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
+	buffer_manager.ReleaseBlock(index_root);
 
 	const void* data_list[3];
 	data_list[0] = table_name_mix_key.c_str();
@@ -568,7 +586,6 @@ uint32_t Catalog::CreateIndex(const string & index_name, const string & table_na
 	buffer_manager.ReleaseBlock((Block* &)index_tree_root);
 	index_block_ptr->is_dirty = true;
 	buffer_manager.ReleaseBlock((Block* &)index_block_ptr);
-	return ret;
 }
 
 RecordBlock* Catalog::FindIndexByName(const string & index_name){
