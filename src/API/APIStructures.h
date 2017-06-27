@@ -17,6 +17,7 @@ typedef struct
 	// TypeName can be "Attribute" | "int" | "float" | "string"
 	string TypeName;
 	string Content;
+	string TableNameIfIsAttr;
 } Comparand;
 
 typedef struct  
