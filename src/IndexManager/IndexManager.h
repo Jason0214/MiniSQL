@@ -3,13 +3,14 @@
 #include "../BufferManager/BufferManager.h"
 #include "BPlusTree.h"
 #include "IndexMethod.h"
+#include "../Type/ConstChar.h"
 
 //virtual class to derive TypedIndexManager of different types
 class IndexManager {
 public:
 	IndexManager() {};
 	virtual ~IndexManager() {};
-	virtual Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, unsigned int num) = 0;
+	virtual Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, int num) = 0;
 	virtual Block* insertEntry(Block* root, MethodType type, void* key_void, uint32_t addr) = 0;
 	virtual Block* removeEntry(Block* root, MethodType type, SearchResult* pos) = 0;
 	virtual SearchResult* searchEntry(Block* root, MethodType type, void* key_void) = 0;
@@ -25,7 +26,7 @@ public:
 	virtual ~TypedIndexManager() {};
 	//insert an array of entries
 	//use root = nullptr to create a new index
-	Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, unsigned int num) {
+	Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, int num) {
 		T* keys = (T*)(keys_void);
 		IndexMethod<T>* method = createMethod(type, root);
 		for (int i = 0;i < num;i++) {

@@ -191,6 +191,7 @@ void AcceptUpdate()
 	string updateValue = GetString(); 
 	ComparisonVector cmpVec;
 	AcceptComparisonVector(cmpVec);
+	ExeUpdate(tableName, attrName, updateValue, cmpVec);
 }
 
 void AcceptDelete()

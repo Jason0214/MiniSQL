@@ -17,8 +17,12 @@ public:
 };
 
 class IndexNotFound: public Exception{
-public:
-	IndexNotFound(const char*, int key){}
+};
+
+class DuplicatedIndexName : public Exception{
+};
+
+class AttributeNotFound : public Exception{
 };
 
 class DuplicatedIndex: public Exception{

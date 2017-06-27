@@ -201,8 +201,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 			pos = indexManager->searchEntry(indexRoot, BPTree, &num);
 			break;
 		default:
-			char str[]=indexContent.c_str;
-			pos = indexManager->searchEntry(indexRoot, BPTree, str);
+			pos = indexManager->searchEntry(indexRoot, BPTree, (void*)indexContent.c_str());
 			break;
 		}
 		ptr = *(pos->ptrs + pos->index + 1);
@@ -252,16 +251,16 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 
 
 //attrVec is sorted
-void ExeProject(TableAliasMap& tableAlias, const string& sourceTableName,
+void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	const string& resultTableName, const AttrNameAliasVector& attrVec)
 {
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
-	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias[sourceTableName]);
+	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias.at(sourceTableName));
 	Block* block = bufferManager->GetBlock(tableMeta->table_addr);
 	std::vector<int> attrIndexVec;
 	//get attr index
-	for (int i = 0, j = 0;i < tableMeta->attr_num&&j < attrVec.size();i++) {
+	for (int i = 0, j = 0;i < tableMeta->attr_num&&j < (int)attrVec.size();i++) {
 		if (tableMeta->GetAttrName(i) == attrVec[j].AttrName) {
 			attrIndexVec.push_back(i);
 			j++;
@@ -272,7 +271,7 @@ void ExeProject(TableAliasMap& tableAlias, const string& sourceTableName,
 	DBenum *newTypeList;
 	newNameList = new std::string[attrIndexVec.size()];
 	newTypeList = new DBenum[attrIndexVec.size()];
-	for (int i = 0;i < attrIndexVec.size();i++) {
+	for (int i = 0;i < (int)attrIndexVec.size();i++) {
 		newNameList[i] = tableMeta->GetAttrName(attrIndexVec[i]);
 		newTypeList[i] = tableMeta->GetAttrType(attrIndexVec[i]);
 	}
@@ -289,7 +288,7 @@ void ExeProject(TableAliasMap& tableAlias, const string& sourceTableName,
 	while (true) {
 		srcBlock->Format(tableMeta->attr_type_list, tableMeta->attr_num, tableMeta->key_index);
 		for (int i = 0; i < srcBlock->RecordNum(); i++) {
-			for (int j = 0;j < attrIndexVec.size();j++) {
+			for (int j = 0;j < (int)attrIndexVec.size();j++) {
 				tuple[j] = srcBlock->GetDataPtr(i, attrIndexVec[j]);
 			}
 			//safe insert
@@ -385,7 +384,7 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 				srcBlock2->Format(tableMeta2->attr_type_list, tableMeta2->attr_num, tableMeta2->key_index);
 				for (int j = 0; j < srcBlock1->RecordNum(); j++) {
 					bool result = true; //compare result
-					for (int k = 0;k < commonAttrIndex1.size();k++) {
+					for (int k = 0;k < (int)commonAttrIndex1.size();k++) {
 						DBenum type = tableMeta1->attr_type_list[commonAttrIndex1[k]];
 						switch (type) {
 						case DB_TYPE_INT:
@@ -425,7 +424,7 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 					if (result) {
 						for (int ii = 0,jj=0;ii < tableMeta1->attr_num;ii++) {
 							for (;jj < newTableMeta->attr_num;jj++) {
-								if (tableMeta1->GetAttrName[ii] == newTableMeta->GetAttrName[jj]) {
+								if (tableMeta1->GetAttrName(ii) == newTableMeta->GetAttrName(jj)) {
 									tuple[jj] = srcBlock1->GetDataPtr(i, ii);
 									break;
 								}
@@ -433,7 +432,7 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 						}
 						for (int ii = 0, jj = 0;ii < tableMeta2->attr_num;ii++) {
 							for (;jj < newTableMeta->attr_num;jj++) {
-								if (tableMeta2->GetAttrName[ii] == newTableMeta->GetAttrName[jj]) {
+								if (tableMeta2->GetAttrName(ii) == newTableMeta->GetAttrName(jj)) {
 									tuple[jj] = srcBlock2->GetDataPtr(j, ii);
 									break;
 								}
@@ -477,7 +476,7 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 
 }
 
-void ExeOutputTable(TableAliasMap& tableAlias, const string& sourceTableName)
+void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableName)
 {
 	// Print "end_result" in the last line to stop
 
@@ -485,14 +484,14 @@ void ExeOutputTable(TableAliasMap& tableAlias, const string& sourceTableName)
 	// if table on disk
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
-	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias[sourceTableName]);
+	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias.at(sourceTableName));
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
 
 	RecordBlock* result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
 	result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, record_key);
 	while(true){
 		for(unsigned int i = 0; i < result_block_ptr->RecordNum(); i++){
-			for(unsigned int j = 0; j < tableMeta->attr_num; j++){
+			for(int j = 0; j < tableMeta->attr_num; j++){
 				switch(tableMeta->attr_type_list[j]){
 					case DB_TYPE_INT: cout <<  *(int*)result_block_ptr->GetDataPtr(i, j);  break;
 					case DB_TYPE_FLOAT: cout <<  *(float*)result_block_ptr->GetDataPtr(i, j);  break;
@@ -524,7 +523,7 @@ int ptr_compare(const void* p1, const void* p2, DBenum type){
 			return *(int*) p1 - *(int*)p2;
 			break;
 		case DB_TYPE_FLOAT:
-			return *(float*)p1 - *(float*)p2;
+			return (int)(*(float*)p1 - *(float*)p2);
 			break;
 		default:
 			return strcmp((char*)p1, (char*)p2);
@@ -548,8 +547,8 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 		return;
 	}
 	bool error = false;
-	const void** data_list = new void*[table_meta->attr_num];
-	for(unsigned int i = 0; !error && i < table_meta->attr_num; i++){
+	const void** data_list = new const void*[table_meta->attr_num];
+	for(int i = 0; !error && i < table_meta->attr_num; i++){
 		stringstream ss(values[i]);
 		ss.exceptions(std::ios::failbit);
 		switch(table_meta->attr_type_list[i]){
@@ -564,7 +563,7 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 				data_list[i] = &temp_float_vector[temp_int_vector.size()-1];
 				break;
 			default:
-				if(table_meta->attr_type_list[i] - DB_TYPE_CHAR < values[i].length()){
+				if(table_meta->attr_type_list[i] - DB_TYPE_CHAR < (int)values[i].length()){
 					error = true;
 					break;
 				}
@@ -670,7 +669,8 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 	cout << "1 Row Affected" << endl;
 }
 
-void ExeUpdate(const std::string& tableName, const std::string& attrName, const std::string& value)
+void ExeUpdate(const std::string& tableName, const std::string& attrName, 
+	const std::string& value, const ComparisonVector& cmpVec)
 {
 	// Print result information in one line
 }
@@ -687,7 +687,7 @@ void ExeDropIndex(const std::string& tableName, const std::string& indexName)
 	try{
 		catalog->DropIndex(indexName);
 	}
-	catch(const IndexNotFound & e){
+	catch(const IndexNotFound){
 		cout << "Index `" << indexName << "` Not Found" << endl;
 		return;
 	}
@@ -701,7 +701,7 @@ void ExeDropTable(const std::string& tableName)
 	try{
 		catalog->DropTable(tableName);
 	}
-	catch (const TableNotFound & e){
+	catch (const TableNotFound){
 		cout << "Table `" << tableName << "` Not Found" << endl;
 		return ;
 	}
@@ -719,11 +719,11 @@ void ExeCreateIndex(const std::string& tableName, const std::string& attrName, c
 		cout << "Duplicated Index Name `" << indexName << "`" << endl;
 		return;
 	}
-	catch (const TableNotFound & e) {
+	catch (const TableNotFound) {
 		cout << "Table `" << tableName << "` Not Found" << endl;
 		return;
 	}
-	catch (const AttributeNotFound & e) {
+	catch (const AttributeNotFound) {
 		cout << "Attribute `" << attrName << "` Not Found" << endl;
 	}
 	cout << "Create Index on `" << tableName << "` Successfully" << endl;
@@ -754,7 +754,7 @@ void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& de
 	try{
 		catalog->CreateTable(tableName, attr_name_list, attr_type_list, attr_num, key_index);
 	}
-	catch (const DuplicatedTableName & e){
+	catch (const DuplicatedTableName){
 		cout << "Table Named `" << tableName << "` Already Existed" << endl;
 		return;
 	}

@@ -322,8 +322,8 @@ protected:
 	int getMinCnt(BPlusNode<T>* theNode) {
 		int minCnt;
 		if (root == theNode) minCnt = 1;
-		else if (theNode->isLeaf()) minCnt = ceil((order - 1)*0.5);
-		else minCnt = ceil(order*0.5) - 1;
+		else if (theNode->isLeaf()) minCnt = (int)ceil((order - 1)*0.5);
+		else minCnt = (int)ceil(order*0.5) - 1;
 		return minCnt;
 	}
 	//operate the whole tree recursively

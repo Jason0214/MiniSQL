@@ -24,7 +24,7 @@ void EndQuery();
 
 void ExeInsert(const string& tableName, InsertValueVector& values);
 
-void ExeUpdate(const string& tableName, const string& attrName, const string& value);
+void ExeUpdate(const string& tableName, const string& attrName, const string& value, const ComparisonVector& cmpVec);
 
 void ExeDelete(const string& tableName, const ComparisonVector& cmpVec);
 
