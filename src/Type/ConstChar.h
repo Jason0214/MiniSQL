@@ -20,7 +20,7 @@ public:
 		return *this;
 	}
 	bool operator!=(const ConstChar<len>& r) const {
-		return strcmp(str_data, r.str_data);
+		return strcmp(str_data, r.str_data)!=0;
 	}
 	bool operator==(const ConstChar<len>& r) const {
 		return !(*this != r);

@@ -3,14 +3,14 @@
 #include "../BufferManager/BufferManager.h"
 #include "BPlusTree.h"
 #include "IndexMethod.h"
-
+#include "../Type/ConstChar.h"
 
 //virtual class to derive TypedIndexManager of different types
 class IndexManager {
 public:
 	IndexManager() {};
 	virtual ~IndexManager() {};
-	virtual Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, unsigned int num) = 0;
+	virtual Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, int num) = 0;
 	virtual Block* insertEntry(Block* root, MethodType type, void* key_void, uint32_t addr) = 0;
 	virtual Block* removeEntry(Block* root, MethodType type, SearchResult* pos) = 0;
 	virtual SearchResult* searchEntry(Block* root, MethodType type, void* key_void) = 0;
@@ -26,7 +26,7 @@ public:
 	virtual ~TypedIndexManager() {};
 	//insert an array of entries
 	//use root = nullptr to create a new index
-	Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, unsigned int num) {
+	Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, int num) {
 		T* keys = (T*)(keys_void);
 		IndexMethod<T>* method = createMethod(type, root);
 		for (int i = 0;i < num;i++) {
@@ -91,3 +91,30 @@ protected:
 		return method;
 	}
 };
+
+//get index manager according to type
+inline IndexManager* getIndexManager(DBenum type) {
+	IndexManager* indexManager;
+	if (type == DB_TYPE_INT) {
+		indexManager = new TypedIndexManager<int>();
+	}
+	else if (type == DB_TYPE_FLOAT) {
+		indexManager = new TypedIndexManager<float>();
+	}
+	else if (type - DB_TYPE_CHAR < 16) {
+		indexManager = new TypedIndexManager<ConstChar<16>>();
+	}
+	else if (type - DB_TYPE_CHAR < 33) {
+		indexManager = new TypedIndexManager<ConstChar<33>>();
+	}
+	else if (type - DB_TYPE_CHAR < 64) {
+		indexManager = new TypedIndexManager<ConstChar<64>>();
+	}
+	else if (type - DB_TYPE_CHAR < 128) {
+		indexManager = new TypedIndexManager<ConstChar<128>>();
+	}
+	else {
+		indexManager = new TypedIndexManager<ConstChar<256>>();
+	}
+	return indexManager;
+}

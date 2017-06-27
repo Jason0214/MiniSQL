@@ -23,6 +23,12 @@ public:
 	int key_index;
 };
 
+class DuplicatedIndexName : public Exception{
+};
+
+class AttributeNotFound : public Exception{
+};
+
 class DuplicatedIndex: public Exception{
 public:
 	DuplicatedIndex(const char*, int key){}

@@ -617,7 +617,7 @@ RecordBlock* Catalog::FindIndexByName(const string & index_name){
 		}
 		uint32_t next = index_data_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock((Block* &)index_data_ptr);
-		if(next == 0) throw IndexNotFound(index_name.c_str());
+		if(next == 0) throw IndexNotFound();
 		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
 		index_data_ptr->Format(type_list, 5, 0);
 	}	
@@ -646,7 +646,7 @@ void Catalog::DropIndex(const string & index_name){
 		if(flag) break;
 		uint32_t next = index_data_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock((Block* &)index_data_ptr);
-		if(next == 0) throw IndexNotFound(index_name.c_str());
+		if(next == 0) throw IndexNotFound();
 		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
 		index_data_ptr->Format(type_list, 5, 0);
 	}
@@ -750,8 +750,6 @@ void Catalog::UpdateTableSecondaryIndex(const std::string & table_name, int8_t k
 		 record_block_addr = this->FindIndexBlock(table_name_mix_key);
 	}
 	catch(IndexNotFound & e){
-		e.table_name = table_name;
-		e.key_index = key_index;
 		throw e;
 	}
 	DBenum type_list[3];
@@ -764,7 +762,7 @@ void Catalog::UpdateTableSecondaryIndex(const std::string & table_name, int8_t k
 	int i = record_block_ptr->FindTupleIndex(table_name_mix_key.c_str());
 	if(i < 0 || strcmp(table_name_mix_key.c_str(), (char*)record_block_ptr->GetDataPtr(i, 0)) != 0){
 		buffer_manager.ReleaseBlock((Block* &)record_block_ptr);
-		throw IndexNotFound(table_name, key_index);
+		throw IndexNotFound();
 	}
 
 	*(uint32_t*)record_block_ptr->GetDataPtr(i, 2) = new_addr;
@@ -780,8 +778,6 @@ uint32_t Catalog::GetIndex(const string & table_name, int8_t secondary_key_index
 		 record_block_addr = this->FindIndexBlock(table_name_mix_key);
 	}
 	catch(IndexNotFound & e){
-		e.table_name = table_name;
-		e.key_index = secondary_key_index;
 		throw e;
 	}
 
@@ -796,7 +792,7 @@ uint32_t Catalog::GetIndex(const string & table_name, int8_t secondary_key_index
 	int i = record_block_ptr->FindTupleIndex(table_name_mix_key.c_str());
 	if(i < 0 || strcmp(table_name_mix_key.c_str(), (char*)record_block_ptr->GetDataPtr(i, 0)) != 0){
 		buffer_manager.ReleaseBlock((Block* &)record_block_ptr);
-		throw IndexNotFound(table_name, secondary_key_index);
+		throw IndexNotFound();
 	}
 	ret = *(uint32_t*)record_block_ptr->GetDataPtr(i, 2);
 	buffer_manager.ReleaseBlock((Block* &)record_block_ptr);
