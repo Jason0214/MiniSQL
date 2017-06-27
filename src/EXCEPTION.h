@@ -26,19 +26,12 @@ public:
 class DuplicatedIndexName : public Exception{
 };
 
-class AttributeNotFound : public Exception{
-};
-
 class DuplicatedIndex: public Exception{
 public:
 	DuplicatedIndex(const char*, int key){}
 };
 
 class AttributeNotFound : public Exception {
-
-};
-
-class DuplicatedIndexName : public Exception {
 
 };
 
