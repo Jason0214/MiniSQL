@@ -9,34 +9,6 @@
 #include <sstream>
 
 //may add to record manager
-//get index manager according to type
-IndexManager* getIndexManager(DBenum type) {
-	IndexManager* indexManager;
-	if (type == DB_TYPE_INT) {
-		indexManager = new TypedIndexManager<int>();
-	}
-	else if (type == DB_TYPE_FLOAT) {
-		indexManager = new TypedIndexManager<float>();
-	}
-	else if (type - DB_TYPE_CHAR < 16) {
-		indexManager = new TypedIndexManager<ConstChar<16>>();
-	}
-	else if (type - DB_TYPE_CHAR < 33) {
-		indexManager = new TypedIndexManager<ConstChar<33>>();
-	}
-	else if (type - DB_TYPE_CHAR < 64) {
-		indexManager = new TypedIndexManager<ConstChar<64>>();
-	}
-	else if (type - DB_TYPE_CHAR < 128) {
-		indexManager = new TypedIndexManager<ConstChar<128>>();
-	}
-	else {
-		indexManager = new TypedIndexManager<ConstChar<256>>();
-	}
-	return indexManager;
-}
-
-//may add to record manager
 RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBlock* dstBlock,BufferManager* bufferManager) {
 	if (!dstBlock->CheckEmptySpace()) {
 		RecordBlock* newBlock = dynamic_cast<RecordBlock*>(bufferManager->CreateBlock(DB_RECORD_BLOCK));

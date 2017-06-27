@@ -4,7 +4,6 @@
 #include "BPlusTree.h"
 #include "IndexMethod.h"
 
-
 //virtual class to derive TypedIndexManager of different types
 class IndexManager {
 public:
@@ -91,3 +90,30 @@ protected:
 		return method;
 	}
 };
+
+//get index manager according to type
+inline IndexManager* getIndexManager(DBenum type) {
+	IndexManager* indexManager;
+	if (type == DB_TYPE_INT) {
+		indexManager = new TypedIndexManager<int>();
+	}
+	else if (type == DB_TYPE_FLOAT) {
+		indexManager = new TypedIndexManager<float>();
+	}
+	else if (type - DB_TYPE_CHAR < 16) {
+		indexManager = new TypedIndexManager<ConstChar<16>>();
+	}
+	else if (type - DB_TYPE_CHAR < 33) {
+		indexManager = new TypedIndexManager<ConstChar<33>>();
+	}
+	else if (type - DB_TYPE_CHAR < 64) {
+		indexManager = new TypedIndexManager<ConstChar<64>>();
+	}
+	else if (type - DB_TYPE_CHAR < 128) {
+		indexManager = new TypedIndexManager<ConstChar<128>>();
+	}
+	else {
+		indexManager = new TypedIndexManager<ConstChar<256>>();
+	}
+	return indexManager;
+}
