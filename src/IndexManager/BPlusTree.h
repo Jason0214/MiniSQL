@@ -87,7 +87,7 @@ public:
 		result->node = theNode;
 		result->dataLen = sizeof(T);
 		result->data = theNode->data();
-		result->ptrs = theNode->ptrs();
+		result->ptrs = theNode->ptrs() + 1;
 		return result;
 	}
 	//print out all leaf nodes

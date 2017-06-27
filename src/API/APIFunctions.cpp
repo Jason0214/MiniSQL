@@ -127,6 +127,9 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	IndexManager* indexManager;
 	int indexPos;
 	std::string operation = "";
+	for (auto i = tableAlias.begin(); i != tableAlias.end(); i++) {
+		cout << i->first << " " << i->second << endl;
+	}
 	//make sure table name is valid
 	std::string tableName;
 	try {
@@ -156,8 +159,8 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	for (auto i = cmpVec.begin();i < cmpVec.end();i++) {
 		//check if the attribute is a primary index
 		if (primaryKeyName == (*i).Comparand1.Content) {
-			indexRoot = bufferManager->GetBlock(catalog->GetIndex(tableName,tableMeta->key_index));
-			indexType = tableMeta->GetAttrType(tableMeta->primary_index_addr);
+			indexRoot = bufferManager->GetBlock(tableMeta->primary_index_addr);
+			indexType = tableMeta->GetAttrType(tableMeta->key_index);
 			indexContent = (*i).Comparand1.Content;
 			indexPos = i - cmpVec.begin();
 			isPrimary = true;
@@ -204,7 +207,10 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 			pos = indexManager->searchEntry(indexRoot, BPTree, (void*)indexContent.c_str());
 			break;
 		}
-		ptr = *(pos->ptrs + pos->index + 1);
+		//
+		//TODO: check if a result is found or not
+		//
+		ptr = *(pos->ptrs + pos->index);
 		srcBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(ptr));
 		delete pos;
 	}
@@ -228,7 +234,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 					tuple[j] = srcBlock->GetDataPtr(i, j);
 				}
 				//safe insert
-				dstBlock = insertTupleSafe(tuple, tableMeta, srcBlock, bufferManager);
+				dstBlock = insertTupleSafe(tuple, tableMeta, dstBlock, bufferManager);
 			}
 		}
 		uint32_t next = srcBlock->NextBlockIndex();
@@ -243,10 +249,9 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	bufferManager->ReleaseBlock((Block* &)dstBlock);
 	if(indexRoot) bufferManager->ReleaseBlock((Block* &)indexRoot);
 	delete indexManager;
-	delete bufferManager;
-	delete catalog;
 	delete tableMeta;
 	delete[] tuple;
+	ExeOutputTable(tableAlias, "T2");
 }
 
 
@@ -292,7 +297,7 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 				tuple[j] = srcBlock->GetDataPtr(i, attrIndexVec[j]);
 			}
 			//safe insert
-			dstBlock = insertTupleSafe(tuple, newTableMeta, srcBlock,bufferManager);
+			dstBlock = insertTupleSafe(tuple, newTableMeta, dstBlock,bufferManager);
 		}
 		uint32_t next = srcBlock->NextBlockIndex();
 		if (next == 0) {
@@ -304,8 +309,6 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	//delete allocated memory
 	bufferManager->ReleaseBlock((Block* &)srcBlock);
 	bufferManager->ReleaseBlock((Block* &)dstBlock);
-	delete bufferManager;
-	delete catalog;
 	delete tableMeta;
 	delete[] tuple;
 	delete[] newNameList;
@@ -460,8 +463,6 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	}
 	//delete allocated memory
 	bufferManager->ReleaseBlock((Block* &)dstBlock);
-	delete bufferManager;
-	delete catalog;
 	delete tableMeta1;
 	delete tableMeta2;
 	delete newTableMeta;
@@ -484,7 +485,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	// if table on disk
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
-	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias.at(sourceTableName));
+	TableMeta* tableMeta = catalog->GetTableMeta(sourceTableName);
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
 
 	RecordBlock* result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
@@ -595,16 +596,16 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 					return;					
 				}
 				else{
-					record_block_addr = *result_ptr->ptrs;
+					record_block_addr = *(result_ptr->ptrs + result_ptr->index);
 				}
 			}
 			else{
 				if(result_ptr->index == 0){
-					record_block_addr = *result_ptr->ptrs;
+					record_block_addr = *(result_ptr->ptrs + result_ptr->index);
 				}
 				else{
 					result_ptr->index--;
-					record_block_addr = *(result_ptr->ptrs - sizeof(uint32_t));		
+					record_block_addr = *(result_ptr->ptrs + result_ptr->index - 1);		
 				}
 			}
 		}
@@ -625,7 +626,7 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 				delete result_ptr;
 				return;
 			}
-			record_block_ptr->InsertTupleByIndex(data_list, i);			
+			record_block_ptr->InsertTupleByIndex(data_list, i>=0?i:0);
 		}
 		else{
 			record_block_ptr->InsertTuple(data_list);
@@ -668,25 +669,25 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 //
 void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 {
-	Catalog* catalog = &Catalog::Instance();
-	BufferManager* buffer_manager = &BufferManager::Instance();
-	TableMeta* table_meta = catalog->GetTableMeta(tableName);
+	//Catalog* catalog = &Catalog::Instance();
+	//BufferManager* buffer_manager = &BufferManager::Instance();
+	//TableMeta* table_meta = catalog->GetTableMeta(tableName);
 
-	bool use_primary_index = false;
-	for(int i = 0; i < cmpVec.size(); i++){
-		if(attr_name_list[i] == table_meta->attr_name_list[table_meta->key_index]){
-			use_primary_index = true;
-		}
-	}
+	//bool use_primary_index = false;
+	//for(int i = 0; i < cmpVec.size(); i++){
+	//	if(attr_name_list[i] == table_meta->attr_name_list[table_meta->key_index]){
+	//		use_primary_index = true;
+	//	}
+	//}
 
-	if(use_primary_index){
-		IndexManager* index_manager = getIndexManager(table_meta->attr_type_list[table_meta->key_index]);
-		Block* index_root = buffer_manager.GetBlock(table_meta->primary_index_addr);
-		
-	}
-	else{
+	//if(use_primary_index){
+	//	IndexManager* index_manager = getIndexManager(table_meta->attr_type_list[table_meta->key_index]);
+	//	Block* index_root = buffer_manager.GetBlock(table_meta->primary_index_addr);
+	//	
+	//}
+	//else{
 
-	}
+	//}
 
 }
 
