@@ -2,8 +2,15 @@
 #include "IO.h"
 #include <string>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
+
+void Flush()
+{
+	// Don't forget to flush or the parent process will get nothing!
+	cout.flush();
+}
 
 static void CheckConnection()
 {
@@ -14,11 +21,15 @@ static void CheckConnection()
 	}
 }
 
+static ofstream logg("log.txt");
+
 template <typename T> T GetObject()
 {
 	CheckConnection();
 	T result;
 	cin >> result;
+	logg << "echo << " << result << endl;
+	logg.flush();
 	return result;
 }
 
@@ -35,10 +46,4 @@ int GetInt()
 float GetFloat()
 {
 	return GetObject<float>();
-}
-
-void Flush()
-{
-	// Don't forget to flush or the parent process will get nothing!
-	cout.flush();
 }
