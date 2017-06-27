@@ -37,7 +37,7 @@ Inner structure:
 }
 ```
 
-```cpp
+``` cpp
 /* invoke buffer manager*/
 
 // get the buffer manager

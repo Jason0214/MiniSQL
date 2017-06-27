@@ -201,7 +201,7 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 		buffer_manager.ReleaseBlock(index_tree_root);
 		throw e;
 	}
-	for(unsigned int i = 0; i < attr_num; i++){
+	for(int i = 0; i < attr_num; i++){
 		table_block_ptr->InsertAttr(attr_name_list[i].c_str(),attr_type_list[i]);
 	}
 	table_block_ptr->is_dirty = true;
@@ -376,7 +376,7 @@ TableBlock* Catalog::SplitTableBlock(TableBlock* table_block_ptr){
 	uint8_t _attr_num;
 	uint8_t _key_index;
 	// split the old, always remove the last record to the new table block
-	for(unsigned int i = 0; i < table_block_ptr->RecordNum()/2; i++){
+	for(int i = 0; i < table_block_ptr->RecordNum()/2; i++){
 		memcpy(_table_name, table_block_ptr->GetTableInfoPtr(table_block_ptr->RecordNum()-1), 32);
 		table_block_ptr->GetTableMeta(_table_name, _table_addr, _index_addr, _attr_num, _attr_addr, _key_index);
 		new_block_ptr->InsertTable(_table_name, _table_addr, _index_addr, _attr_num, _key_index);
@@ -463,12 +463,19 @@ TableMeta* Catalog::GetTableMeta(const string & table_name){
 		delete ret;
 		buffer_manager.ReleaseBlock((Block* &) table_block_ptr);
 		throw e;
-	}	
+	}
 	ret->attr_num = (int8_t)attr_num;
-	ret->key_index = (int8_t)key_index;
-	char buf[32];
+	if ((int8_t)key_index >= 0) {
+		ret->key_index = (int8_t)key_index;
+		ret->is_primary_key = true;
+	}
+	else {
+		ret->key_index = 0;
+		ret->is_primary_key = false;
+	}
 	ret->attr_name_list = new string[attr_num];
 	ret->attr_type_list = new DBenum[attr_num];
+	char buf[32];
 	for(unsigned int i = 0; i < attr_num; i++){
 		table_block_ptr->GetAttrMeta(buf, ret->attr_type_list[i], attr_addr);
 		attr_addr -= TableBlock::ATTR_RECORD_SIZE;
@@ -545,11 +552,16 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 
 	Block* index_root = buffer_manager.CreateBlock();
 	this->InitBPIndexRoot(index_root, type);
+//	IndexManager* index_manager = getIndexManager(type);
 	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(table_meta->table_addr));
 	while (true) {
-
+		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
+		index_root = index_manager.insertEntry(index_root, BPTree, data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
+		uint32_t next = data_block_ptr->BlockIndex();
+		buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
+		if (next == 0) break;
+		else data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
 	}
-
 	uint32_t new_block_addr = index_root->BlockIndex();
 	delete table_meta;
 	buffer_manager.ReleaseBlock((Block* &)data_block_ptr);

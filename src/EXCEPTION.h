@@ -1,8 +1,8 @@
 #pragma once
+#include <string>
 #include <iostream>
-using namespace std;
 
-class Exception:public exception{
+class Exception:public std::exception{
 
 };
 
@@ -18,7 +18,9 @@ public:
 
 class IndexNotFound: public Exception{
 public:
-	IndexNotFound(const char*, int key){}
+	IndexNotFound(std::string table_name="", int key_index=-1):table_name(table_name),key_index(key_index){}
+	std::string table_name;
+	int key_index;
 };
 
 class DuplicatedIndex: public Exception{
@@ -26,6 +28,13 @@ public:
 	DuplicatedIndex(const char*, int key){}
 };
 
+class AttributeNotFound : public Exception {
+
+};
+
+class DuplicatedIndexName : public Exception {
+
+};
 
 class DiscFailure : public Exception {
 

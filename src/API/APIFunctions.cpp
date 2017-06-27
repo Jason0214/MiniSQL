@@ -78,7 +78,7 @@ inline bool compare(const void* a, const void* b, const std::string &operation) 
 //may add to record manager
 //check if a tuple is valid
 //cmpVec is sorted
-inline bool checkTuple(RecordBlock* block, int line,TableMeta* tableMeta,const ComparisonVector& sortedCmpVec) {
+inline bool checkTuple(RecordBlock* block, int line, TableMeta* tableMeta,const ComparisonVector& sortedCmpVec) {
 	const ComparisonVector& cmpVec = sortedCmpVec;
 	std::string cmpOperator;
 	for (int i = 0,j = 0;cmpVec.begin()+i < cmpVec.end(); i++) {
@@ -609,25 +609,15 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 	else{
 		uint32_t record_block_addr;
 		bool _is_distinct = true;
-		int key;
-		if(table_meta->key_index >= 0){
-			// has a primary index
-			key = table_meta->key_index;
-		}
-		else{
-			//default to be 0
-			key = 0;
-			_is_distinct = false;
-		}
 		/* do finding update index */
-		IndexManager* index_manager = getIndexManager(table_meta->attr_type_list[key]);
+		IndexManager* index_manager = getIndexManager(table_meta->attr_type_list[table_meta->key_index]);
 		Block* index_root = buffer_manager->GetBlock(table_meta->primary_index_addr);
-		SearchResult* result_ptr = index_manager->searchEntry(index_root, BPTree, (void*)data_list[key]);
-		DBenum key_type = table_meta->attr_type_list[key];
+		SearchResult* result_ptr = index_manager->searchEntry(index_root, BPTree, (void*)data_list[table_meta->key_index]);
+		DBenum key_type = table_meta->attr_type_list[table_meta->key_index];
 		void* B_plus_tree_key_ptr = NULL;
 		if(result_ptr){
-			if(ptr_compare(result_ptr->data, data_list[key], key_type) == 0){
-				if(_is_distinct){
+			if(ptr_compare(result_ptr->data, data_list[table_meta->key_index], key_type) == 0){
+				if(table_meta->is_primary_key){
 					cout << "Duplicated Primary Key" << endl;
 					buffer_manager->ReleaseBlock(index_root);
 					delete result_ptr;
@@ -655,9 +645,9 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 		RecordBlock* record_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(record_block_addr));
 		record_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
 
-		if(_is_distinct){
-			int i = record_block_ptr->FindTupleIndex(data_list[key]);
-			if(i >= 0 && ptr_compare(data_list[key], record_block_ptr->GetDataPtr(i, key), key_type) == 0){
+		if(table_meta->is_primary_key){
+			int i = record_block_ptr->FindTupleIndex(data_list[table_meta->key_index]);
+			if(i >= 0 && ptr_compare(data_list[table_meta->key_index], record_block_ptr->GetDataPtr(i, table_meta->key_index), key_type) == 0){
 				cout << "Duplicated Primary key" << endl;
 				buffer_manager->ReleaseBlock(index_root);
 				buffer_manager->ReleaseBlock((Block* &)record_block_ptr);
@@ -672,17 +662,17 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 
 		// update index
 		if(!result_ptr){
-			index_manager->insertEntry(index_root, BPTree, record_block_ptr->GetDataPtr(0, key), record_block_addr);
+			index_manager->insertEntry(index_root, BPTree, record_block_ptr->GetDataPtr(0, table_meta->key_index), record_block_addr);
 		}
 		else{
 			index_manager->removeEntry(index_root, BPTree, result_ptr);
-			index_manager->insertEntry(index_root, BPTree, record_block_ptr->GetDataPtr(0, key), record_block_addr);
+			index_manager->insertEntry(index_root, BPTree, record_block_ptr->GetDataPtr(0, table_meta->key_index), record_block_addr);
 		}
 		//check space, split if needed
 		if(!record_block_ptr->CheckEmptySpace()){
 			RecordBlock* new_block_ptr = catalog->SplitRecordBlock(record_block_ptr, table_meta->attr_type_list, 
-													table_meta->attr_num, key);
-			index_manager->insertEntry(index_root, BPTree, new_block_ptr->GetDataPtr(0, key), record_block_addr);
+													table_meta->attr_num, table_meta->key_index);
+			index_manager->insertEntry(index_root, BPTree, new_block_ptr->GetDataPtr(0, table_meta->key_index), record_block_addr);
 			buffer_manager->ReleaseBlock((Block* &)new_block_ptr);
 		}
 		// update index root
@@ -703,10 +693,29 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName, const 
 	// Print result information in one line
 }
 
+//
 void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 {
+	Catalog* catalog = &Catalog::Instance();
+	BufferManager* buffer_manager = &BufferManager::Instance();
+	TableMeta* table_meta = catalog->GetTableMeta(tableName);
 
-	// Print result information in one line
+	bool use_primary_index = false;
+	for(int i = 0; i < cmpVec.size(); i++){
+		if(attr_name_list[i] == table_meta->attr_name_list[table_meta->key_index]){
+			use_primary_index = true;
+		}
+	}
+
+	if(use_primary_index){
+		IndexManager* index_manager = getIndexManager(table_meta->attr_type_list[table_meta->key_index]);
+		Block* index_root = buffer_manager.GetBlock(table_meta->primary_index_addr);
+		
+	}
+	else{
+
+	}
+
 }
 
 void ExeDropIndex(const std::string& tableName, const std::string& indexName)

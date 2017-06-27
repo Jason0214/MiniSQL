@@ -8,7 +8,7 @@
 class TableMeta{
 public:
 	TableMeta(const std::string & table_name):table_name(table_name),attr_name_list(NULL),attr_type_list(NULL),
-					attr_num(0),table_addr(0),key_index(-1),primary_index_addr(0){}
+					attr_num(0),table_addr(0),key_index(-1),primary_index_addr(0),is_primary_key(true){}
 	~TableMeta(){
 		delete [] this->attr_name_list;
 		delete [] this->attr_type_list;
@@ -20,6 +20,7 @@ public:
 	DBenum* attr_type_list;
 	int key_index;
 	uint32_t primary_index_addr; // address of primary index
+	bool is_primary_key;
 	std::string & GetAttrName(int index){return this->attr_name_list[index];}
 	DBenum & GetAttrType(int index){return this->attr_type_list[index];}
 private:
