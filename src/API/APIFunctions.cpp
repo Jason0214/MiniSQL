@@ -668,26 +668,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 //
 void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 {
-	Catalog* catalog = &Catalog::Instance();
-	BufferManager* buffer_manager = &BufferManager::Instance();
-	TableMeta* table_meta = catalog->GetTableMeta(tableName);
-
-	bool use_primary_index = false;
-	for(int i = 0; i < cmpVec.size(); i++){
-		if(attr_name_list[i] == table_meta->attr_name_list[table_meta->key_index]){
-			use_primary_index = true;
-		}
-	}
-
-	if(use_primary_index){
-		IndexManager* index_manager = getIndexManager(table_meta->attr_type_list[table_meta->key_index]);
-		Block* index_root = buffer_manager.GetBlock(table_meta->primary_index_addr);
-		
-	}
-	else{
-
-	}
-
+	
 }
 
 void ExeDropIndex(const std::string& tableName, const std::string& indexName)
