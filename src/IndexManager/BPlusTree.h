@@ -85,6 +85,9 @@ public:
 		SearchResult* result = new SearchResult();
 		result->index = index;
 		result->node = theNode;
+		result->dataLen = sizeof(T);
+		result->data = theNode->data();
+		result->ptrs = theNode->ptrs();
 		return result;
 	}
 	//print out all leaf nodes
