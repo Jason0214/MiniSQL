@@ -43,7 +43,7 @@ public:
 	void DropTable(const std::string & table_name);
 	void DeleteTable(const std::string & table_name);
 
-	uint32_t CreateIndex(const std::string & index_name, const std::string & table_name, int8_t secondary_key_index, DBenum type);
+	void CreateIndex(const std::string & index_name, const std::string & table_name, const std::string & attr_name);
 	uint32_t GetIndex(const std::string & table_name, int8_t secondary_key_index);
 	void DropIndex(const std::string & index_name);
 

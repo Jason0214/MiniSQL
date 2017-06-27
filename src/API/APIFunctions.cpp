@@ -8,8 +8,6 @@
 #include <string>
 #include <sstream>
 
-using namespace std;
-
 //may add to record manager
 //get index manager according to type
 IndexManager* getIndexManager(DBenum type) {
@@ -624,52 +622,28 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 		/* do finding update index */
 		IndexManager* index_manager = getIndexManager(table_meta->attr_type_list[key]);
 		Block* index_root = buffer_manager->GetBlock(table_meta->primary_index_addr);
-		SearchResult* result_ptr = index_manager->searchEntry(index_root, BPTree, data_list[key]);
+		SearchResult* result_ptr = index_manager->searchEntry(index_root, BPTree, (void*)data_list[key]);
 		DBenum key_type = table_meta->attr_type_list[key];
 		void* B_plus_tree_key_ptr = NULL;
 		if(result_ptr){
-			switch(key_type){
-			case DB_TYPE_INT:
-				BPlusNode<int>* leaf_node = static_cast<BPlusNode<int>*>(result_ptr->node);				
-				break;
-			case DB_TYPE_FLOAT:
-				BPlusNode<float>* leaf_node = static_cast<BPlusNode<float>*>(result_ptr->node);
-				break;
-			default:
-				if (key_type - DB_TYPE_CHAR < 16) {
-					BPlusNode<ConstChar<16> >* leaf_node = static_cast<BPlusNode<ConstChar<16> >*>(result_ptr->node);
-				}
-				else if (key_type - DB_TYPE_CHAR < 33) {
-					BPlusNode<ConstChar<33> >* leaf_node = static_cast<BPlusNode<ConstChar<33> >*>(result_ptr->node);
-				}
-				else if (key_type - DB_TYPE_CHAR < 64) {
-					BPlusNode<ConstChar<64> >* leaf_node = static_cast<BPlusNode<ConstChar<64> >*>(result_ptr->node);
-				}
-				else if (key_type - DB_TYPE_CHAR < 128) {
-					BPlusNode<ConstChar<128> >* leaf_node = static_cast<BPlusNode<ConstChar<128> >*>(result_ptr->node);
-				}
-				else {
-					BPlusNode<ConstChar<256> >* leaf_node = static_cast<BPlusNode<ConstChar<256> >*>(result_ptr->node);
-				}
-				break;
-			}
-			if(ptr_compare(&leaf_node->data()[result_ptr->index], data_list[key], key_type) == 0){
+			if(ptr_compare(result_ptr->data, data_list[key], key_type) == 0){
 				if(_is_distinct){
 					cout << "Duplicated Primary Key" << endl;
 					buffer_manager->ReleaseBlock(index_root);
+					delete result_ptr;
 					return;					
 				}
 				else{
-					record_block_addr = leaf_node->ptrs()[result_ptr->index + 1];
+					record_block_addr = *result_ptr->ptrs;
 				}
 			}
 			else{
 				if(result_ptr->index == 0){
-					record_block_addr = leaf_node->ptrs()[result_ptr->index + 1];
+					record_block_addr = *result_ptr->ptrs;
 				}
 				else{
-					record_block_addr = leaf_node->ptrs()[result_ptr->index];
-					result_ptr->index--;						
+					result_ptr->index--;
+					record_block_addr = *(result_ptr->ptrs - sizeof(uint32_t));		
 				}
 			}
 		}
@@ -687,6 +661,7 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 				cout << "Duplicated Primary key" << endl;
 				buffer_manager->ReleaseBlock(index_root);
 				buffer_manager->ReleaseBlock((Block* &)record_block_ptr);
+				delete result_ptr;
 				return;
 			}
 			record_block_ptr->InsertTupleByIndex(data_list, i);			
@@ -720,7 +695,7 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 	}
 	delete data_list;
 	delete table_meta;
-	cout << "1 Row Effected" << endl;
+	cout << "1 Row Affected" << endl;
 }
 
 void ExeUpdate(const std::string& tableName, const std::string& attrName, const std::string& value)
@@ -762,45 +737,24 @@ void ExeDropTable(const std::string& tableName)
 	return;
 }
 
-void ExeCreateIndex(const std::string& tableName, const std::string& attrName, const std::string& indexName)
+void ExeCreateIndex(const std::string& tableName, const std::string& attrName, const string& indexName)
 {
 	Catalog* catalog = &Catalog::Instance();
-	TableMeta* table_meta = NULL;
 	try{
-		 table_meta = catalog->GetTableMeta(tableName);
+		catalog->CreateIndex(indexName, tableName, attrName);
 	}
-	catch (const TableNotFound & e){
+	catch(const DuplicatedIndexName &){
+		cout << "Duplicated Index Name `" << indexName << "`" << endl;
+		return;
+	}
+	catch (const TableNotFound & e) {
 		cout << "Table `" << tableName << "` Not Found" << endl;
-		return ;
+		return;
 	}
-	int key_index = -1;
-	for(int i = 0; i < table_meta->attr_num; i++){
-		if(table_meta->attr_name_list[i] == attrName){
-			key_index = i;
-		}
+	catch (const AttributeNotFound & e) {
+		cout << "Attribute `" << attrName << "` Not Found" << endl;
 	}
-	bool error = false;
-	uint32_t index_root;
-	if(key_index == -1) {
-		cout << "`" << attrName << "` Not Found in Table `" << tableName << "`" << endl;
-	}
-	else{
-		try{
-			index_root = catalog->CreateIndex(indexName, tableName, key_index, table_meta->attr_type_list[key_index]);
-		}
-		catch(const DuplicatedIndexName &){
-			error = true;
-			cout << "Duplicated Index Name `" << indexName << "`" << endl;
-		}
-		if(!error){
-			cout << "Create Index on `" << tableName << "`.`" << attrName << "` Successfully" << endl;			
-		}
-	}
-
-	//TODO, insert,  can encapesulate ExeInsert to do this job
-
-	delete table_meta;
-	// Print result information in one line
+	cout << "Create Index on `" << tableName << "` Successfully" << endl;
 }
 
 void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& defVec)
