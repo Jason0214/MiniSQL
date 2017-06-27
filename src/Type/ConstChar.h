@@ -43,7 +43,7 @@ public:
 	}
 	friend std::ostream& operator<<(std::ostream& os, const ConstChar<len>& obj) {
 		os << obj.str_data;
-		return os;
+		return os; 
 	}
 	char str_data[len];
 };

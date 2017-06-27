@@ -8,28 +8,41 @@
 #include "../BufferManager/BufferManager.h"
 #include "IndexMethod.h"
 
-template<class T>
-class BPlusNode :public Block {
+class BPlusBlock :public Block {
 public:
-	inline bool & isLeaf() {
+	BPlusBlock() {};
+	virtual ~BPlusBlock() {};
+	virtual bool & isLeaf()=0;
+	virtual uint32_t & parent()=0;
+	virtual uint32_t & rightSibling()=0;
+	virtual int & order()=0;
+	virtual int & dataCnt()=0;
+	virtual void *data()=0;
+	virtual uint32_t *ptrs()=0;
+};
+
+template<class T>
+class BPlusNode :public BPlusBlock {
+public:
+	bool & isLeaf() {
 		return *(bool*)(&block_data[BLOCK_HEAD_SIZE]);
 	}
-	inline uint32_t & parent() {
+	uint32_t & parent() {
 		return *(uint32_t*)(&block_data[BLOCK_HEAD_SIZE + 1]);
 	}
-	inline uint32_t & rightSibling() {
+	uint32_t & rightSibling() {
 		return *(uint32_t*)(&block_data[BLOCK_HEAD_SIZE + 5]);
 	}
-	inline int & order() {
+	int & order() {
 		return *(int*)(&block_data[BLOCK_HEAD_SIZE + 9]);
 	}
-	inline int & dataCnt() {
+	int & dataCnt() {
 		return *(int*)(&block_data[BLOCK_HEAD_SIZE + 13]);
 	}
-	inline T *data() {
+	void *data() {
 		return (T*)(&block_data[BLOCK_HEAD_SIZE + 17]);
 	}
-	inline uint32_t *ptrs() {
+	uint32_t *ptrs() {
 		return (uint32_t*)(&block_data[BLOCK_HEAD_SIZE + 17 + order() * sizeof(T)]);//not order-1: one more position for split easily
 	}
 };
@@ -54,7 +67,7 @@ public:
 			theNode->order() = order;
 			theNode->dataCnt() = 1;
 			theNode->parent() = 0;
-			theNode->data()[0] = key;
+			((T*)theNode->data())[0] = key;
 			theNode->ptrs()[1] = addr;
 			theNode->rightSibling() = 0;
 			return;
@@ -96,7 +109,7 @@ public:
 		}
 		while (true) {
 			for (int i = 0;i < theNode->dataCnt();i++) {
-				std::cout << theNode->data()[i] << " ";
+				std::cout << ((T*)theNode->data())[i] << " ";
 			}
 			if (theNode->rightSibling()) {
 				theNode = static_cast<BPlusNode<T>*>(bufferManager->GetBlock(theNode->rightSibling()));
@@ -140,10 +153,10 @@ protected:
 		//std::cout << '<'<<theNode->dataCnt() << '>';
 		int idx = this->findLargerInBlock(key, theNode);
 		for (int i = theNode->dataCnt() - 1;i >= idx;i--) {
-			theNode->data()[i + 1] = theNode->data()[i];
+			((T*)theNode->data())[i + 1] = ((T*)theNode->data())[i];
 			theNode->ptrs()[i + 2] = theNode->ptrs()[i + 1];
 		}
-		theNode->data()[idx] = key;
+		((T*)theNode->data())[idx] = key;
 		theNode->ptrs()[idx + 1] = addr;
 
 		theNode->dataCnt()++;
@@ -159,7 +172,7 @@ protected:
 		while (low <= high)
 		{
 			mid = (low + high) >> 1;
-			T e = theNode->data()[mid];
+			T e = ((T*)theNode->data())[mid];
 			if (e < key) low = mid + 1;
 			else if (e > key) high = mid - 1;
 			else return mid;
@@ -172,7 +185,7 @@ protected:
 	int findFirstInBlock(T key, BPlusNode<T>* theNode) {
 		int index = findLargerInBlock(key, theNode);
 		//trace back the first matched key
-		while (index > 0 && theNode->data()[index - 1] == key) index--;
+		while (index > 0 && ((T*)theNode->data())[index - 1] == key) index--;
 		return index;
 	}
 	//split the current node
@@ -197,19 +210,19 @@ protected:
 		//leaf node
 		if (theNode->isLeaf()) {
 			//copy data to new node
-			memcpy(&(newNode->data()[0]), &(theNode->data()[order - order / 2]), order / 2 * sizeof(T));
+			memcpy(&(((T*)newNode->data())[0]), &(((T*)theNode->data())[order - order / 2]), order / 2 * sizeof(T));
 			memcpy(&(newNode->ptrs()[1]), &(theNode->ptrs()[order - order / 2 + 1]), order / 2 * sizeof(T));
 			newNode->isLeaf() = true;
 			newNode->parent() = theNode->parent();
 			newNode->dataCnt() = order / 2;
 			theNode->dataCnt() = order - order / 2;
 			//insert new entry to parent
-			insertInBlock(newNode->data()[0], newNode->BlockIndex(), static_cast<BPlusNode<T>*>(bufferManager->GetBlock(newNode->parent())));
+			insertInBlock(((T*)newNode->data())[0], newNode->BlockIndex(), static_cast<BPlusNode<T>*>(bufferManager->GetBlock(newNode->parent())));
 		}
 		//non-leaf node
 		else {
 			//copy data to new node
-			memcpy(&(newNode->data()[0]), &(theNode->data()[order / 2 + 1]), (order - order / 2 - 1) * sizeof(T));
+			memcpy(&(((T*)newNode->data())[0]), &(((T*)theNode->data())[order / 2 + 1]), (order - order / 2 - 1) * sizeof(T));
 			memcpy(&(newNode->ptrs()[0]), &(theNode->ptrs()[order / 2 + 1]), (order - order / 2) * sizeof(T));
 			newNode->isLeaf() = false;
 			newNode->parent() = theNode->parent();
@@ -217,13 +230,13 @@ protected:
 			newNode->dataCnt() = order - order / 2 - 1;
 			theNode->dataCnt() = order / 2;
 			//insert new entry to parent
-			insertInBlock(theNode->data()[order / 2], newNode->BlockIndex(), static_cast<BPlusNode<T>*>(bufferManager->GetBlock(newNode->parent())));
+			insertInBlock(((T*)theNode->data())[order / 2], newNode->BlockIndex(), static_cast<BPlusNode<T>*>(bufferManager->GetBlock(newNode->parent())));
 		}
 	}
 	//delete an entry from the block
 	void removeInBlock(BPlusNode<T>* theNode, unsigned int index) {
 		for (int i = index;i < theNode->dataCnt() - 1;i++) {
-			theNode->data()[i] = theNode->data()[i + 1];
+			((T*)theNode->data())[i] = ((T*)theNode->data())[i + 1];
 			theNode->ptrs()[i + 1] = theNode->ptrs()[i + 2];
 		}
 		theNode->dataCnt()--;
@@ -263,17 +276,17 @@ protected:
 		int totalCnt = theNode->dataCnt() + rightNode->dataCnt();
 		//cannot put in one node, redistribute entries
 		if (totalCnt > order - 1) {
-			T oldKey = rightNode->data()[0];
+			T oldKey = ((T*)rightNode->data())[0];
 			int offset = totalCnt / 2 - theNode->dataCnt();
 			if (offset>0) {
 				// move some data in right node to the node
 				for (int i = theNode->dataCnt();i < totalCnt / 2;i++) {
-					theNode->data()[i] = rightNode->data()[i - theNode->dataCnt()];
-					theNode->ptrs()[i + 1] = rightNode->ptrs()[i - theNode->dataCnt() + 1];
+					((T*)theNode->data())[i] = ((T*)rightNode->data())[i - theNode->dataCnt()];
+					((T*)theNode->data())[i + 1] = rightNode->ptrs()[i - theNode->dataCnt() + 1];
 				}
 				// shift right node
 				for (int i = offset;i < rightNode->dataCnt();i++) {
-					rightNode->data()[i - offset] = rightNode->data()[i];
+					((T*)rightNode->data())[i - offset] = ((T*)rightNode->data())[i];
 					rightNode->ptrs()[i - offset + 1] = rightNode->ptrs()[i + 1];
 				}
 			}
@@ -281,19 +294,19 @@ protected:
 				offset = -offset;
 				// move some data in the node to right node
 				for (int i = rightNode->dataCnt()-1;i >= offset;i--) {
-					rightNode->data()[i] = rightNode->data()[i - offset];
+					((T*)rightNode->data())[i] = ((T*)rightNode->data())[i - offset];
 					rightNode->ptrs()[i + 1] = rightNode->ptrs()[i - offset + 1];
 				}
 				// shift the node
 				for (int i = 0;i < offset;i++) {
-					rightNode->data()[i] = theNode->data()[totalCnt / 2 + i];
+					((T*)rightNode->data())[i] = ((T*)theNode->data())[totalCnt / 2 + i];
 					rightNode->ptrs()[i + 1] = theNode->ptrs()[totalCnt / 2 + i + 1];
 				}
 			}
 			//update entry in parent node
 			int indexInParent = findFirstInBlock(oldKey, parentNode);
 			while (parentNode->ptrs()[indexInParent + 1] != rightNode->BlockIndex()) indexInParent++;
-			parentNode->data()[indexInParent] = rightNode->data()[0];
+			((T*)parentNode->data())[indexInParent] = ((T*)rightNode->data())[0];
 			//update dataCnt
 			theNode->dataCnt() = totalCnt / 2;
 			rightNode->dataCnt() = totalCnt - totalCnt / 2;
@@ -302,10 +315,10 @@ protected:
 		else {
 			// merge data
 			for (int i = theNode->dataCnt();i < totalCnt;i++) {
-				theNode->data()[i] = rightNode->data()[i - theNode->dataCnt()];
+				((T*)theNode->data())[i] = ((T*)rightNode->data())[i - theNode->dataCnt()];
 			}
 			// delete entry of right node in parent node
-			int indexInParent = findFirstInBlock(rightNode->data()[0], parentNode);
+			int indexInParent = findFirstInBlock(((T*)rightNode->data())[0], parentNode);
 			while (parentNode->ptrs()[indexInParent + 1] != rightNode->BlockIndex()) indexInParent++;
 			removeInBlock(parentNode, indexInParent);
 			//update dataCnt
