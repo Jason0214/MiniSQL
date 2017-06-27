@@ -186,7 +186,11 @@ void AcceptInsert()
 
 void AcceptUpdate()
 {
-	ExeUpdate(GetString(), GetString(), GetString());
+	string tableName = GetString();
+	string attrName = GetString();
+	string updateValue = GetString(); 
+	ComparisonVector cmpVec;
+	AcceptComparisonVector(cmpVec);
 }
 
 void AcceptDelete()
