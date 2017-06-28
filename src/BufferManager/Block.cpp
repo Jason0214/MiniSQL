@@ -140,7 +140,7 @@ void RecordBlock::Format(DBenum* attr_type, uint16_t attr_num, unsigned short ke
 uint8_t* RecordBlock::GetDataPtr(unsigned short row, unsigned short colomn){
 	unsigned short target_row_size = 0;
 	for(unsigned short i = 0; i < colomn; i++){
-		target_row_size += size[i];
+		target_row_size += this->size[i];
 	}
 	return &(this->block_data[DATA_BEG + row*tuple_size + target_row_size]);
 }
@@ -184,6 +184,14 @@ int RecordBlock::InsertTupleByIndex(const void** data_list, int position){
 	this->RecordNum()++;
 	return position;
 }
+
+
+// set the value of in a tuple(row, colomn)
+void RecordBlock::SetTupleValue(unsigned short row, unsigned short colomn, const void* value){
+	uint8_t* addr = this->GetDataPtr(row, colomn);
+	memcpy(addr, value, this->size[colomn]);
+}
+
 
 // given a key and delete its corresponding tuple
 // also fill the deleted tuple position with other tuple
