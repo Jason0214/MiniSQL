@@ -86,7 +86,8 @@ protected:
 		IndexMethod<T>* method;
 		if (type == BPTree) {
 			//BLOCK_HEAD_SIZE + BP_HEAD_SIZE + order * SIZEOF(T) + 4 * (order + 1)<=4096
-			method = new BPlusTree<T>(root, (4096 - BLOCK_HEAD_SIZE - BP_HEAD_SIZE - 4) / (sizeof(uint32_t*) + sizeof(T)));
+			int order = (BLOCK_SIZE - BLOCK_HEAD_SIZE - BP_HEAD_SIZE - (sizeof(uint32_t*))) / (sizeof(uint32_t*) + sizeof(T));
+			method = new BPlusTree<T>(root, order);
 		}
 		return method;
 	}

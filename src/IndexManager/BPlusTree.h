@@ -245,12 +245,15 @@ protected:
 		//if the node is the root, let its only child to be the new root
 		if (theNode==root) {
 			Block* oldRoot = root;
-			//if root is a leaf, empty the tree
-			if (theNode->isLeaf()) root = nullptr;
+			//if root is a leaf, do nothing
+			//if (theNode->isLeaf()) root = nullptr;
+			if (theNode->isLeaf());
 			//assign new root
-			else root = static_cast<BPlusNode<T>*>(bufferManager->GetBlock(theNode->ptrs()[0]));
-			//delete the block
-			bufferManager->DeleteBlock(oldRoot);
+			else {
+				root = static_cast<BPlusNode<T>*>(bufferManager->GetBlock(theNode->ptrs()[0]));
+				//delete the block
+				bufferManager->DeleteBlock(oldRoot);
+			}
 			return;
 		}
 		BPlusNode<T>* parentNode = static_cast<BPlusNode<T>*>(bufferManager->GetBlock(theNode->parent()));
@@ -313,6 +316,8 @@ protected:
 			removeInBlock(parentNode, indexInParent);
 			//update dataCnt
 			theNode->dataCnt() = totalCnt;
+			//update rightSibling
+			theNode->rightSibling() = rightNode->rightSibling();
 			//delete block
 			Block* tmp = rightNode;
 			bufferManager->DeleteBlock(tmp);
@@ -328,6 +333,7 @@ protected:
 	}
 	//operate the whole tree recursively
 	void operateTree(BPlusNode<T>* theNode,void (BufferManager::*func)(Block*&) ) {
+		if (!theNode) return;
 		if (!theNode->isLeaf()) {
 			for (int i = 0;i < theNode->dataCnt() + 1;i++) {
 				operateTree(static_cast<BPlusNode<T>*>(bufferManager->GetBlock(theNode->ptrs()[i])),func);
