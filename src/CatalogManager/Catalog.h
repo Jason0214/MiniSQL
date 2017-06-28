@@ -49,8 +49,8 @@ public:
 	void DropIndex(const std::string & index_name);
 
 	void UpdateTablePrimaryIndex(const std::string & table_name, uint32_t new_addr);
-	void UpdateTableSecondaryIndex(const std::string & table_name, int8_t key_index, uint32_t new_addr);
 	void UpdateTableDataAddr(const std::string & table_name, uint32_t new_addr);
+	void UpdateTableSecondaryIndex(const std::string & table_name, int8_t key_index, uint32_t new_addr);
 
 	RecordBlock* SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key);
 private:

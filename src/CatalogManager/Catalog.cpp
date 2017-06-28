@@ -225,6 +225,7 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 	}
 	if (index_tree_root->BlockIndex() != this->table_index_addr) {
 		this->UpdateDatabaseTableIndex(this->current_database_name, index_tree_root->BlockIndex());
+		this->table_index_addr = index_tree_root->BlockIndex();
 	}
 	delete result_ptr;
 	buffer_manager.ReleaseBlock(index_tree_root);
@@ -270,6 +271,7 @@ void Catalog::DropTable(const string & table_name){
 		}
 		else{
 			if(result_ptr->index == 0){
+				delete result_ptr;
 				buffer_manager.ReleaseBlock(index_tree_root);
 				throw TableNotFound(table_name.c_str());
 			}
@@ -280,6 +282,7 @@ void Catalog::DropTable(const string & table_name){
 		}		
 	}
 	else{
+		delete result_ptr;
 		buffer_manager.ReleaseBlock(index_tree_root);
 		throw TableNotFound(table_name.c_str());
 	}
@@ -290,6 +293,7 @@ void Catalog::DropTable(const string & table_name){
 	int i = table_block_ptr->FindRecordIndex(table_name.c_str());
 	if(i < 0 || strcmp((char*)table_block_ptr->GetTableInfoPtr(i), table_name.c_str()) != 0){
 		//not found
+		delete result_ptr;
 		buffer_manager.ReleaseBlock((Block* &)table_block_ptr);
 		buffer_manager.ReleaseBlock(index_tree_root);
 		throw TableNotFound(table_name.c_str());
@@ -308,15 +312,17 @@ void Catalog::DropTable(const string & table_name){
 	table_block_ptr->DropTable(table_name.c_str());
 
 /* update index */
-	if(table_block_ptr->RecordNum() > 0){
+	if(i == 0 && table_block_ptr->RecordNum() > 0){
+		index_tree_root = index_manager.removeEntry(index_tree_root, BPTree, result_ptr);
 		index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, 
 				&ConstChar<32>((char*)table_block_ptr->GetTableInfoPtr(0)), table_block_ptr->BlockIndex());	
 	}
-	else{
+	else if(table_block_ptr->RecordNum() == 0){
 	// the block would be empty remove it from link list
 		if(table_block_ptr->PreBlockIndex() == 0 && table_block_ptr->NextBlockIndex() == 0){}
 		else if(table_block_ptr->PreBlockIndex() == 0){
 			this->UpdateDatabaseTableData(this->current_database_name, table_block_ptr->NextBlockIndex());
+			this->table_data_addr = table_block_ptr->NextBlockIndex();
 			Block* next_block_ptr = buffer_manager.GetBlock(table_block_ptr->NextBlockIndex());
 			next_block_ptr->PreBlockIndex() = 0;
 			next_block_ptr->is_dirty = true;
@@ -344,12 +350,14 @@ void Catalog::DropTable(const string & table_name){
 	}
 	if(index_tree_root->BlockIndex() != this->table_index_addr){
 		this->UpdateDatabaseTableIndex(this->current_database_name, index_tree_root->BlockIndex());
+		this->table_index_addr = index_tree_root->BlockIndex();
 	}
 	buffer_manager.ReleaseBlock(index_tree_root);
 	if(table_block_ptr) {
 		table_block_ptr->is_dirty = true;
 		buffer_manager.ReleaseBlock((Block* &)table_block_ptr);
-	}	
+	}
+	delete result_ptr;
 }
 
 // split the block pointer by `table_block_ptr`
@@ -553,11 +561,11 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 
 	Block* index_root = buffer_manager.CreateBlock();
 	this->InitBPIndexRoot(index_root, type);
-//	IndexManager* index_manager = getIndexManager(type);
+	IndexManager* index_manager_ptr = getIndexManager(type);
 	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(table_meta->table_addr));
 	while (true) {
 		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
-		index_root = index_manager.insertEntry(index_root, BPTree, data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
+		index_root = index_manager_ptr->insertEntry(index_root, BPTree, data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
 		uint32_t next = data_block_ptr->BlockIndex();
 		buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
 		if (next == 0) break;
@@ -565,6 +573,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	}
 	uint32_t new_block_addr = index_root->BlockIndex();
 	delete table_meta;
+	delete index_manager_ptr;
 	buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
 	buffer_manager.ReleaseBlock(index_root);
 
@@ -595,6 +604,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	delete result_ptr;
 	if(index_tree_root->BlockIndex() != this->index_index_addr){
 		this->UpdateDatabaseIndexIndex(this->current_database_name, index_tree_root->BlockIndex());
+		this->index_index_addr = index_tree_root->BlockIndex();
 	}
 	buffer_manager.ReleaseBlock((Block* &)index_tree_root);
 	index_block_ptr->is_dirty = true;
@@ -636,9 +646,20 @@ void Catalog::DropIndex(const string & index_name){
 	bool flag = false;
 	uint32_t index_root_block;
 	while(true){
-		for(unsigned int i = 0; i < index_data_ptr->RecordNum(); i++){
+		int record_num = index_data_ptr->RecordNum();
+		for(int i = record_num; i >=0; i--){
 			if(strcmp((char*)index_data_ptr->GetDataPtr(i, 1), index_name.c_str()) == 0){
 				index_root_block = *(uint32_t*)index_data_ptr->GetDataPtr(i, 2);
+				if(i == 0 && index_data_ptr->RecordNum() > 1){
+					//update primary index
+					TypedIndexManager<ConstChar<33> > index_manager;
+					Block* index_root = buffer_manager.GetBlock(this->index_index_addr);
+					SearchResult* index_data_entry = index_manager.searchEntry(index_root, BPTree, index_data_ptr->GetDataPtr(0, 0));
+					index_root = index_manager.removeEntry(index_root, BPTree, index_data_entry);
+					index_root = index_manager.insertEntry(index_root, BPTree, index_data_ptr->GetDataPtr(1, 0), index_data_ptr->BlockIndex());
+					buffer_manager.ReleaseBlock(index_root);
+					delete index_data_entry;
+				}
 				index_data_ptr->RemoveTuple(i);
 				flag = true;
 				break;
@@ -649,7 +670,7 @@ void Catalog::DropIndex(const string & index_name){
 		buffer_manager.ReleaseBlock((Block* &)index_data_ptr);
 		if(next == 0) throw IndexNotFound();
 		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
-		index_data_ptr->Format(type_list, 5, 0);
+		index_data_ptr->Format(type_list, 3, 0);
 	}
 
 	TypedIndexManager<int> index_manager;
@@ -660,6 +681,7 @@ void Catalog::DropIndex(const string & index_name){
 		}
 		else if(index_data_ptr->PreBlockIndex() == 0){
 			this->UpdateDatabaseIndexData(this->current_database_name, index_data_ptr->NextBlockIndex());
+			this->index_data_addr = index_data_ptr->NextBlockIndex();
 			Block* next_block_ptr = buffer_manager.GetBlock(index_data_ptr->NextBlockIndex());
 			next_block_ptr->PreBlockIndex() = 0;
 			next_block_ptr->is_dirty = true;
@@ -835,5 +857,6 @@ void Catalog::InitBPIndexRoot(Block* root, DBenum type){
 			break;
 	}
 	index_manager_ptr->initRootBlock(root, BPTree);
+	delete index_manager_ptr;
 	root->is_dirty = true;
 }
