@@ -39,7 +39,7 @@ public:
 	void CreateDatabase(const std::string & db_name);
 	void UseDatabase(const std::string & db_name);
 
-	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index = -1);
+	void CreateTable(const std::string & table_name, std::string* attr_name_list, DBenum* attr_type_list, int attr_num, int & key_index);
 	TableMeta* GetTableMeta(const std::string & table_name);
 	void DropTable(const std::string & table_name);
 	void DeleteTable(const std::string & table_name);

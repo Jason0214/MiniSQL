@@ -134,6 +134,7 @@ public:
 	int FindTupleIndex(const void* key_data);
 	int InsertTuple(const void** data_list);
 	int InsertTupleByIndex(const void** data_list, int position);
+	void SetTupleValue(unsigned short row, unsigned short colomn, const void* value);
 	void RemoveTuple(unsigned short row);
 	int Compare(uint8_t* data_1_ptr, uint8_t* data_2_ptr, unsigned short data_index);
 	unsigned short tuple_size;

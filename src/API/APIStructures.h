@@ -53,4 +53,9 @@ typedef struct
 
 typedef vector<AttrDefinition> AttrDefinitionVector;
 
+typedef struct{
+	uint32_t begin;
+	uint32_t end;
+} TraversalAddr;
+
 #endif
