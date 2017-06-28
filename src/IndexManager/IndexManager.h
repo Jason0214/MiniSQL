@@ -18,6 +18,7 @@ public:
 	virtual void removeIndex(Block* root, MethodType type) = 0;
 	virtual void printAll(Block* root, MethodType type) = 0;
 	virtual void initRootBlock(Block* block, MethodType type) = 0;
+	virtual void writeAll() = 0;
 };
 
 template<class T>
@@ -78,6 +79,12 @@ public:
 	void initRootBlock(Block* root, MethodType type) {
 		IndexMethod<T>* method = createMethod(type, root);
 		method->initBlock(root);
+	}
+	virtual void writeAll() {
+		for (auto i = methods.begin();i < methods.end();i++) {
+			delete *i; //destructor will write data to disk
+		}
+		methods.empty();//clean methods vector
 	}
 protected:
 	IndexMethod<T>* createMethod(MethodType type,Block* root) {
