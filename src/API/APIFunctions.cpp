@@ -431,11 +431,12 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	//insert data into new table
 	srcBlock1 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta1->table_addr));
 	srcBlock2 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta2->table_addr));
-
-		//first loop:srcBlock1
+	//first loop:srcBlock1
 	while (true) {
 		srcBlock1->Format(tableMeta1->attr_type_list, tableMeta1->attr_num, tableMeta1->key_index);
 		for (int i = 0; i < srcBlock1->RecordNum(); i++) {
+			//reset srcBlock2
+			srcBlock2 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta2->table_addr));
 			//second loop:srcBlock2
 			while (true) {
 				srcBlock2->Format(tableMeta2->attr_type_list, tableMeta2->attr_num, tableMeta2->key_index);
@@ -548,6 +549,8 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 	while (true) {
 		srcBlock1->Format(tableMeta1->attr_type_list, tableMeta1->attr_num, tableMeta1->key_index);
 		for (int i = 0; i < srcBlock1->RecordNum(); i++) {
+			//reset srcBlock2
+			srcBlock2 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta2->table_addr));
 			//second loop:srcBlock2
 			while (true) {
 				srcBlock2->Format(tableMeta2->attr_type_list, tableMeta2->attr_num, tableMeta2->key_index);
