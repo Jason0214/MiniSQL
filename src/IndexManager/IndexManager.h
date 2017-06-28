@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "../BufferManager/Block.h"
 #include "../BufferManager/BufferManager.h"
 #include "BPlusTree.h"
@@ -23,7 +24,11 @@ template<class T>
 class TypedIndexManager:public IndexManager {
 public:
 	TypedIndexManager() {};
-	virtual ~TypedIndexManager() {};
+	virtual ~TypedIndexManager() {
+		for (auto i = methods.begin();i < methods.end();i++) {
+			delete *i; //destructor will write data to disk
+		}
+	};
 	//insert an array of entries
 	//use root = nullptr to create a new index
 	Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, int num) {
@@ -34,7 +39,6 @@ public:
 			method->insert(keys[i], addrs[i]);
 		}
 		root = method->getRoot();
-		delete method; //destructor will write data to disk
 		return root;
 	}
 	//insert an  entry
@@ -45,7 +49,6 @@ public:
 		//insert entry
 		method->insert(key, addr);
 		root = method->getRoot();
-		delete method; //destructor will write data to disk
 		return root;
 	}
 	//remove an entry from existing index
@@ -53,7 +56,6 @@ public:
 		IndexMethod<T>* method = createMethod(type, root);
 		method->remove(pos);
 		root = method->getRoot();
-		delete method; //destructor will write data to disk
 		return root;
 	}
 	//search an entry in existing index
@@ -61,36 +63,41 @@ public:
 		T key = *(T*)(key_void);
 		IndexMethod<T>* method = createMethod(type, root);
 		SearchResult* result = method->search(key);
-		delete method; //destructor will write data to disk
 		return result;
 	}
 	//remove an existing index from a table
 	void removeIndex(Block* root, MethodType type) {
 		IndexMethod<T>* method = createMethod(type,root);
 		method->removeAll();
-		delete method;
 	}
 	//print out the data in the index
 	void printAll(Block* root, MethodType type) {
 		IndexMethod<T>* method = createMethod(type, root);
 		method->printAll();
-		delete method;
 	}
 	void initRootBlock(Block* root, MethodType type) {
 		IndexMethod<T>* method = createMethod(type, root);
 		method->initBlock(root);
-		delete method;
 	}
 protected:
 	IndexMethod<T>* createMethod(MethodType type,Block* root) {
+		//check if the method already exists
+		for (auto i = methods.begin();i < methods.end();i++) {
+			if ((*i)->getRoot() == root) {
+				return *i;
+			}
+		}
 		IndexMethod<T>* method;
 		if (type == BPTree) {
 			//BLOCK_HEAD_SIZE + BP_HEAD_SIZE + order * SIZEOF(T) + 4 * (order + 1)<=4096
 			int order = (BLOCK_SIZE - BLOCK_HEAD_SIZE - BP_HEAD_SIZE - (sizeof(uint32_t*))) / (sizeof(uint32_t*) + sizeof(T));
 			method = new BPlusTree<T>(root, order);
 		}
+		methods.push_back(method);
 		return method;
 	}
+	//store methods
+	std::vector<IndexMethod<T>*> methods;
 };
 
 //get index manager according to type
