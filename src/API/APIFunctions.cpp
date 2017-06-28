@@ -24,6 +24,7 @@ RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBl
 //compare template function
 template <class T>
 inline bool compare(const void* a, const void* b, const std::string &operation) {
+	cout << *(T*)a << " " << *(T*)b << endl;
 	if (operation == ">") {
 		return *(T*)a > *(T*)b;
 	}
@@ -52,12 +53,11 @@ inline bool compare(const void* a, const void* b, const std::string &operation) 
 //cmpVec is sorted
 inline bool checkTuple(RecordBlock* block, int line, TableMeta* tableMeta,const ComparisonVector& sortedCmpVec) {
 	const ComparisonVector& cmpVec = sortedCmpVec;
-	std::string cmpOperator;
 	for (int i = 0,j = 0;cmpVec.begin()+i < cmpVec.end(); i++) {
 		std::string cmpOperator = cmpVec[i].Operation;
 		for (; j < tableMeta->attr_num; j++) {
-			bool result=true;
 			if (cmpVec[i].Comparand1.Content == tableMeta->GetAttrName(j)) {
+				bool result = true;
 				stringstream ss(cmpVec[i].Comparand2.Content);
 				DBenum type = tableMeta->attr_type_list[j];
 				switch (type) {
@@ -99,7 +99,8 @@ inline bool checkTuple(RecordBlock* block, int line, TableMeta* tableMeta,const 
 						}
 						break;
 				}
-				if (!result) return result;
+				if (result) break;
+				else return result;
 			}
 		}	
 	}
@@ -124,18 +125,16 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	//variables init
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
-	IndexManager* indexManager;
+	IndexManager* indexManager = nullptr;
 	int indexPos;
 	std::string operation = "";
-	for (auto i = tableAlias.begin(); i != tableAlias.end(); i++) {
-		cout << i->first << " " << i->second << endl;
-	}
 	//make sure table name is valid
 	std::string tableName;
 	try {
 		tableName = tableAlias.at(sourceTableName);
 	}
 	catch (exception& e) {
+		std::cout << e.what() << std::endl;
 		throw(e);
 	}
 	TableMeta* tableMeta = catalog->GetTableMeta(tableName);
@@ -224,7 +223,6 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 			//if the current key is already larger than the searched primary index
 			if (isPrimary&&(operation == "<" || operation == "=" || operation == "<=")) {
 				if (checkTuple(srcBlock, i, tableMeta, indexCmp)) {
-					bufferManager->ReleaseBlock((Block* &)srcBlock);
 					break;
 				}
 			}
@@ -248,9 +246,11 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	bufferManager->ReleaseBlock((Block* &)srcBlock);
 	bufferManager->ReleaseBlock((Block* &)dstBlock);
 	if(indexRoot) bufferManager->ReleaseBlock((Block* &)indexRoot);
-	delete indexManager;
+	if(indexManager) delete indexManager;
 	delete tableMeta;
 	delete[] tuple;
+	cout << "select result:";
+	ExeOutputTable(tableAlias, resultTableName);
 }
 
 
@@ -260,7 +260,16 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 {
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
-	TableMeta* tableMeta = catalog->GetTableMeta(tableAlias.at(sourceTableName));
+	std::string tableName;
+	//check if alias exists
+	try {
+		tableName = tableAlias.at(sourceTableName);
+	}
+	catch (exception& e) {
+		std::cout << e.what() << std::endl;
+		throw(e);
+	}
+	TableMeta* tableMeta = catalog->GetTableMeta(tableName);
 	Block* block = bufferManager->GetBlock(tableMeta->table_addr);
 	std::vector<int> attrIndexVec;
 	//get attr index
@@ -280,7 +289,7 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 		newTypeList[i] = tableMeta->GetAttrType(attrIndexVec[i]);
 	}
 	int keyIndex = 0;
-	catalog->CreateTable(resultTableName, newNameList, newTypeList, tableMeta->attr_num, keyIndex);
+	catalog->CreateTable(resultTableName, newNameList, newTypeList, attrIndexVec.size(), keyIndex);
 	RecordBlock* dstBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(catalog->GetTableMeta(resultTableName)->table_addr));
 	dstBlock->is_dirty = true;
 	dstBlock->Format(newTypeList, attrIndexVec.size(), keyIndex);
@@ -309,9 +318,12 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	bufferManager->ReleaseBlock((Block* &)srcBlock);
 	bufferManager->ReleaseBlock((Block* &)dstBlock);
 	delete tableMeta;
+	delete newTableMeta;
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
+	cout << "project result:";
+	ExeOutputTable(tableAlias, resultTableName);
 }
 
 //attr is sorted
@@ -329,6 +341,7 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 		tableName2 = tableAlias.at(sourceTableName2);
 	}
 	catch (exception& e) {
+		std::cout << e.what() << std::endl;
 		throw(e);
 	}
 	TableMeta* tableMeta1 = catalog->GetTableMeta(tableName1), *tableMeta2 = catalog->GetTableMeta(tableName2);
@@ -338,12 +351,14 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::vector<int> commonAttrIndex1, commonAttrIndex2;
 
 	//get common attrs
+	//attr_num is sorted
 	for (int i = 0, j = 0;i < tableMeta1->attr_num&&j < tableMeta2->attr_num;) {
 		if (tableMeta1->GetAttrName(i) > tableMeta2->GetAttrName(j)) j++;
 		else if (tableMeta1->GetAttrName(i) < tableMeta2->GetAttrName(j)) i++;
 		else {
 			commonAttrIndex1.push_back(i);
 			commonAttrIndex2.push_back(j);
+			i++;j++;
 		}
 	}
 
@@ -354,18 +369,24 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	const void** tuple = (const void**)(new void*[newListSize]);
 	newNameList = new std::string[newListSize];
 	newTypeList = new DBenum[newListSize];
-	for (int i = 0, j = 0, k = 0;i < tableMeta1->attr_num&&j < tableMeta2->attr_num;k++) {
-		if (tableMeta1->GetAttrName(i) > tableMeta2->GetAttrName(j)) {
-			j++;
+	//create new info lists
+	//attr_num is sorted
+	for (int i = 0, j = 0, k = 0;i < tableMeta1->attr_num||j < tableMeta2->attr_num;k++) {
+		if (i >= tableMeta1->attr_num||tableMeta1->GetAttrName(i) > tableMeta2->GetAttrName(j)) {
 			newNameList[k] = tableMeta2->GetAttrName(j);
 			newTypeList[k] = tableMeta2->GetAttrType(j);
+			j++;
+		}
+		else if(j >= tableMeta2->attr_num || tableMeta1->GetAttrName(i) < tableMeta2->GetAttrName(j)) {
+			newNameList[k] = tableMeta1->GetAttrName(i);
+			newTypeList[k] = tableMeta1->GetAttrType(i);
+			i++;
 		}
 		else {
-			i++;
-			newNameList[k] = tableMeta2->GetAttrName(i);
-			newTypeList[k] = tableMeta2->GetAttrType(i);
+			newNameList[k] = tableMeta1->GetAttrName(i);
+			newTypeList[k] = tableMeta1->GetAttrType(i);
+			i++;j++;
 		}
-		if (tableMeta1->GetAttrName(i) == tableMeta2->GetAttrName(j)) j++;
 	}
 	int keyIndex = 0;
 	catalog->CreateTable(resultTableName, newNameList, newTypeList, newListSize, keyIndex);
@@ -424,24 +445,23 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 					}
 					//join two tuples
 					if (result) {
-						for (int ii = 0,jj=0;ii < tableMeta1->attr_num;ii++) {
-							for (;jj < newTableMeta->attr_num;jj++) {
-								if (tableMeta1->GetAttrName(ii) == newTableMeta->GetAttrName(jj)) {
-									tuple[jj] = srcBlock1->GetDataPtr(i, ii);
-									break;
-								}
+						for (int ii = 0, jj = 0, kk = 0;ii < tableMeta1->attr_num || jj < tableMeta2->attr_num;kk++) {
+							if (ii >= tableMeta1->attr_num || tableMeta1->GetAttrName(ii) > tableMeta2->GetAttrName(jj)) {
+								tuple[kk] = srcBlock2->GetDataPtr(j, jj);
+								jj++;
+							}
+							else if (jj >= tableMeta2->attr_num || tableMeta1->GetAttrName(ii) < tableMeta2->GetAttrName(jj)) {
+								tuple[kk] = srcBlock1->GetDataPtr(i, ii);
+								ii++;
+							}
+							else {
+								tuple[kk] = srcBlock1->GetDataPtr(i, ii);
+								ii++;jj++;
 							}
 						}
-						for (int ii = 0, jj = 0;ii < tableMeta2->attr_num;ii++) {
-							for (;jj < newTableMeta->attr_num;jj++) {
-								if (tableMeta2->GetAttrName(ii) == newTableMeta->GetAttrName(jj)) {
-									tuple[jj] = srcBlock2->GetDataPtr(j, ii);
-									break;
-								}
-							}
-						}
-					}
-					dstBlock = insertTupleSafe(tuple, newTableMeta, dstBlock, bufferManager);
+						//insert the joined data
+						dstBlock = insertTupleSafe(tuple, newTableMeta, dstBlock, bufferManager);
+					}	
 				}
 				uint32_t next = srcBlock2->NextBlockIndex();
 				if (next == 0) {
@@ -468,6 +488,8 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
+	cout << "Natural join result:";
+	ExeOutputTable(tableAlias, resultTableName);
 }
 
 void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName1,
@@ -660,6 +682,8 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 	}
 	delete table_meta;
 	cout << "1 Row Affected" << endl;
+	const TableAliasMap map;
+	ExeOutputTable(map, tableName);
 }
 
 void ExeUpdate(const std::string& tableName, const std::string& attrName, 
