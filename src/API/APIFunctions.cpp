@@ -23,7 +23,7 @@ RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBl
 //may add to record manager
 //compare template function
 template <class T>
-inline bool compare(const void* a, const void* b, const std::string &operation) {
+bool typedCompare(const void* a, const void* b, const std::string &operation) {
 	cout << *(T*)a << " " << *(T*)b << endl;
 	if (operation == ">") {
 		return *(T*)a > *(T*)b;
@@ -48,6 +48,36 @@ inline bool compare(const void* a, const void* b, const std::string &operation) 
 	}
 }
 
+bool compare(const void* a, const void* b, const std::string &operation, DBenum type) {
+	bool result;
+	switch (type) {
+	case DB_TYPE_INT:
+		result = typedCompare<int>(a, b, operation);
+		break;
+	case DB_TYPE_FLOAT:
+		result = typedCompare<float>(a, b, operation);
+		break;
+	default:
+		if (type - DB_TYPE_CHAR < 16) {
+			result = typedCompare<ConstChar<16>>(a, b, operation);
+		}
+		else if (type - DB_TYPE_CHAR < 33) {
+			result = typedCompare<ConstChar<33>>(a, b, operation);
+		}
+		else if (type - DB_TYPE_CHAR < 64) {
+			result = typedCompare<ConstChar<64>>(a, b, operation);
+		}
+		else if (type - DB_TYPE_CHAR < 128) {
+			result = typedCompare<ConstChar<128>>(a, b, operation);
+		}
+		else {
+			result = typedCompare<ConstChar<256>>(a, b, operation);
+		}
+		break;
+	}
+	return result;
+}
+
 //may add to record manager
 //check if a tuple is valid
 //cmpVec is sorted
@@ -64,38 +94,38 @@ inline bool checkTuple(RecordBlock* block, int line, TableMeta* tableMeta,const 
 					case DB_TYPE_INT:
 						int integer;
 						ss >> integer;
-						result = compare<int>(block->GetDataPtr(line, j),&integer,cmpOperator);
+						result = typedCompare<int>(block->GetDataPtr(line, j),&integer,cmpOperator);
 						break;
 					case DB_TYPE_FLOAT:
 						float num;
 						ss >> num;
-						result = compare<float>(block->GetDataPtr(line, j), &num, cmpOperator);
+						result = typedCompare<float>(block->GetDataPtr(line, j), &num, cmpOperator);
 						break;
 					default:
 						if (type - DB_TYPE_CHAR < 16) {
 							ConstChar<16> str;
 							ss >> str;
-							result = compare<ConstChar<16>>(block->GetDataPtr(line, j), &str, cmpOperator);
+							result = compare(block->GetDataPtr(line, j), &str, cmpOperator, type);
 						}
 						else if (type - DB_TYPE_CHAR < 33) {
 							ConstChar<33> str;
 							ss >> str;
-							result = compare<ConstChar<33>>(block->GetDataPtr(line, j), &str, cmpOperator);
+							result = compare(block->GetDataPtr(line, j), &str, cmpOperator, type);
 						}
 						else if (type - DB_TYPE_CHAR < 64) {
 							ConstChar<64> str;
 							ss >> str;
-							result = compare<ConstChar<64>>(block->GetDataPtr(line, j), &str, cmpOperator);
+							result = compare(block->GetDataPtr(line, j), &str, cmpOperator, type);
 						}
 						else if (type - DB_TYPE_CHAR < 128) {
 							ConstChar<128> str;
 							ss >> str;
-							result = compare<ConstChar<128>>(block->GetDataPtr(line, j), &str, cmpOperator);
+							result = compare(block->GetDataPtr(line, j), &str, cmpOperator, type);
 						}
 						else {
 							ConstChar<256> str;
 							ss >> str;
-							result = compare<ConstChar<256>>(block->GetDataPtr(line, j), &str, cmpOperator);
+							result = compare(block->GetDataPtr(line, j), &str, cmpOperator, type);
 						}
 						break;
 				}
@@ -352,10 +382,14 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 
 	//get common attrs
 	//attr_num is sorted
+	bool isPrimary = false; //if a common attr in the primary index of both tables
 	for (int i = 0, j = 0;i < tableMeta1->attr_num&&j < tableMeta2->attr_num;) {
 		if (tableMeta1->GetAttrName(i) > tableMeta2->GetAttrName(j)) j++;
 		else if (tableMeta1->GetAttrName(i) < tableMeta2->GetAttrName(j)) i++;
 		else {
+			if (tableMeta1->key_index == i&&tableMeta2->key_index == j) {
+				isPrimary = true; //use primary index to reduce time complexity to O(n)
+			}
 			commonAttrIndex1.push_back(i);
 			commonAttrIndex2.push_back(j);
 			i++;j++;
@@ -398,7 +432,8 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	//insert data into new table
 	srcBlock1 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta1->table_addr));
 	srcBlock2 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta2->table_addr));
-	//first loop:srcBlock1
+
+		//first loop:srcBlock1
 	while (true) {
 		srcBlock1->Format(tableMeta1->attr_type_list, tableMeta1->attr_num, tableMeta1->key_index);
 		for (int i = 0; i < srcBlock1->RecordNum(); i++) {
@@ -409,38 +444,8 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 					bool result = true; //compare result
 					for (int k = 0;k < (int)commonAttrIndex1.size();k++) {
 						DBenum type = tableMeta1->attr_type_list[commonAttrIndex1[k]];
-						switch (type) {
-						case DB_TYPE_INT:
-							result = compare<int>(srcBlock1->GetDataPtr(i, commonAttrIndex1[k]), 
-								srcBlock1->GetDataPtr(j, commonAttrIndex2[k]), cmpOperator);
-							break;
-						case DB_TYPE_FLOAT:
-							result = compare<float>(srcBlock1->GetDataPtr(i, commonAttrIndex1[k]),
-								srcBlock1->GetDataPtr(j, commonAttrIndex2[k]), cmpOperator);
-							break;
-						default:
-							if (type - DB_TYPE_CHAR < 16) {
-								result = compare<ConstChar<16>>(srcBlock1->GetDataPtr(i, commonAttrIndex1[k]),
-									srcBlock1->GetDataPtr(j, commonAttrIndex2[k]), cmpOperator);
-							}
-							else if (type - DB_TYPE_CHAR < 33) {
-								result = compare<ConstChar<33>>(srcBlock1->GetDataPtr(i, commonAttrIndex1[k]),
-									srcBlock1->GetDataPtr(j, commonAttrIndex2[k]), cmpOperator);
-							}
-							else if (type - DB_TYPE_CHAR < 64) {
-								result = compare<ConstChar<64>>(srcBlock1->GetDataPtr(i, commonAttrIndex1[k]),
-									srcBlock1->GetDataPtr(j, commonAttrIndex2[k]), cmpOperator);
-							}
-							else if (type - DB_TYPE_CHAR < 128) {
-								result = compare<ConstChar<128>>(srcBlock1->GetDataPtr(i, commonAttrIndex1[k]),
-									srcBlock1->GetDataPtr(j, commonAttrIndex2[k]), cmpOperator);
-							}
-							else {
-								result = compare<ConstChar<256>>(srcBlock1->GetDataPtr(i, commonAttrIndex1[k]),
-									srcBlock1->GetDataPtr(j, commonAttrIndex2[k]), cmpOperator);
-							}
-							break;
-						}
+						result = compare(srcBlock1->GetDataPtr(i, commonAttrIndex1[k]),
+							srcBlock2->GetDataPtr(j, commonAttrIndex2[k]), cmpOperator, type);
 						if (!result) break;
 					}
 					//join two tuples
@@ -461,7 +466,103 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 						}
 						//insert the joined data
 						dstBlock = insertTupleSafe(tuple, newTableMeta, dstBlock, bufferManager);
-					}	
+					}
+				}
+				uint32_t next = srcBlock2->NextBlockIndex();
+				if (next == 0) {
+					bufferManager->ReleaseBlock((Block* &)srcBlock2);
+					break;
+				}
+				bufferManager->ReleaseBlock((Block* &)srcBlock2);
+				srcBlock2 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
+			}
+		}
+		uint32_t next = srcBlock1->NextBlockIndex();
+		if (next == 0) {
+			bufferManager->ReleaseBlock((Block* &)srcBlock1);
+			break;
+		}
+		bufferManager->ReleaseBlock((Block* &)srcBlock1);
+		srcBlock1 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
+	}
+
+	//delete allocated memory
+	bufferManager->ReleaseBlock((Block* &)dstBlock);
+	delete tableMeta1;
+	delete tableMeta2;
+	delete newTableMeta;
+	delete[] tuple;
+	delete[] newNameList;
+	delete[] newTypeList;
+	cout << "Natural join result:";
+	ExeOutputTable(tableAlias, resultTableName);
+}
+
+void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName1,
+	const string& sourceTableName2, const string& resultTableName)
+{
+	//variables init
+	Catalog* catalog = &Catalog::Instance();
+	BufferManager* bufferManager = &BufferManager::Instance();
+	//make sure table name is valid
+	std::string tableName1, tableName2;
+	try {
+		tableName1 = tableAlias.at(sourceTableName1);
+		tableName2 = tableAlias.at(sourceTableName2);
+	}
+	catch (exception& e) {
+		std::cout << e.what() << std::endl;
+		throw(e);
+	}
+	TableMeta* tableMeta1 = catalog->GetTableMeta(tableName1), *tableMeta2 = catalog->GetTableMeta(tableName2);
+	RecordBlock* srcBlock1, *srcBlock2;
+
+	//create new temp table
+	std::string *newNameList;
+	DBenum *newTypeList;
+	int newListSize = tableMeta1->attr_num + tableMeta2->attr_num;
+	const void** tuple = (const void**)(new void*[newListSize]);
+	newNameList = new std::string[newListSize];
+	newTypeList = new DBenum[newListSize];
+	//create new info lists
+	//sourceTableName is sorted
+	for (int i = 0;i < tableMeta1->attr_num;i++) {
+		newNameList[i] = sourceTableName1 + "." + tableMeta1->GetAttrName(i);
+		newTypeList[i] = tableMeta2->GetAttrType(i);
+	}
+	for (int i = tableMeta1->attr_num;i < newListSize;i++) {
+		newNameList[i] = sourceTableName2 + "." + tableMeta2->GetAttrName(i- tableMeta1->attr_num);
+		newTypeList[i] = tableMeta2->GetAttrType(i - tableMeta1->attr_num);
+	}
+	
+	int keyIndex = 0;
+	catalog->CreateTable(resultTableName, newNameList, newTypeList, newListSize, keyIndex);
+	RecordBlock* dstBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(catalog->GetTableMeta(resultTableName)->table_addr));
+	dstBlock->is_dirty = true;
+	dstBlock->Format(newTypeList, newListSize, keyIndex);
+	TableMeta* newTableMeta = catalog->GetTableMeta(resultTableName);
+
+	//insert data into new table
+	srcBlock1 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta1->table_addr));
+	srcBlock2 = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta2->table_addr));
+	//first loop:srcBlock1
+	while (true) {
+		srcBlock1->Format(tableMeta1->attr_type_list, tableMeta1->attr_num, tableMeta1->key_index);
+		for (int i = 0; i < srcBlock1->RecordNum(); i++) {
+			//second loop:srcBlock2
+			while (true) {
+				srcBlock2->Format(tableMeta2->attr_type_list, tableMeta2->attr_num, tableMeta2->key_index);
+				for (int j = 0; j < srcBlock1->RecordNum(); j++) {
+					
+					//join two tuples
+					for (int ii = 0;ii < tableMeta1->attr_num;ii++) {
+						tuple[ii] = srcBlock1->GetDataPtr(i, ii);
+					}
+					for (int ii = tableMeta1->attr_num;ii < newListSize;ii++) {
+						tuple[ii] = srcBlock2->GetDataPtr(j, ii - tableMeta1->attr_num);
+					}
+					//insert the product data
+					dstBlock = insertTupleSafe(tuple, newTableMeta, dstBlock, bufferManager);
 				}
 				uint32_t next = srcBlock2->NextBlockIndex();
 				if (next == 0) {
@@ -488,14 +589,8 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
-	cout << "Natural join result:";
+	cout << "Cartesian product result:";
 	ExeOutputTable(tableAlias, resultTableName);
-}
-
-void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName1,
-	const string& sourceTableName2, const string& resultTableName)
-{
-
 }
 
 void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableName)
@@ -519,7 +614,9 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 					case DB_TYPE_FLOAT: cout <<  *(float*)result_block_ptr->GetDataPtr(i, j);  break;
 					default: cout <<  (char*)result_block_ptr->GetDataPtr(i, j);  break;
 				}
+				cout << " ";
 			}
+			cout << endl;
 		}
 		uint32_t next = result_block_ptr->NextBlockIndex();
 		if(next == 0){ 
@@ -529,7 +626,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		bufferManager->ReleaseBlock((Block* &)result_block_ptr);
 		result_block_ptr =  dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
 	}
-
+	cout << "end_result" << endl;
 	// if table is a temperary table not on disk
 		//TODO
 }
