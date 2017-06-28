@@ -63,6 +63,9 @@ private:
 	uint64_t hash(uint32_t blk_index);
 	BlockNode* & GetBlockNode(uint32_t blk_index); 
 	BlockNode* block_table[BLOCK_NUM*2];
+
+	// for text
+	int pinned_block_count;
 };
 
 #endif
