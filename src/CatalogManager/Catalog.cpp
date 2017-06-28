@@ -138,7 +138,7 @@ void Catalog::UpdateDatabaseInfo(const string & db_name, unsigned int info_type,
 	buffer_manager.ReleaseBlock((Block* &)block_ptr);
 }
 
-void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index){
+void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBenum* attr_type_list, int attr_num, int & key_index){
 	if(!this->database_selected) throw DatabaseNotSelected();
 	// sort attr
 	for (int i = 1; i < attr_num; i++) {
