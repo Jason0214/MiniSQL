@@ -251,7 +251,6 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete indexManager;
 	delete tableMeta;
 	delete[] tuple;
-	ExeOutputTable(tableAlias, "T2");
 }
 
 
@@ -576,6 +575,7 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 	}
 	if(error){
 		cout << "Attributes Types Not Satisfied" << endl;
+		delete table_meta;
 		return;
 	}
 	else{
@@ -588,7 +588,8 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 		DBenum key_type = table_meta->attr_type_list[table_meta->key_index];
 		void* B_plus_tree_key_ptr = NULL;
 		if(result_ptr){
-			if(ptr_compare(result_ptr->data, data_list[table_meta->key_index], key_type) == 0){
+			if(ptr_compare((void *)((uint64_t)result_ptr->data + result_ptr->index*result_ptr->dataLen), 
+									data_list[table_meta->key_index], key_type) == 0){
 				if(table_meta->is_primary_key){
 					cout << "Duplicated Primary Key" << endl;
 					buffer_manager->ReleaseBlock(index_root);
@@ -651,11 +652,12 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 		if(index_root->BlockIndex() != table_meta->primary_index_addr){
 			catalog->UpdateTablePrimaryIndex(tableName, index_root->BlockIndex());
 		}
+		record_block_ptr->is_dirty = true;
 		buffer_manager->ReleaseBlock((Block* &)record_block_ptr);
 		buffer_manager->ReleaseBlock(index_root);
 		delete result_ptr;
+		delete data_list;
 	}
-	delete data_list;
 	delete table_meta;
 	cout << "1 Row Affected" << endl;
 }
@@ -663,7 +665,7 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values)
 void ExeUpdate(const std::string& tableName, const std::string& attrName, 
 	const std::string& value, const ComparisonVector& cmpVec)
 {
-	// Print result information in one line
+		
 }
 
 //
@@ -673,24 +675,164 @@ void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* buffer_manager = &BufferManager::Instance();
 	TableMeta* table_meta = catalog->GetTableMeta(tableName);
+	IndexManager* index_manager_ptr = getIndexManager(table_meta->attr_type_list[table_meta->key_index]);
+	Block* index_root = buffer_manager->GetBlock(table_meta->primary_index_addr);
 
-	bool use_primary_index = false;
-	for(int i = 0; i < cmpVec.size(); i++){
-		if(attr_name_list[i] == table_meta->attr_name_list[table_meta->key_index]){
-			use_primary_index = true;
+	unsigned int deleted_tuple_count = 0;
+/* attribute check */
+	int primary_tag = -1;
+	for(unsigned int i = 0; i < cmpVec.size(); i++){
+		if(cmpVec[i].Comparand1.TypeName == "Attribute" &&
+		table_meta->attr_name_list[table_meta->key_index] == cmpVec[i].Comparand1.Content){
+			primary_tag = i;
 		}
 	}
 
-	if(use_primary_index){
-		IndexManager* index_manager = getIndexManager(table_meta->attr_type_list[table_meta->key_index]);
-		Block* index_root = buffer_manager.GetBlock(table_meta->primary_index_addr);
-		
+/* delete starts here */
+	if(primary_tag != -1){
+		/* use primary index to find the target block */
+		// temp var
+		int temp_int;
+		float temp_float;
+		void* temp_ptr;
+		stringstream ss(cmpVec[primary_tag].Comparand2.Content);
+		ss.exceptions(std::ios::failbit);
+		switch(table_meta->attr_type_list[table_meta->primary_index_addr]){
+			case DB_TYPE_INT:
+				temp_ptr = &temp_int;
+				break;
+			case DB_TYPE_FLOAT:
+				ss >> temp_float;
+				temp_ptr = &temp_float;
+				break;
+			default:
+				temp_ptr = (void*)(cmpVec[primary_tag].Comparand2.Content.c_str());
+				break;
+		}
+
+		uint32_t target_block_addr;
+		SearchResult* result_ptr = index_manager_ptr->searchEntry(index_root, BPTree, temp_ptr);
+		if(ptr_compare((void*)((uint64_t)result_ptr->data + result_ptr->index*result_ptr->dataLen), temp_ptr
+				, table_meta->attr_type_list[table_meta->key_index]) == 0){
+			target_block_addr = *(result_ptr->ptrs + result_ptr->index);
+		}
+		else{
+			if(result_ptr->index == 0){
+				target_block_addr = *(result_ptr->ptrs + result_ptr->index);
+			}
+			else{
+				target_block_addr = *(result_ptr->ptrs + result_ptr->index - 1);		
+			}
+		}
+		delete result_ptr;
+		/* deletion starts here */
+		RecordBlock* target_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(target_block_addr));
+		target_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
+		// delete in block scale
+		if((cmpVec[primary_tag].Operation == "<" || cmpVec[primary_tag].Operation == "<=" || cmpVec[primary_tag].Operation == "<>") 
+					&& target_block_ptr->PreBlockIndex() != 0){
+			RecordBlock* head = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(table_meta->table_addr));
+			deleted_tuple_count += head->RecordNum();
+			while(true){
+				uint32_t next = head->NextBlockIndex();
+				SearchResult* index_entry = index_manager_ptr->searchEntry(index_root, BPTree, head->GetDataPtr(0, table_meta->key_index));
+				index_root = index_manager_ptr->removeEntry(index_root, BPTree, index_entry);
+				delete index_entry;
+				buffer_manager->DeleteBlock((Block* &)head);
+				if(next == target_block_addr) break;
+				else{
+					head = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(next));
+				}
+			}
+			target_block_ptr->PreBlockIndex() = 0;
+			target_block_ptr->is_dirty = true;
+			catalog->UpdateTableDataAddr(tableName, target_block_addr);
+			table_meta->table_addr = target_block_addr;
+		}
+		if(cmpVec[primary_tag].Operation == ">=" && target_block_ptr->NextBlockIndex() != 0 ||
+			cmpVec[primary_tag].Operation == ">" && table_meta->is_primary_key){
+			RecordBlock* head = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(target_block_ptr->NextBlockIndex()));
+			deleted_tuple_count += head->RecordNum();
+			while(true){
+				uint32_t next = head->NextBlockIndex();
+				SearchResult* index_entry = index_manager_ptr->searchEntry(index_root, BPTree, 
+											head->GetDataPtr(0, table_meta->key_index));
+				index_root = index_manager_ptr->removeEntry(index_root, BPTree, index_entry);
+				delete index_entry;
+				buffer_manager->DeleteBlock((Block* &)head);
+				if(next == target_block_addr) break;
+				else{
+					head = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(next));
+				}
+			}
+			target_block_ptr->NextBlockIndex() == 0;
+			target_block_ptr->is_dirty = true;
+		}
+		buffer_manager->ReleaseBlock((Block* &)target_block_ptr);
 	}
-	else{
-
+	// delete in tuple scale
+	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(table_meta->table_addr));
+	while(true){
+		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
+		unsigned int record_num = data_block_ptr->RecordNum();
+		for(unsigned int i = record_num; i >= 0; i--){
+			if(checkTuple(data_block_ptr, i, table_meta, cmpVec)){
+				if(i == 0 && data_block_ptr->RecordNum() > 1){
+					SearchResult* data_block_entry = index_manager_ptr->searchEntry(index_root, BPTree, 
+													data_block_ptr->GetDataPtr(0, table_meta->key_index));
+					index_root = index_manager_ptr->removeEntry(index_root, BPTree, data_block_entry);
+					index_root = index_manager_ptr->insertEntry(index_root, BPTree, 
+										data_block_ptr->GetDataPtr(1, table_meta->key_index),data_block_ptr->BlockIndex());
+					delete data_block_entry;
+				}
+				data_block_ptr->RemoveTuple(i);
+				deleted_tuple_count += 1;
+			}
+		}
+		if(data_block_ptr->RecordNum() == 0){
+			// if only one record remained in the block
+			if(data_block_ptr->PreBlockIndex() == 0 && data_block_ptr->NextBlockIndex() == 0){}
+			else if(data_block_ptr->PreBlockIndex() == 0){
+				catalog->UpdateTableDataAddr(tableName, data_block_ptr->NextBlockIndex());
+				table_meta->table_addr = data_block_ptr->NextBlockIndex();
+				Block* next_block_ptr = buffer_manager->GetBlock(data_block_ptr->NextBlockIndex());
+				next_block_ptr->PreBlockIndex() = 0;
+				next_block_ptr->is_dirty = true;
+				buffer_manager->ReleaseBlock(next_block_ptr);
+				buffer_manager->DeleteBlock((Block* &)data_block_ptr);
+			}
+			else if(data_block_ptr->NextBlockIndex() == 0){
+				Block* pre_block_ptr = buffer_manager->GetBlock(data_block_ptr->PreBlockIndex());
+				pre_block_ptr->NextBlockIndex() = 0;
+				pre_block_ptr->is_dirty = true;
+				buffer_manager->ReleaseBlock(pre_block_ptr);
+				buffer_manager->DeleteBlock((Block* &)data_block_ptr);
+			}
+			else{
+				Block* pre_block_ptr = buffer_manager->GetBlock(data_block_ptr->PreBlockIndex());
+				Block* next_block_ptr = buffer_manager->GetBlock(data_block_ptr->NextBlockIndex());
+				pre_block_ptr->NextBlockIndex() = next_block_ptr->BlockIndex();
+				next_block_ptr->PreBlockIndex() = pre_block_ptr->BlockIndex();
+				pre_block_ptr->is_dirty = true;
+				next_block_ptr->is_dirty = true;
+				buffer_manager->ReleaseBlock(next_block_ptr);
+				buffer_manager->ReleaseBlock(pre_block_ptr);
+				buffer_manager->DeleteBlock((Block* &)data_block_ptr);
+			}
+		}
+		uint32_t next = data_block_ptr->NextBlockIndex();
+		buffer_manager->ReleaseBlock((Block* &)data_block_ptr);
+		if(next == 0){
+			break;
+		}
+		else{
+			data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(next));
+		}
 	}
-
-
+	buffer_manager->ReleaseBlock(index_root);
+	delete table_meta;
+	delete index_manager_ptr;
+	cout << deleted_tuple_count << " Rows Affected" << endl;
 }
 
 void ExeDropIndex(const std::string& tableName, const std::string& indexName)
@@ -699,7 +841,7 @@ void ExeDropIndex(const std::string& tableName, const std::string& indexName)
 	try{
 		catalog->DropIndex(indexName);
 	}
-	catch(const IndexNotFound){
+	catch(const IndexNotFound &){
 		cout << "Index `" << indexName << "` Not Found" << endl;
 		return;
 	}
