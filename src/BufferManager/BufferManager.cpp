@@ -2,6 +2,7 @@
 #include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <iostream>
 using namespace std;
 
 // make a new SRC_FILE
@@ -19,6 +20,7 @@ BufferManager::BufferManager():SRC_FILE_NAME(DB_FILE),MAX_BLOCK_NUM(BLOCK_NUM){
 	else{
 		this->LoadSrcFile();
 	}
+	this->pinned_block_count = 0;
 }
 void BufferManager::CreateSrcFile() {
 	SchemaBlock* block_zero = new SchemaBlock();
@@ -36,6 +38,7 @@ BufferManager::~BufferManager() {
 	while (this->block_list_head) {
 		this->RemoveBlock(this->block_list_head);
 	}
+	cout << "Pinned Block Count: " << this->pinned_block_count << endl;
 }
 
 // hash block index to fit into the hash table
@@ -66,6 +69,7 @@ BlockNode* & BufferManager::GetBlockNode(uint32_t block_index){
 // if block in buffer, move it to the head of the list and return it
 // otherwise read it from src file and insert to the head of list and return
 Block* BufferManager::GetBlock(uint32_t block_index){
+	this->pinned_block_count++;
 	BlockNode* block_node_ptr = this->GetBlockNode(block_index);
 	if(block_node_ptr){
 		if(block_node_ptr->pre){
@@ -110,6 +114,7 @@ void BufferManager::ReleaseBlock(Block* & block_ptr){
 	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
 	block_ptr = NULL;
 	block_node_ptr->is_pined = false;
+	this->pinned_block_count--;
 }
 
 // interface for outer program to get an empty block which not on the disc
