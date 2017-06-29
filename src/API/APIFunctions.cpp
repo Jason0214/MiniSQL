@@ -238,12 +238,12 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 			pos = indexManager->searchEntry(indexRoot, BPTree, (void*)indexContent.c_str());
 			break;
 		}
-		//
-		//TODO: check if a result is found or not
-		//
-		ptr = *(pos->ptrs + pos->index);
-		srcBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(ptr));
-		delete pos;
+		//if the b+tree is empty, pos will be nullptr
+		if (pos) {
+			ptr = *(pos->ptrs + pos->index);
+			srcBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(ptr));
+			delete pos;
+		}
 	}
 	//no primary index found
 	else {
@@ -257,6 +257,9 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 				if (checkTuple(srcBlock, i, tableMeta, indexCmp)) {
 					break;
 				}
+			}
+			if (*(int*)srcBlock->GetDataPtr(i, 0) == 254) {
+				cout << "catch" << endl;
 			}
 			//if the tuple fit the comparisonVector
 			if (checkTuple(srcBlock, i, tableMeta, cmpVec)) {
@@ -760,7 +763,7 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 	if(!record_block_ptr->CheckEmptySpace()){
 		RecordBlock* new_block_ptr = catalog->SplitRecordBlock(record_block_ptr, table_meta->attr_type_list, 
 												table_meta->attr_num, table_meta->key_index);
-		index_manager->insertEntry(index_root, BPTree, new_block_ptr->GetDataPtr(0, table_meta->key_index), record_block_addr);
+		index_manager->insertEntry(index_root, BPTree, new_block_ptr->GetDataPtr(0, table_meta->key_index), new_block_ptr->BlockIndex());
 		buffer_manager->ReleaseBlock((Block* &)new_block_ptr);
 	}
 	// update index root
