@@ -6,6 +6,8 @@
 
 using namespace std;
 
+static ofstream logg("log.txt");
+
 void Flush()
 {
 	// Don't forget to flush or the parent process will get nothing!
@@ -17,11 +19,11 @@ static void CheckConnection()
 	if (cin.fail())
 	{
 		// If parent process fails, exit child process
+		logg << "IO Failed" << endl;
+		logg.flush();
 		throw IOFailure();
 	}
 }
-
-static ofstream logg("log.txt");
 
 template <typename T> T GetObject()
 {

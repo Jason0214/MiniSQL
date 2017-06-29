@@ -723,14 +723,15 @@ RecordBlock* Catalog::SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* ty
 		buffer_manager.ReleaseBlock(next_block_ptr);
 	}
 	new_block_ptr->PreBlockIndex() = origin_block_ptr->BlockIndex();
-	new_block_ptr->NextBlockIndex() = origin_block_ptr->NextBlockIndex();	
-	origin_block_ptr->NextBlockIndex() = new_block_ptr->BlockIndex();		
+	new_block_ptr->NextBlockIndex() = origin_block_ptr->NextBlockIndex();
+	origin_block_ptr->NextBlockIndex() = new_block_ptr->BlockIndex();
 
 	new_block_ptr->Format(types, num, key);
 
 	unsigned int half_of_records = origin_block_ptr->RecordNum()/2;
 	memcpy(new_block_ptr->GetDataPtr(0, 0), origin_block_ptr->GetDataPtr(half_of_records, 0), 
 					(size_t)(new_block_ptr->tuple_size*(origin_block_ptr->RecordNum() - half_of_records)));
+	new_block_ptr->RecordNum() = origin_block_ptr->RecordNum() - half_of_records;
 	origin_block_ptr->RecordNum() = half_of_records;
 	new_block_ptr->is_dirty = true;
 	origin_block_ptr->is_dirty = true;

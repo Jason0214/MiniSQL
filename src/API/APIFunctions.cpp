@@ -786,6 +786,7 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values){
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	int temp_int_buf[32];
 	int temp_int_pointer = 0;
