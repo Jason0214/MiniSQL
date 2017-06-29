@@ -436,8 +436,8 @@ void Catalog::UpdateTablePrimaryIndex(const std::string & table_name, uint32_t n
 	uint32_t table_block_addr = this->FindTableBlock(table_name);
 	TableBlock* table_block_ptr = dynamic_cast<TableBlock*>(buffer_manager.GetBlock(table_block_addr));
 
-	unsigned short row = table_block_ptr->FindRecordIndex(table_name.c_str());
-	if(strcmp(table_name.c_str(), (char*)table_block_ptr->GetTableInfoPtr(row)) != 0){
+	int row = table_block_ptr->FindRecordIndex(table_name.c_str());
+	if(row < 0 || strcmp(table_name.c_str(), (char*)table_block_ptr->GetTableInfoPtr(row)) != 0){
 		buffer_manager.ReleaseBlock((Block* &) table_block_ptr);
 		throw TableNotFound(table_name.c_str());
 	}
@@ -541,8 +541,8 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 				index_block_addr = leaf_node->ptrs()[result_ptr->index + 1];
 			}
 			else{
+				result_ptr->index--;
 				index_block_addr =leaf_node->ptrs()[result_ptr->index];
-				result_ptr->index--;				
 			}
 		}
 	}
