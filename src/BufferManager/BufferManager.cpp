@@ -202,9 +202,10 @@ BlockNode* BufferManager::AddBlock(Block* blk_to_add){
 
 // free a block from buffer
 void BufferManager::RemoveBlock(BlockNode* node_to_remove){
-	if(node_to_remove->data->is_dirty){
-		this->WriteBack(node_to_remove);
-	}
+//	if(node_to_remove->data->is_dirty){
+//		this->WriteBack(node_to_remove);
+//	}
+	this->WriteBack(node_to_remove);
 	if(node_to_remove->pre){
 		node_to_remove->pre->next = node_to_remove->next;
 	}
