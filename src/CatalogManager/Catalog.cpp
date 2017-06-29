@@ -241,14 +241,13 @@ void Catalog::DeleteTable(const string & table_name){
 		index_manager.removeIndex(index_tree_root, BPTree);
 		buffer_manager.ReleaseBlock(index_tree_root);
 	}
-	TableBlock* data_block_ptr = dynamic_cast<TableBlock*>(buffer_manager.GetBlock(table_meta->table_addr));
+	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(table_meta->table_addr));
 	while (data_block_ptr->NextBlockIndex()!= 0) {
 		Block* next_block_ptr = buffer_manager.GetBlock(data_block_ptr->NextBlockIndex());
 		data_block_ptr->NextBlockIndex() = next_block_ptr->NextBlockIndex();
 		buffer_manager.DeleteBlock(next_block_ptr);
 	}
 	data_block_ptr->RecordNum() = 0;
-	data_block_ptr->StackPtr() = BLOCK_SIZE - 1;
 	data_block_ptr->is_dirty = true;
 	buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
 }
@@ -715,7 +714,7 @@ void Catalog::DropIndex(const string & index_name){
 
 RecordBlock* Catalog::SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key){
 	// create a new table block and move half of data in `record_block_ptr` to the new block	
-	RecordBlock* new_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.CreateBlock(DB_TABLE_BLOCK));
+	RecordBlock* new_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.CreateBlock(DB_RECORD_BLOCK));
 	// maintain the list
 	if(origin_block_ptr->NextBlockIndex() != 0){
 		Block* next_block_ptr = buffer_manager.GetBlock(origin_block_ptr->NextBlockIndex());
