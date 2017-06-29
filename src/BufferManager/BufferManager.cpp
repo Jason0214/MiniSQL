@@ -34,11 +34,10 @@ void BufferManager::LoadSrcFile() {
 
 
 // before exit, check and write back all the blocks
-BufferManager::~BufferManager() {
+void BufferManager::WriteBackAll() {
 	while (this->block_list_head) {
 		this->RemoveBlock(this->block_list_head);
 	}
-	cout << "Pinned Block Count: " << this->pinned_block_count << endl;
 }
 
 // hash block index to fit into the hash table
