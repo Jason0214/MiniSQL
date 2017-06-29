@@ -760,7 +760,7 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 	if(!record_block_ptr->CheckEmptySpace()){
 		RecordBlock* new_block_ptr = catalog->SplitRecordBlock(record_block_ptr, table_meta->attr_type_list, 
 												table_meta->attr_num, table_meta->key_index);
-		index_manager->insertEntry(index_root, BPTree, new_block_ptr->GetDataPtr(0, table_meta->key_index), record_block_addr);
+		index_manager->insertEntry(index_root, BPTree, new_block_ptr->GetDataPtr(0, table_meta->key_index), new_block_ptr->BlockIndex());
 		buffer_manager->ReleaseBlock((Block* &)new_block_ptr);
 	}
 	// update index root
