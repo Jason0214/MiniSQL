@@ -8,7 +8,7 @@ using namespace std;
 
 static string Command;
 
-int main()
+int main_api()
 {
 	try
 	{
