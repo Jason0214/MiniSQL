@@ -238,12 +238,12 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 			pos = indexManager->searchEntry(indexRoot, BPTree, (void*)indexContent.c_str());
 			break;
 		}
-		//
-		//TODO: check if a result is found or not
-		//
-		ptr = *(pos->ptrs + pos->index);
-		srcBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(ptr));
-		delete pos;
+		//if the b+tree is empty, pos will be nullptr
+		if (pos) {
+			ptr = *(pos->ptrs + pos->index);
+			srcBlock = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(ptr));
+			delete pos;
+		}
 	}
 	//no primary index found
 	else {
@@ -257,6 +257,9 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 				if (checkTuple(srcBlock, i, tableMeta, indexCmp)) {
 					break;
 				}
+			}
+			if (*(int*)srcBlock->GetDataPtr(i, 0) == 254) {
+				cout << "catch" << endl;
 			}
 			//if the tuple fit the comparisonVector
 			if (checkTuple(srcBlock, i, tableMeta, cmpVec)) {
@@ -283,7 +286,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete[] tuple;
 	//drop the srcTable if it's a temp table
 	std::regex e("^_tmp");
-	if (regex_match(tableName, e)) {
+	if (std::regex_match(tableName, e)) {
 		ExeDropTable(tableName);
 	}
 #ifdef __DEBUG__
@@ -363,7 +366,7 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete[] newTypeList;
 	//drop the srcTable if it's a temp table
 	std::regex e("^_tmp");
-	if (regex_match(tableName, e)) {
+	if (std::regex_match(tableName, e)) {
 		ExeDropTable(tableName);
 	}
 #ifdef __DEBUG__
@@ -457,7 +460,7 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 			//second loop:srcBlock2
 			while (true) {
 				srcBlock2->Format(tableMeta2->attr_type_list, tableMeta2->attr_num, tableMeta2->key_index);
-				for (int j = 0; j < srcBlock1->RecordNum(); j++) {
+				for (int j = 0; j < srcBlock2->RecordNum(); j++) {
 					bool result = true; //compare result
 					for (int k = 0;k < (int)commonAttrIndex1.size();k++) {
 						DBenum type = tableMeta1->attr_type_list[commonAttrIndex1[k]];
@@ -513,10 +516,10 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	delete[] newTypeList;
 	//drop the srcTable if it's a temp table
 	std::regex e("^_tmp");
-	if (regex_match(tableName1, e)) {
+	if (std::regex_match(tableName1, e)) {
 		ExeDropTable(tableName1);
 	}
-	if (regex_match(tableName2, e)) {
+	if (std::regex_match(tableName2, e)) {
 		ExeDropTable(tableName2);
 	}
 #ifdef __DEBUG__
@@ -581,7 +584,7 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 			//second loop:srcBlock2
 			while (true) {
 				srcBlock2->Format(tableMeta2->attr_type_list, tableMeta2->attr_num, tableMeta2->key_index);
-				for (int j = 0; j < srcBlock1->RecordNum(); j++) {
+				for (int j = 0; j < srcBlock2->RecordNum(); j++) {
 					
 					//join two tuples
 					for (int ii = 0;ii < tableMeta1->attr_num;ii++) {
@@ -620,10 +623,10 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 	delete[] newTypeList;
 	//drop the srcTable if it's a temp table
 	std::regex e("^_tmp");
-	if (regex_match(tableName1, e)) {
+	if (std::regex_match(tableName1, e)) {
 		ExeDropTable(tableName1);
 	}
-	if (regex_match(tableName2, e)) {
+	if (std::regex_match(tableName2, e)) {
 		ExeDropTable(tableName2);
 	}
 #ifdef __DEBUG__
@@ -638,9 +641,10 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 
 
 	// if table on disk
+	std::string tableName = sourceTableName;
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
-	TableMeta* tableMeta = catalog->GetTableMeta(sourceTableName);
+	TableMeta* tableMeta = catalog->GetTableMeta(tableName);
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
 
 	RecordBlock* result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
@@ -666,8 +670,15 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		result_block_ptr =  dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
 	}
 	cout << "end_result" << endl;
+
 	// if table is a temperary table not on disk
 		//TODO
+		
+	//drop the srcTable if it's a temp table
+	std::regex e("^_tmp");
+	if (std::regex_match(tableName, e)) {
+		ExeDropTable(tableName);
+	}
 }
 
 void EndQuery()
