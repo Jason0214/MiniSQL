@@ -731,6 +731,7 @@ RecordBlock* Catalog::SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* ty
 	unsigned int half_of_records = origin_block_ptr->RecordNum()/2;
 	memcpy(new_block_ptr->GetDataPtr(0, 0), origin_block_ptr->GetDataPtr(half_of_records, 0), 
 					(size_t)(new_block_ptr->tuple_size*(origin_block_ptr->RecordNum() - half_of_records)));
+	new_block_ptr->RecordNum() = origin_block_ptr->RecordNum() - half_of_records;
 	origin_block_ptr->RecordNum() = half_of_records;
 	new_block_ptr->is_dirty = true;
 	origin_block_ptr->is_dirty = true;
