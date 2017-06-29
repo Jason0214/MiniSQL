@@ -6,6 +6,7 @@
 #include "../Type/ConstChar.h"
 #include <string>
 #include <sstream>
+#include <regex>
 
 //may add to record manager
 RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBlock* dstBlock,BufferManager* bufferManager) {
@@ -23,7 +24,7 @@ RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBl
 //compare template function
 template <class T>
 bool typedCompare(const void* a, const void* b, const std::string &operation) {
-	cout << *(T*)a << " " << *(T*)b << endl;
+	//cout << *(T*)a << " " << *(T*)b << endl;
 	if (operation == ">") {
 		return *(T*)a > *(T*)b;
 	}
@@ -280,6 +281,11 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete[] tuple;
 	cout << "select result:";
 	ExeOutputTable(tableAlias, resultTableName);
+	//drop the srcTable if it's a temp table
+	std::regex e("^tmp");
+	if (regex_match(tableName, e)) {
+		ExeDropTable(tableName);
+	}
 }
 
 
@@ -353,6 +359,11 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete[] newTypeList;
 	cout << "project result:";
 	ExeOutputTable(tableAlias, resultTableName);
+	//drop the srcTable if it's a temp table
+	std::regex e("^tmp");
+	if (regex_match(tableName, e)) {
+		ExeDropTable(tableName);
+	}
 }
 
 //attr is sorted
@@ -496,6 +507,14 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	delete[] newTypeList;
 	cout << "Natural join result:";
 	ExeOutputTable(tableAlias, resultTableName);
+	//drop the srcTable if it's a temp table
+	std::regex e("^tmp");
+	if (regex_match(tableName1, e)) {
+		ExeDropTable(tableName1);
+	}
+	if (regex_match(tableName2, e)) {
+		ExeDropTable(tableName2);
+	}
 }
 
 void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName1,
@@ -593,6 +612,14 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 	delete[] newTypeList;
 	cout << "Cartesian product result:";
 	ExeOutputTable(tableAlias, resultTableName);
+	//drop the srcTable if it's a temp table
+	std::regex e("^tmp");
+	if (regex_match(tableName1, e)) {
+		ExeDropTable(tableName1);
+	}
+	if (regex_match(tableName2, e)) {
+		ExeDropTable(tableName2);
+	}
 }
 
 void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableName)
@@ -683,7 +710,7 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 			}
 			else{
 				result_ptr->index--;
-				record_block_addr = *(result_ptr->ptrs + result_ptr->index - 1);		
+				record_block_addr = *(result_ptr->ptrs + result_ptr->index);		
 			}
 		}
 	}
