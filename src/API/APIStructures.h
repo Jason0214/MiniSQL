@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 
+#include "stdint.h"
+
 using namespace std;
 
 typedef string TableAlias;
@@ -53,7 +55,8 @@ typedef struct
 
 typedef vector<AttrDefinition> AttrDefinitionVector;
 
-typedef struct{
+typedef struct
+{
 	uint32_t begin;
 	uint32_t end;
 } TraversalAddr;
