@@ -6,8 +6,9 @@
 #include "../Type/ConstChar.h"
 #include <string>
 #include <sstream>
+#include <regex>
 
-//#define __DEBUG__
+#define __DEBUG__
 
 //may add to record manager
 RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBlock* dstBlock,BufferManager* bufferManager) {
@@ -25,7 +26,7 @@ RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBl
 //compare template function
 template <class T>
 bool typedCompare(const void* a, const void* b, const std::string &operation) {
-	cout << *(T*)a << " " << *(T*)b << endl;
+	//cout << *(T*)a << " " << *(T*)b << endl;
 	if (operation == ">") {
 		return *(T*)a > *(T*)b;
 	}
@@ -280,6 +281,11 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	if(indexManager) delete indexManager;
 	delete tableMeta;
 	delete[] tuple;
+	//drop the srcTable if it's a temp table
+	std::regex e("^_tmp");
+	if (regex_match(tableName, e)) {
+		ExeDropTable(tableName);
+	}
 #ifdef __DEBUG__
 	cout << "select result:";
 	ExeOutputTable(tableAlias, resultTableName);
@@ -355,6 +361,11 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
+	//drop the srcTable if it's a temp table
+	std::regex e("^_tmp");
+	if (regex_match(tableName, e)) {
+		ExeDropTable(tableName);
+	}
 #ifdef __DEBUG__
 	cout << "project result:";
 	ExeOutputTable(tableAlias, resultTableName);
@@ -500,6 +511,14 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
+	//drop the srcTable if it's a temp table
+	std::regex e("^_tmp");
+	if (regex_match(tableName1, e)) {
+		ExeDropTable(tableName1);
+	}
+	if (regex_match(tableName2, e)) {
+		ExeDropTable(tableName2);
+	}
 #ifdef __DEBUG__
 	cout << "Natural join result:";
 	ExeOutputTable(tableAlias, resultTableName);
@@ -599,6 +618,14 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
+	//drop the srcTable if it's a temp table
+	std::regex e("^_tmp");
+	if (regex_match(tableName1, e)) {
+		ExeDropTable(tableName1);
+	}
+	if (regex_match(tableName2, e)) {
+		ExeDropTable(tableName2);
+	}
 #ifdef __DEBUG__
 	cout << "Cartesian product result:";
 	ExeOutputTable(tableAlias, resultTableName);

@@ -28,7 +28,7 @@ template <typename T> T GetObject()
 	CheckConnection();
 	T result;
 	cin >> result;
-	logg << "echo << " << result << endl;
+	logg << result << endl;
 	logg.flush();
 	return result;
 }

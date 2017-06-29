@@ -2,6 +2,7 @@
 #define _BUFFER_MANAGER_
 #include <string>
 #include <cstring>
+#include <iostream>
 #include "Block.h"
 
 #define DB_FILE ("data.db")

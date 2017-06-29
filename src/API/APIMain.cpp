@@ -16,7 +16,7 @@ int main()
 		{
 			Command = GetString();
 
-			if (Command == "quit") return 0;
+			if (Command == "quit") goto _QUIT;
 			else if (Command == "begin_query") AcceptQuery();
 			else if (Command == "begin_insert") AcceptInsert();
 			else if (Command == "begin_update") AcceptUpdate();
@@ -40,11 +40,13 @@ int main()
 		cout << "Invalid Command: " + e.ErrorCommand << endl;
 		Flush();
 	}
-	catch (...)
+	catch (exception e)
 	{
-		cout << "Fatal Error in API" << endl;
+		cout << e.what() << " Fatal Error in API" << endl;
 		Flush();
 	}
 
+_QUIT:
+	OnQuit();
 	return 0;
 }

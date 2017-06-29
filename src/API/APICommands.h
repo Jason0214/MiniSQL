@@ -11,6 +11,8 @@ public:
 	InvalidCommand(std::string errorCommand) { ErrorCommand = errorCommand; }
 };
 
+void OnQuit();
+
 void AcceptQuery();
 
 void AcceptInsert();
