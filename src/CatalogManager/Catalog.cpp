@@ -317,7 +317,8 @@ void Catalog::DropTable(const string & table_name){
 				&ConstChar<32>((char*)table_block_ptr->GetTableInfoPtr(0)), table_block_ptr->BlockIndex());	
 	}
 	else if(table_block_ptr->RecordNum() == 0){
-	// the block would be empty remove it from link list
+		index_tree_root = index_manager.removeEntry(index_tree_root, BPTree, result_ptr);
+		// the block would be empty remove it from link list
 		if(table_block_ptr->PreBlockIndex() == 0 && table_block_ptr->NextBlockIndex() == 0){}
 		else if(table_block_ptr->PreBlockIndex() == 0){
 			this->UpdateDatabaseTableData(this->current_database_name, table_block_ptr->NextBlockIndex());
