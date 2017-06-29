@@ -561,7 +561,7 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 			}
 			else{
 				result_ptr->index--;
-				record_block_addr = *(result_ptr->ptrs + result_ptr->index - 1);		
+				record_block_addr = *(result_ptr->ptrs + result_ptr->index);		
 			}
 		}
 	}
