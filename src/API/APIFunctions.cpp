@@ -7,6 +7,8 @@
 #include <string>
 #include <sstream>
 
+//#define __DEBUG__
+
 //may add to record manager
 RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBlock* dstBlock,BufferManager* bufferManager) {
 	if (!dstBlock->CheckEmptySpace()) {
@@ -278,8 +280,10 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	if(indexManager) delete indexManager;
 	delete tableMeta;
 	delete[] tuple;
+#ifdef __DEBUG__
 	cout << "select result:";
 	ExeOutputTable(tableAlias, resultTableName);
+#endif
 }
 
 
@@ -351,8 +355,10 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
+#ifdef __DEBUG__
 	cout << "project result:";
 	ExeOutputTable(tableAlias, resultTableName);
+#endif
 }
 
 //attr is sorted
@@ -494,8 +500,10 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
+#ifdef __DEBUG__
 	cout << "Natural join result:";
 	ExeOutputTable(tableAlias, resultTableName);
+#endif
 }
 
 void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName1,
@@ -591,8 +599,10 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 	delete[] tuple;
 	delete[] newNameList;
 	delete[] newTypeList;
+#ifdef __DEBUG__
 	cout << "Cartesian product result:";
 	ExeOutputTable(tableAlias, resultTableName);
+#endif
 }
 
 void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableName)
