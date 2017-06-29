@@ -46,12 +46,9 @@ int main_api()
 		Flush();
 	}
 
-<<<<<<< HEAD
 _QUIT:
 	OnQuit();
 	cout << "API Quit" << endl;
 	Flush();
-=======
->>>>>>> 4ef8e46844892acc832bce8b158fd0ef92637b05
 	return 0;
 }
