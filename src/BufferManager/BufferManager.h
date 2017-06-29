@@ -26,18 +26,21 @@ public:
 		static BufferManager theBufferManager;
 		return theBufferManager;
 	}
-	~BufferManager();
+	~BufferManager() {
+		this->WriteBackAll();
+		cout << "Pinned Block Count: " << this->pinned_block_count << endl;
+	};
 
 	Block* GetBlock(uint32_t blk_index);
 	Block* CreateBlock(DBenum = (DBenum)0);
 	void WriteToDisc(Block* block_ptr);
 	void ReleaseBlock(Block* & block_ptr);
 	void DeleteBlock(Block* & block_ptr);
+	void WriteBackAll();
 private:
 	BufferManager();
 	BufferManager(const BufferManager &);
 	BufferManager & operator=(const BufferManager &);
-
 
 	uint32_t AllocNewBlock();  
 	void WriteBack(BlockNode* blk_node_ptr){
