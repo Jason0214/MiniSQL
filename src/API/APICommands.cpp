@@ -3,6 +3,7 @@
 #include "APIFunctions.h"
 #include "APIStructures.h"
 #include "IO.h"
+#include "../BufferManager/BufferManager.h"
 
 using namespace std;
 
@@ -224,4 +225,10 @@ void AcceptCreateIndex()
 void AcceptDropIndex()
 {
 	ExeDropIndex(GetString(), GetString());
+}
+
+void OnQuit()
+{
+	BufferManager& buf = BufferManager::Instance();
+	buf.WriteBackAll();
 }

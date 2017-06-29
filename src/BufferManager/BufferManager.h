@@ -2,6 +2,7 @@
 #define _BUFFER_MANAGER_
 #include <string>
 #include <cstring>
+#include <iostream>
 #include "Block.h"
 
 #define DB_FILE ("data.db")
@@ -28,7 +29,7 @@ public:
 	}
 	~BufferManager() {
 		this->WriteBackAll();
-		cout << "Pinned Block Count: " << this->pinned_block_count << endl;
+		std::cout << "Pinned Block Count: " << this->pinned_block_count << std::endl;
 	};
 
 	Block* GetBlock(uint32_t blk_index);
