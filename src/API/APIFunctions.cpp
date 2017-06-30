@@ -857,8 +857,9 @@ TraversalAddr FindAddr(TableMeta* table_meta, int primary_tag, const ComparisonV
 	void* temp_ptr;
 	stringstream ss(cmpVec[primary_tag].Comparand2.Content);
 	ss.exceptions(std::ios::failbit);
-	switch(table_meta->attr_type_list[table_meta->primary_index_addr]){
+	switch(table_meta->attr_type_list[table_meta->key_index]){
 		case DB_TYPE_INT:
+			ss >> temp_int;
 			temp_ptr = &temp_int;
 			break;
 		case DB_TYPE_FLOAT:
@@ -917,7 +918,7 @@ TraversalAddr FindAddr(TableMeta* table_meta, int primary_tag, const ComparisonV
 	else if(cmpVec[primary_tag].Operation == ">="){
 		ret.begin = target_block_ptr->BlockIndex();
 	}
-	else if(cmpVec[primary_tag].Operation == ">"){
+	else if(cmpVec[primary_tag].Operation == ">" && target_block_ptr->NextBlockIndex() != 0){
 		RecordBlock* next_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(target_block_ptr->NextBlockIndex()));
 		while(true){
 			next_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
@@ -936,7 +937,7 @@ TraversalAddr FindAddr(TableMeta* table_meta, int primary_tag, const ComparisonV
 			}
 		}
 	}
-	else if(cmpVec[primary_tag].Operation == "="){
+	else if(cmpVec[primary_tag].Operation == "=" && target_block_ptr->NextBlockIndex() != 0){
 		ret.begin = target_block_ptr->BlockIndex();
 		RecordBlock* next_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(target_block_ptr->NextBlockIndex()));	
 		while(true){
@@ -1065,7 +1066,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 			index_root = index_manager_ptr->removeEntry(index_root, BPTree, data_block_entry);
 			delete data_block_entry;
 
-			for (int i = record_num; i >= 0; i--) {
+			for (int i = record_num - 1; i >= 0; i--) {
 				if (checkTuple(data_block_ptr, i, table_meta, cmpVec)) {
 					data_block_ptr->SetTupleValue(i, attr_index, temp_ptr);
 					if (ptr_compare(temp_ptr, data_block_ptr->GetDataPtr(0, attr_index), attr_type) < 0
@@ -1172,13 +1173,12 @@ void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 		end_addr = addr_struct.end;
 	}
 
-
 	// delete in tuple scale
 	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(begin_addr));
 	while(true){
 		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
-		unsigned int record_num = data_block_ptr->RecordNum();
-		for(unsigned int i = record_num; i >= 0; i--){
+		int record_num = data_block_ptr->RecordNum();
+		for(int i = record_num - 1; i >= 0; i--){
 			if(checkTuple(data_block_ptr, i, table_meta, cmpVec)){
 				if(i == 0 && data_block_ptr->RecordNum() > 1){
 					SearchResult* data_block_entry = index_manager_ptr->searchEntry(index_root, BPTree, 
