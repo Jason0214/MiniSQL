@@ -974,7 +974,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	catch(const TableNotFound &){
 		cout << "Table Name `" << tableName << "` Not Found" << endl;
 	}
-	// find attribute index
+	// find attribute index and make sure it exists in the tab;e
 	int attr_index = -1;
 	for(int i = 0; i < table_meta->attr_num; i++){
 		if(table_meta->attr_name_list[i] == attrName){
@@ -987,21 +987,16 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 		cout << "Attribute Name `" << attrName << "` Not Found" << endl;
 		return;
 	}
-	int primary_tag = -1;
-	for (unsigned int i = 0; i < cmpVec.size(); i++) {
-		if (cmpVec[i].Comparand1.TypeName == "Attribute" &&
-			table_meta->attr_name_list[table_meta->key_index] == cmpVec[i].Comparand1.Content) {
-			primary_tag = i;
-		}
-	}
-	// temp var
+
+	// temp var to transform `value` to const void*
 	int temp_int;
 	float temp_float;
 	void* temp_ptr;
-	stringstream ss(cmpVec[primary_tag].Comparand2.Content);
+	stringstream ss(value);
 	ss.exceptions(std::ios::failbit);
-	switch (table_meta->attr_type_list[table_meta->primary_index_addr]) {
+	switch (table_meta->attr_type_list[attr_index]) {
 	case DB_TYPE_INT:
+		ss >> temp_int;
 		temp_ptr = &temp_int;
 		break;
 	case DB_TYPE_FLOAT:
@@ -1009,21 +1004,30 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 		temp_ptr = &temp_float;
 		break;
 	default:
-		temp_ptr = (void*)(cmpVec[primary_tag].Comparand2.Content.c_str());
+		temp_ptr = (void*)(value.c_str());
 		break;
 	}
 
+	// test if primary index exists in the cmpVec
+	int primary_tag = -1;
+	for (unsigned int i = 0; i < cmpVec.size(); i++) {
+		if (cmpVec[i].Comparand1.TypeName == "Attribute" &&
+			table_meta->attr_name_list[table_meta->key_index] == cmpVec[i].Comparand1.Content) {
+			primary_tag = i;
+		}
+	}
 	// begin and end address for deletion traversal, here give the default value
-	uint32_t begin_addr;
-	uint32_t end_addr;
+	uint32_t begin_addr = table_meta->table_addr;
+	uint32_t end_addr = 0;
 	if (primary_tag != -1) {
 		TraversalAddr addr_struct = FindAddr(table_meta, primary_tag, cmpVec);
 		begin_addr = addr_struct.begin;
 		end_addr = addr_struct.end;
 	}
-	
 
+	DBenum attr_type = table_meta->attr_type_list[attr_index];
 	if(attr_index != table_meta->key_index){
+		// no need to update primary index
 		RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(begin_addr));
 		while (true) {
 			data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
@@ -1043,10 +1047,35 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	}
 	else{
 		// if attr_index is same as primary key, we should update index
-		DBenum attr_type = table_meta->attr_type_list[attr_index];
 		IndexManager* index_manager_ptr = getIndexManager(attr_type);
 		Block* index_root = buffer_manager->GetBlock(table_meta->primary_index_addr);
 
+		//pre-check whether the new attribute value would cause duplicated primary key
+		if (table_meta->is_primary_key) {
+			uint32_t target_block_addr;
+			SearchResult* block_entry = index_manager_ptr->searchEntry(index_root, BPTree, temp_ptr);
+			if (ptr_compare((void*)((uint64_t)block_entry->data + block_entry->dataLen * block_entry->index), temp_ptr, attr_type) == 0) {
+				target_block_addr = *(block_entry->ptrs + block_entry->index);
+			}
+			else {
+				if (block_entry->index == 0) {
+					target_block_addr = *(block_entry->ptrs + block_entry->index);
+				}
+				else {
+					target_block_addr = *(block_entry->ptrs + block_entry->index - 1);
+				}
+			}
+			delete block_entry;
+			RecordBlock* target_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(target_block_addr));
+			target_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
+			int target_index = target_block_ptr->FindTupleIndex(temp_ptr);
+			if (target_index >= 0 && ptr_compare(temp_ptr, target_block_ptr->GetDataPtr(target_index, table_meta->key_index), attr_type) == 0) {
+				cout << "Duplicated Primary Key" << endl;
+				return;
+			}
+		}
+		
+	/* update begins here */
 		RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(begin_addr));
 		char* buf = new char[data_block_ptr->tuple_size];
 		const void ** data_list = new const void*[table_meta->attr_num];
@@ -1083,7 +1112,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 				for (int i = 1; i < data_block_ptr->RecordNum(); i++) {
 					memcpy(buf, data_block_ptr->GetDataPtr(i, 0), data_block_ptr->tuple_size);
 					int j = i - 1;
-					for (; j >= 0 && ptr_compare(buf, data_block_ptr->GetDataPtr(j, 0), attr_type) < 0; j--) {
+					for (; j >= 0 && ptr_compare(data_list[attr_index], data_block_ptr->GetDataPtr(j, attr_index), attr_type) < 0; j--) {
 						memcpy(data_block_ptr->GetDataPtr(j + 1, 0), data_block_ptr->GetDataPtr(j, 0), data_block_ptr->tuple_size);
 					}
 					memcpy(data_block_ptr->GetDataPtr(j + 1, 0), buf, data_block_ptr->tuple_size);
@@ -1122,7 +1151,6 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 					buffer_manager->DeleteBlock((Block* &)data_block_ptr);
 				}
 			}
-			uint32_t next = data_block_ptr->NextBlockIndex();
 			buffer_manager->ReleaseBlock((Block* &)data_block_ptr);
 			if (next_block_ptr == NULL) break;
 			else {
@@ -1138,9 +1166,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 		delete index_manager_ptr;
 	}
 	delete table_meta;
-	cout << "1 Row Affected" << endl;
-	const TableAliasMap map;
-	ExeOutputTable(map, tableName);
+	cout << updated_tuple_count << " Row Affected" << endl;
 }
 
 //
@@ -1165,8 +1191,8 @@ void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 	}
 
 	// begin and end address for deletion traversal, here give the default value
-	uint32_t begin_addr;
-	uint32_t end_addr;
+	uint32_t begin_addr = table_meta->table_addr;
+	uint32_t end_addr = 0;
 	if(primary_tag != -1){
 		TraversalAddr addr_struct = FindAddr(table_meta, primary_tag, cmpVec);
 		begin_addr = addr_struct.begin;
