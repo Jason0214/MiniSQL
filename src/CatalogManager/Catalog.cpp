@@ -565,7 +565,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	while (true) {
 		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
 		index_root = index_manager_ptr->insertEntry(index_root, BPTree, data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
-		uint32_t next = data_block_ptr->BlockIndex();
+		uint32_t next = data_block_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
 		if (next == 0) break;
 		else data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
@@ -573,7 +573,6 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	uint32_t new_block_addr = index_root->BlockIndex();
 	delete table_meta;
 	delete index_manager_ptr;
-	buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
 	buffer_manager.ReleaseBlock(index_root);
 
 	const void* data_list[3];
