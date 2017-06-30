@@ -285,7 +285,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete tableMeta;
 	delete[] tuple;
 	//drop the srcTable if it's a temp table
-	std::regex e("^_tmp");
+	std::regex e("^_tmp.*");
 	if (std::regex_match(tableName, e)) {
 		ExeDropTable(tableName);
 	}
@@ -365,7 +365,7 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	delete[] newNameList;
 	delete[] newTypeList;
 	//drop the srcTable if it's a temp table
-	std::regex e("^_tmp");
+	std::regex e("^_tmp.*");
 	if (std::regex_match(tableName, e)) {
 		ExeDropTable(tableName);
 	}
@@ -515,7 +515,7 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	delete[] newNameList;
 	delete[] newTypeList;
 	//drop the srcTable if it's a temp table
-	std::regex e("^_tmp");
+	std::regex e("^_tmp.*");
 	if (std::regex_match(tableName1, e)) {
 		ExeDropTable(tableName1);
 	}
@@ -622,7 +622,7 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 	delete[] newNameList;
 	delete[] newTypeList;
 	//drop the srcTable if it's a temp table
-	std::regex e("^_tmp");
+	std::regex e("^_tmp.*");
 	if (std::regex_match(tableName1, e)) {
 		ExeDropTable(tableName1);
 	}
@@ -675,7 +675,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		//TODO
 		
 	//drop the srcTable if it's a temp table
-	std::regex e("^_tmp");
+	std::regex e("^_tmp.*");
 	if (std::regex_match(tableName, e)) {
 		ExeDropTable(tableName);
 	}
