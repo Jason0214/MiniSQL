@@ -8,7 +8,7 @@
 #include <sstream>
 #include <regex>
 
-#define __DEBUG__
+//#define __DEBUG__
 
 //may add to record manager
 RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBlock* dstBlock,BufferManager* bufferManager) {
@@ -1294,7 +1294,7 @@ void ExeDropIndex(const std::string& tableName, const std::string& indexName)
 	return;
 }
 
-void ExeDropTable(const std::string& tableName)
+void ExeDropTable(const std::string& tableName, bool echo)
 {
 	Catalog* catalog = &Catalog::Instance();
 	try{
@@ -1304,7 +1304,7 @@ void ExeDropTable(const std::string& tableName)
 		cout << "Table `" << tableName << "` Not Found" << endl;
 		return ;
 	}
-	cout << "Drop Table `" << tableName << "` Successfully" << endl;
+	if (echo) cout << "Drop Table `" << tableName << "` Successfully" << endl;
 	return;
 }
 

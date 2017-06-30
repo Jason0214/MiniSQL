@@ -214,7 +214,7 @@ void AcceptCreateTable()
 
 void AcceptDropTable()
 {
-	ExeDropTable(GetString());
+	ExeDropTable(GetString(), true);
 }
 
 void AcceptCreateIndex()

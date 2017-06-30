@@ -30,7 +30,7 @@ void ExeDelete(const string& tableName, const ComparisonVector& cmpVec);
 
 void ExeDropIndex(const string& tableName, const string& indexName);
 
-void ExeDropTable(const string& tableName);
+void ExeDropTable(const string& tableName, bool echo = false);
 
 void ExeCreateIndex(const string& tableName, const string& attrName, const string& indexName);
 

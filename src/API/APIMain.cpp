@@ -16,7 +16,7 @@ int main()
 		{
 			Command = GetString();
 
-			if (Command == "quit") return 0;
+			if (Command == "quit") goto _QUIT;
 			else if (Command == "begin_query") AcceptQuery();
 			else if (Command == "begin_insert") AcceptInsert();
 			else if (Command == "begin_update") AcceptUpdate();
