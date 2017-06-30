@@ -169,7 +169,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 		std::cout << e.what() << std::endl;
 		throw(e);
 	}
-	TableMeta* tableMeta = NULL;
+	TableMeta* tableMeta;
 	try{
 		tableMeta = catalog->GetTableMeta(tableName);
 	}
@@ -317,7 +317,7 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 		std::cout << e.what() << std::endl;
 		throw(e);
 	}
-	TableMeta* tableMeta = NULL;
+	TableMeta* tableMeta;
 	try{
 		tableMeta = catalog->GetTableMeta(tableName);
 	}
@@ -657,7 +657,8 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::string tableName = sourceTableName;
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
-	TableMeta* tableMeta = NULL;
+
+	TableMeta* tableMeta;
 	try{
 		tableMeta = catalog->GetTableMeta(tableName);
 	}
