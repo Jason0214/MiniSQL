@@ -175,6 +175,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	const void** tuple = (const void**)(new void*[tableMeta->attr_num]);
 	RecordBlock* srcBlock;
