@@ -647,7 +647,7 @@ void Catalog::DropIndex(const string & index_name){
 	uint32_t index_root_block;
 	while(true){
 		int record_num = index_data_ptr->RecordNum();
-		for(int i = record_num; i >=0; i--){
+		for(int i = record_num - 1; i >=0; i--){
 			if(strcmp((char*)index_data_ptr->GetDataPtr(i, 1), index_name.c_str()) == 0){
 				index_root_block = *(uint32_t*)index_data_ptr->GetDataPtr(i, 2);
 				if(i == 0 && index_data_ptr->RecordNum() > 1){
