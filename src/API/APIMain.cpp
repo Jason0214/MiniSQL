@@ -36,9 +36,9 @@ int main()
 		}
 		catch (InvalidCommand e)
 		{
-			/*cout << "Invalid Command: " + e.ErrorCommand << endl;
+			cout << "Invalid Command: " + e.ErrorCommand << endl;
 			Flush();
-			goto _QUIT;*/
+			goto _QUIT;
 		}
 		catch (Exception e)
 		{

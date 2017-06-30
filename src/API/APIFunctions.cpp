@@ -1371,6 +1371,8 @@ void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& de
 	}
 	catch (const DuplicatedTableName){
 		cout << "Table Named `" << tableName << "` Already Existed" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	cout << "Create Table `" << tableName << "` Successfully" << endl;
