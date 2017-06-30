@@ -175,6 +175,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	const void** tuple = (const void**)(new void*[tableMeta->attr_num]);
 	RecordBlock* srcBlock;
@@ -323,6 +324,7 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	Block* block = bufferManager->GetBlock(tableMeta->table_addr);
 	std::vector<int> attrIndexVec;
@@ -656,12 +658,14 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::string tableName = sourceTableName;
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
+
 	TableMeta* tableMeta;
 	try{
 		tableMeta = catalog->GetTableMeta(tableName);
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
 
@@ -991,6 +995,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	}
 	catch(const TableNotFound &){
 		cout << "Table Name `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	// find attribute index and make sure it exists in the tab;e
 	int attr_index = -1;

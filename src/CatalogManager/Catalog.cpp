@@ -300,10 +300,9 @@ void Catalog::DropTable(const string & table_name){
 	// delete index and data
 
 	uint32_t primary_index_addr = *(uint32_t*)(table_block_ptr->GetTableInfoPtr(i) + 40);
-	if(primary_index_addr != 0) {
-		Block* primary_index_ptr = buffer_manager.GetBlock(primary_index_addr);
-		buffer_manager.DeleteBlock(primary_index_ptr);
-	}
+	Block* primary_index_ptr = buffer_manager.GetBlock(primary_index_addr);
+	buffer_manager.DeleteBlock(primary_index_ptr);
+
 	Block* table_data_ptr = buffer_manager.GetBlock(*(uint32_t*)(table_block_ptr->GetTableInfoPtr(i) + 36));
 	buffer_manager.DeleteBlock(table_data_ptr);
 	
