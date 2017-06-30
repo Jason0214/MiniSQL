@@ -169,7 +169,12 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 		std::cout << e.what() << std::endl;
 		throw(e);
 	}
-	TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+	try{
+		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+	}
+	catch(const TableNotFound &){
+		cout << "Table `" << tableName << "` Not Found" << endl;
+	}
 	const void** tuple = (const void**)(new void*[tableMeta->attr_num]);
 	RecordBlock* srcBlock;
 	vector<Comparison> indexCmp;
@@ -311,7 +316,12 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 		std::cout << e.what() << std::endl;
 		throw(e);
 	}
-	TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+	try{
+		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+	}
+	catch(const TableNotFound &){
+		cout << "Table `" << tableName << "` Not Found" << endl;
+	}
 	Block* block = bufferManager->GetBlock(tableMeta->table_addr);
 	std::vector<int> attrIndexVec;
 	//get attr index
@@ -644,7 +654,12 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::string tableName = sourceTableName;
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
-	TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+	try{
+		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+	}
+	catch(const TableNotFound &){
+		cout << "Table `" << tableName << "` Not Found" << endl;
+	}
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
 
 	RecordBlock* result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
