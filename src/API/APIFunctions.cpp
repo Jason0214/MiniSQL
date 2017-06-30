@@ -806,6 +806,7 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 	delete index_manager;
 	delete result_ptr;
 	cout << "1 Row Affected" << endl;
+	cout << "end_result" << endl;
 }
 
 void ExeInsert(const std::string& tableName, InsertValueVector& values){
@@ -1190,6 +1191,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	}
 	delete table_meta;
 	cout << updated_tuple_count << " Row Affected" << endl;
+	cout << "end_result" << endl;
 }
 
 //
@@ -1286,6 +1288,7 @@ void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 	delete table_meta;
 	delete index_manager_ptr;
 	cout << deleted_tuple_count << " Rows Affected" << endl;
+	cout << "end_result" << endl;
 }
 
 void ExeDropIndex(const std::string& tableName, const std::string& indexName)
@@ -1299,6 +1302,7 @@ void ExeDropIndex(const std::string& tableName, const std::string& indexName)
 		return;
 	}
 	cout << "Drop Index Named `" << indexName << "` Successfully" << endl;
+	cout << "end_result" << endl;
 	return;
 }
 
@@ -1313,6 +1317,7 @@ void ExeDropTable(const std::string& tableName, bool echo)
 		return ;
 	}
 	if (echo) cout << "Drop Table `" << tableName << "` Successfully" << endl;
+	if (echo) cout << "end_result" << endl;
 	return;
 }
 
@@ -1334,6 +1339,7 @@ void ExeCreateIndex(const std::string& tableName, const std::string& attrName, c
 		cout << "Attribute `" << attrName << "` Not Found" << endl;
 	}
 	cout << "Create Index on `" << tableName << "` Successfully" << endl;
+	cout << "end_result" << endl;
 }
 
 void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& defVec)
@@ -1365,6 +1371,7 @@ void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& de
 		cout << "Table Named `" << tableName << "` Already Existed" << endl;
 		return;
 	}
-	cout << "Create Table `" << tableName << "` Successfully" <<endl;
+	cout << "Create Table `" << tableName << "` Successfully" << endl;
+	cout << "end_result" << endl;
 	return;
 }
