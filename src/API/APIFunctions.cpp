@@ -169,8 +169,9 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 		std::cout << e.what() << std::endl;
 		throw(e);
 	}
+	TableMeta* tableMeta = NULL;
 	try{
-		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+		tableMeta = catalog->GetTableMeta(tableName);
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
@@ -316,11 +317,13 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 		std::cout << e.what() << std::endl;
 		throw(e);
 	}
+	TableMeta* tableMeta = NULL;
 	try{
-		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+		tableMeta = catalog->GetTableMeta(tableName);
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	Block* block = bufferManager->GetBlock(tableMeta->table_addr);
 	std::vector<int> attrIndexVec;
@@ -654,11 +657,13 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::string tableName = sourceTableName;
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
+	TableMeta* tableMeta = NULL;
 	try{
-		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+		tableMeta = catalog->GetTableMeta(tableName);
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
 
@@ -988,6 +993,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	}
 	catch(const TableNotFound &){
 		cout << "Table Name `" << tableName << "` Not Found" << endl;
+		return;
 	}
 	// find attribute index and make sure it exists in the tab;e
 	int attr_index = -1;
