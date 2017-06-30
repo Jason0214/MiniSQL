@@ -5,10 +5,16 @@
 #include "../IndexManager/IndexManager.h"
 #include "../Type/ConstChar.h"
 #include <string>
+#include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <regex>
 
 #define __DEBUG__
+//#define __PRETTY__
+#define INTLEN 10
+#define FLOATLEN 12
+#define STRLEN 15
 
 //may add to record manager
 RecordBlock* insertTupleSafe(const void** tuple, TableMeta* tableMeta,  RecordBlock* dstBlock,BufferManager* bufferManager) {
@@ -635,10 +641,9 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 #endif
 }
 
+//print out a table
 void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableName)
 {
-	// Print "end_result" in the last line to stop
-
 
 	// if table on disk
 	std::string tableName = sourceTableName;
@@ -649,16 +654,43 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 
 	RecordBlock* result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
 	result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, record_key);
+#ifdef __PRETTY__
+	//adjust align
+	std::cout << std::left;
+	//print out attr name
+	int borderLen = tableMeta->attr_num - 1;
+	for (int i = 0;i < tableMeta->attr_num;i++) {
+		switch (tableMeta->attr_type_list[i]) {
+		case DB_TYPE_INT: borderLen+=INTLEN;  break;
+		case DB_TYPE_FLOAT: borderLen += FLOATLEN;  break;
+		default:  borderLen += STRLEN;  break;
+		}
+	}
+	std::string horizontalBorder(borderLen, '-');
+	horizontalBorder = " " + horizontalBorder + " ";
+	std::cout << horizontalBorder << std::endl;
+	for (int i = 0;i < tableMeta->attr_num;i++) {
+		std::cout << "|";
+		switch (tableMeta->attr_type_list[i]) {
+		case DB_TYPE_INT: std::cout << std::setw(INTLEN);  break;
+		case DB_TYPE_FLOAT: std::cout << std::setw(FLOATLEN);;  break;
+		default: std::cout << std::setw(STRLEN);;  break;
+		}
+		std::cout << tableMeta->GetAttrName(i);
+	}
+	std::cout << "|" << std::endl << horizontalBorder << std::endl;
+	//print out data
 	while(true){
 		for(unsigned int i = 0; i < result_block_ptr->RecordNum(); i++){
 			for(int j = 0; j < tableMeta->attr_num; j++){
+				std::cout << "|";
 				switch(tableMeta->attr_type_list[j]){
-					case DB_TYPE_INT: cout <<  *(int*)result_block_ptr->GetDataPtr(i, j);  break;
-					case DB_TYPE_FLOAT: cout <<  *(float*)result_block_ptr->GetDataPtr(i, j);  break;
-					default: cout <<  (char*)result_block_ptr->GetDataPtr(i, j);  break;
+				case DB_TYPE_INT: std::cout << std::setw(INTLEN) << *(int*)result_block_ptr->GetDataPtr(i, j);  break;
+				case DB_TYPE_FLOAT: std::cout << std::setw(FLOATLEN) << *(float*)result_block_ptr->GetDataPtr(i, j);  break;
+				default: std::cout << std::setw(STRLEN) << (char*)result_block_ptr->GetDataPtr(i, j);  break;
 				}
-				cout << " ";
 			}
+			std::cout << "|";
 			cout << endl;
 		}
 		uint32_t next = result_block_ptr->NextBlockIndex();
@@ -669,8 +701,31 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		bufferManager->ReleaseBlock((Block* &)result_block_ptr);
 		result_block_ptr =  dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
 	}
-	cout << "end_result" << endl;
-
+	std::cout << horizontalBorder << std::endl;
+	std::cout << "end_result" << std::endl;
+#else
+	//print out data
+	while (true) {
+		for (unsigned int i = 0; i < result_block_ptr->RecordNum(); i++) {
+			for (int j = 0; j < tableMeta->attr_num; j++) {
+				if(j) std::cout << "|";
+				switch (tableMeta->attr_type_list[j]) {
+				case DB_TYPE_INT: std::cout << *(int*)result_block_ptr->GetDataPtr(i, j);  break;
+				case DB_TYPE_FLOAT: std::cout << *(float*)result_block_ptr->GetDataPtr(i, j);  break;
+				default: std::cout << (char*)result_block_ptr->GetDataPtr(i, j);  break;
+				}
+			}
+			cout << endl;
+		}
+		uint32_t next = result_block_ptr->NextBlockIndex();
+		if (next == 0) {
+			bufferManager->ReleaseBlock((Block* &)result_block_ptr);
+			break;
+		}
+		bufferManager->ReleaseBlock((Block* &)result_block_ptr);
+		result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
+	}
+#endif
 	// if table is a temperary table not on disk
 		//TODO
 		
