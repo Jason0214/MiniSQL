@@ -1314,7 +1314,8 @@ void ExeDropTable(const std::string& tableName, bool echo)
 		catalog->DropTable(tableName);
 	}
 	catch (const TableNotFound){
-		cout << "Table `" << tableName << "` Not Found" << endl;
+		if (echo) cout << "Table `" << tableName << "` Not Found" << endl;
+		if (echo) cout << "end_result" << endl;
 		return ;
 	}
 	if (echo) cout << "Drop Table `" << tableName << "` Successfully" << endl;
