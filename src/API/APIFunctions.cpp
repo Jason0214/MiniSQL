@@ -1059,6 +1059,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 			for (int i = 0; i < record_num; i++) {
 				if (checkTuple(data_block_ptr, i, table_meta, cmpVec)) {
 					data_block_ptr->SetTupleValue(i, attr_index, temp_ptr);
+					updated_tuple_count++;
 				}
 			}
 			uint32_t next = data_block_ptr->NextBlockIndex();
@@ -1322,6 +1323,7 @@ void ExeDropTable(const std::string& tableName, bool echo)
 }
 
 void ExeCreateIndex(const std::string& tableName, const std::string& attrName, const string& indexName)
+
 {
 	Catalog* catalog = &Catalog::Instance();
 	try{
