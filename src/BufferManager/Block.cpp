@@ -18,7 +18,7 @@ void TableBlock::InsertTable(const char* table_name, uint32_t table_addr, uint32
 	int table_index = this->FindRecordIndex(table_name);
 	if (table_index < 0) table_index = 0;
 	uint16_t target_addr = DATA_BEG + TABLE_RECORD_SIZE * table_index;
-	if(!strcmp(table_name, (char*)&this->block_data[target_addr])){
+	if(this->RecordNum() != 0 && !strcmp(table_name, (char*)&this->block_data[target_addr])){
 		throw DuplicatedTableName(table_name);
 	}
 	uint16_t tail_addr = this->RecordNum() * TABLE_RECORD_SIZE + DATA_BEG;

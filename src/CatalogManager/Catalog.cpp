@@ -112,7 +112,7 @@ RecordBlock* Catalog::FindDatabaseBlock(const string & db_name){
 		}
 		uint32_t next = db_block_ptr->NextBlockIndex();		
 		buffer_manager.ReleaseBlock((Block* &)db_block_ptr);
-		if(next == 0) throw DatabaseNotFound();
+		if(next == 0) throw DatabaseNotFound("database not found!");
 		db_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
 		db_block_ptr->Format(type_list, 5, 0);
 	}
@@ -139,7 +139,7 @@ void Catalog::UpdateDatabaseInfo(const string & db_name, unsigned int info_type,
 }
 
 void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBenum* attr_type_list, int attr_num, int & key_index){
-	if(!this->database_selected) throw DatabaseNotSelected();
+	if(!this->database_selected) throw DatabaseNotSelected("data base not selected!");
 	// sort attr
 	for (int i = 1; i < attr_num; i++) {
 		string t1 = attr_name_list[i];
@@ -253,7 +253,7 @@ void Catalog::DeleteTable(const string & table_name){
 }
 
 void Catalog::DropTable(const string & table_name){
-	if(!this->database_selected) throw DatabaseNotSelected();
+	if(!this->database_selected) throw DatabaseNotSelected("database not selected!");
 /* delete data */
 	this->DeleteTable(table_name);
 /* search */
@@ -300,10 +300,9 @@ void Catalog::DropTable(const string & table_name){
 	// delete index and data
 
 	uint32_t primary_index_addr = *(uint32_t*)(table_block_ptr->GetTableInfoPtr(i) + 40);
-	if(primary_index_addr != 0) {
-		Block* primary_index_ptr = buffer_manager.GetBlock(primary_index_addr);
-		buffer_manager.DeleteBlock(primary_index_ptr);
-	}
+	Block* primary_index_ptr = buffer_manager.GetBlock(primary_index_addr);
+	buffer_manager.DeleteBlock(primary_index_ptr);
+
 	Block* table_data_ptr = buffer_manager.GetBlock(*(uint32_t*)(table_block_ptr->GetTableInfoPtr(i) + 36));
 	buffer_manager.DeleteBlock(table_data_ptr);
 	
@@ -402,7 +401,7 @@ TableBlock* Catalog::SplitTableBlock(TableBlock* table_block_ptr){
 }
 
 uint32_t Catalog::FindTableBlock(const std::string & table_name){
-	if(!this->database_selected) throw DatabaseNotSelected();
+	if(!this->database_selected) throw DatabaseNotSelected("database not selected");
 /* find the record of `table_name` */
 	TypedIndexManager<ConstChar<32> > index_manager;
 	Block* index_tree_root = buffer_manager.GetBlock(this->table_index_addr);
@@ -495,7 +494,7 @@ TableMeta* Catalog::GetTableMeta(const string & table_name){
 }
 
 void Catalog::CreateIndex(const string & index_name, const string & table_name, const string & attr_name){
-	if(!this->database_selected) throw DatabaseNotSelected();
+	if(!this->database_selected) throw DatabaseNotSelected("database not selected");
 	Block* block_get_by_index_name = NULL;
 	try{
 		block_get_by_index_name = this->FindIndexByName(index_name);
@@ -503,7 +502,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	catch(const IndexNotFound &){}
 	if(block_get_by_index_name){
 		buffer_manager.ReleaseBlock(block_get_by_index_name);
-		throw DuplicatedIndexName();
+		throw DuplicatedIndexName("duplicate index name : " + index_name);
 	}
 
 	TableMeta* table_meta = this->GetTableMeta(table_name);
@@ -517,7 +516,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	}
 	if (secondary_key_index < 0) {
 		delete table_meta;
-		throw AttributeNotFound();
+		throw AttributeNotFound("attribute not found: " + attr_name);
 	}
 /* do finding */
 	// mix table name and index key, the combination is distinct
@@ -566,7 +565,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	while (true) {
 		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
 		index_root = index_manager_ptr->insertEntry(index_root, BPTree, data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
-		uint32_t next = data_block_ptr->BlockIndex();
+		uint32_t next = data_block_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
 		if (next == 0) break;
 		else data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
@@ -574,7 +573,6 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	uint32_t new_block_addr = index_root->BlockIndex();
 	delete table_meta;
 	delete index_manager_ptr;
-	buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
 	buffer_manager.ReleaseBlock(index_root);
 
 	const void* data_list[3];
@@ -647,7 +645,7 @@ void Catalog::DropIndex(const string & index_name){
 	uint32_t index_root_block;
 	while(true){
 		int record_num = index_data_ptr->RecordNum();
-		for(int i = record_num; i >=0; i--){
+		for(int i = record_num - 1; i >=0; i--){
 			if(strcmp((char*)index_data_ptr->GetDataPtr(i, 1), index_name.c_str()) == 0){
 				index_root_block = *(uint32_t*)index_data_ptr->GetDataPtr(i, 2);
 				if(i == 0 && index_data_ptr->RecordNum() > 1){
@@ -740,7 +738,7 @@ RecordBlock* Catalog::SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* ty
 }
 
 uint32_t Catalog::FindIndexBlock(const std::string & table_name_mix_key){
-	if(!this->database_selected) throw DatabaseNotSelected();
+	if (!this->database_selected) throw DatabaseNotSelected("database not selected");
 /* find through index */
 	TypedIndexManager<ConstChar<32> > index_manager;
 	Block* index_tree_root = buffer_manager.GetBlock(this->index_index_addr);

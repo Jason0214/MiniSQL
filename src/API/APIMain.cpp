@@ -1,5 +1,6 @@
 
 #include "APICommands.h"
+#include "../EXCEPTION.h"
 #include "IO.h"
 #include <string>
 #include <iostream>
@@ -8,15 +9,15 @@ using namespace std;
 
 static string Command;
 
-int main_api()
+int main()
 {
-	try
+	while (1)
 	{
-		while (1)
+		try
 		{
 			Command = GetString();
 
-			if (Command == "quit") return 0;
+			if (Command == "quit") goto _QUIT;
 			else if (Command == "begin_query") AcceptQuery();
 			else if (Command == "begin_insert") AcceptInsert();
 			else if (Command == "begin_update") AcceptUpdate();
@@ -29,22 +30,33 @@ int main_api()
 
 			Flush();
 		}
-	}
-	catch (IOFailure)
-	{
-		cout << "IO Failed" << endl;
-		Flush();
-	}
-	catch (InvalidCommand e)
-	{
-		cout << "Invalid Command: " + e.ErrorCommand << endl;
-		Flush();
-	}
-	catch (...)
-	{
-		cout << "Fatal Error in API" << endl;
-		Flush();
+		catch (IOFailure)
+		{
+			goto _QUIT;
+		}
+		catch (InvalidCommand e)
+		{
+			cout << "Invalid Command: " + e.ErrorCommand << endl;
+			Flush();
+			goto _QUIT;
+		}
+		catch (Exception e)
+		{
+			cout << "Error Msg : " << e.Message << endl;
+			cout << "end_result" << endl;
+			Flush();
+		}
+		catch (...)
+		{
+			cout << "Fatal Error in API" << endl;
+			Flush();
+			goto _QUIT;
+		}
 	}
 
+_QUIT:
+	OnQuit();
+	cout << "API Quit" << endl;
+	Flush();
 	return 0;
 }

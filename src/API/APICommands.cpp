@@ -214,17 +214,22 @@ void AcceptCreateTable()
 
 void AcceptDropTable()
 {
-	ExeDropTable(GetString());
+	ExeDropTable(GetString(), true);
 }
 
 void AcceptCreateIndex()
 {
-	ExeCreateIndex(GetString(), GetString(), GetString());
+	string tableName = GetString();
+	string attrName = GetString();
+	string indexName = GetString();
+	ExeCreateIndex(tableName, attrName, indexName);
 }
 
 void AcceptDropIndex()
 {
-	ExeDropIndex(GetString(), GetString());
+	string tableName = GetString();
+	string indexName = GetString();
+	ExeDropIndex(tableName, indexName);
 }
 
 void OnQuit()
