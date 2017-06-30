@@ -169,8 +169,9 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 		std::cout << e.what() << std::endl;
 		throw(e);
 	}
+	TableMeta* tableMeta;
 	try{
-		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+		tableMeta = catalog->GetTableMeta(tableName);
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
@@ -316,8 +317,9 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 		std::cout << e.what() << std::endl;
 		throw(e);
 	}
+	TableMeta* tableMeta;
 	try{
-		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+		tableMeta = catalog->GetTableMeta(tableName);
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
@@ -654,8 +656,9 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::string tableName = sourceTableName;
 	Catalog* catalog = &Catalog::Instance();
 	BufferManager* bufferManager = &BufferManager::Instance();
+	TableMeta* tableMeta;
 	try{
-		TableMeta* tableMeta = catalog->GetTableMeta(tableName);
+		tableMeta = catalog->GetTableMeta(tableName);
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
