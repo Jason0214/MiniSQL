@@ -1,5 +1,6 @@
 
 #include "APICommands.h"
+#include "../EXCEPTION.h"
 #include "IO.h"
 #include <string>
 #include <iostream>
@@ -10,9 +11,9 @@ static string Command;
 
 int main()
 {
-	try
+	while (1)
 	{
-		while (1)
+		try
 		{
 			Command = GetString();
 
@@ -29,21 +30,27 @@ int main()
 
 			Flush();
 		}
-	}
-	catch (IOFailure)
-	{
-		cout << "IO Failed" << endl;
-		Flush();
-	}
-	catch (InvalidCommand e)
-	{
-		cout << "Invalid Command: " + e.ErrorCommand << endl;
-		Flush();
-	}
-	catch (...)
-	{
-		cout << "Fatal Error in API" << endl;
-		Flush();
+		catch (IOFailure)
+		{
+			goto _QUIT;
+		}
+		catch (InvalidCommand e)
+		{
+			cout << "Invalid Command: " + e.ErrorCommand << endl;
+			Flush();
+			goto _QUIT;
+		}
+		catch (Exception e)
+		{
+			cout << "Error Msg : " << e.Message << endl;
+			Flush();
+		}
+		catch (...)
+		{
+			cout << "Fatal Error in API" << endl;
+			Flush();
+			goto _QUIT;
+		}
 	}
 
 _QUIT:
