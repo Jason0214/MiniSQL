@@ -20,7 +20,7 @@ void TableBlock::InsertTable(const char* table_name, uint32_t table_addr, uint32
 	if (table_index < 0) table_index = 0;
 	uint16_t target_addr = DATA_BEG + TABLE_RECORD_SIZE * table_index;
 	if(this->RecordNum() != 0 && table_index < this->RecordNum() && !strcmp(table_name, (char*)&this->block_data[target_addr])){
-		throw DuplicatedTableName("duplicate table name " + string(table_name));
+		throw DuplicatedTableName(string(table_name));
 	}
 	uint16_t tail_addr = this->RecordNum() * TABLE_RECORD_SIZE + DATA_BEG;
 	while(tail_addr != target_addr){
@@ -67,7 +67,7 @@ void TableBlock::DropTable(const char* table_name){
 	int table_index = this->FindRecordIndex(table_name);
 	uint16_t table_addr = DATA_BEG + TABLE_RECORD_SIZE*table_index;
 	if(table_index < 0 || strcmp(table_name, (char*)&this->block_data[table_addr])){
-		throw TableNotFound("table not found " + string(table_name));
+		throw TableNotFound(string(table_name));
 	}
 	uint16_t table_offset = DATA_BEG + table_index*TABLE_RECORD_SIZE;
 	uint16_t attr_addr = *(uint16_t*)&this->block_data[table_offset + 32];
@@ -97,7 +97,7 @@ void TableBlock::GetTableMeta(const char* table_name, uint32_t & table_addr, uin
 	uint16_t index = this->FindRecordIndex(table_name);
 	uint16_t offset = this->DATA_BEG + index * TABLE_RECORD_SIZE;
 	if(index >= this->RecordNum() || strcmp(table_name, (char*)&this->block_data[offset])){
-		throw TableNotFound("table not found " + string(table_name));
+		throw TableNotFound(string(table_name));
 	}
 	attr_addr = *(uint16_t*)&this->block_data[offset + 32];
 	attr_num = *(uint8_t*)&this->block_data[offset + 34];
