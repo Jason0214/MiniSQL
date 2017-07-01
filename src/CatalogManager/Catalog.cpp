@@ -166,7 +166,7 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 		ConstChar<32> & key = leaf_node->data()[result_ptr->index];
 		if(key ==  ConstChar<32>(table_name.c_str())){
 			buffer_manager.ReleaseBlock((Block* &)index_tree_root);
-			throw DuplicatedTableName(table_name.c_str());
+			throw DuplicatedTableName("duplicate table name " + table_name);
 		}
 		else{
 			if (result_ptr->index != 0) {
@@ -272,7 +272,7 @@ void Catalog::DropTable(const string & table_name){
 			if(result_ptr->index == 0){
 				delete result_ptr;
 				buffer_manager.ReleaseBlock(index_tree_root);
-				throw TableNotFound(table_name.c_str());
+				throw TableNotFound("table not found :" + table_name);
 			}
 			else{
 				table_block_addr = leaf_node->ptrs()[result_ptr->index];
@@ -283,7 +283,7 @@ void Catalog::DropTable(const string & table_name){
 	else{
 		delete result_ptr;
 		buffer_manager.ReleaseBlock(index_tree_root);
-		throw TableNotFound(table_name.c_str());
+		throw TableNotFound("table not found " + table_name);
 	}
 
 /* real deletion */
@@ -295,7 +295,7 @@ void Catalog::DropTable(const string & table_name){
 		delete result_ptr;
 		buffer_manager.ReleaseBlock((Block* &)table_block_ptr);
 		buffer_manager.ReleaseBlock(index_tree_root);
-		throw TableNotFound(table_name.c_str());
+		throw TableNotFound("table not found " + table_name);
 	}
 	// delete index and data
 
@@ -409,7 +409,7 @@ uint32_t Catalog::FindTableBlock(const std::string & table_name){
 	if(!result_ptr){
 	// table_name not existed
 		buffer_manager.ReleaseBlock((Block* &)index_tree_root);
-		throw TableNotFound(table_name.c_str());
+		throw TableNotFound("table not found " + table_name);
 	}
 	BPlusNode<ConstChar<32> >* leaf_node = static_cast<BPlusNode<ConstChar<32> >*>(result_ptr->node);
 	ConstChar<32> & key = leaf_node->data()[result_ptr->index];
@@ -423,7 +423,7 @@ uint32_t Catalog::FindTableBlock(const std::string & table_name){
 	else{
 	// table_name less than the smallest key in index
 		buffer_manager.ReleaseBlock(index_tree_root);
-		throw TableNotFound(table_name.c_str());
+		throw TableNotFound("table not found " + table_name);
 	}
 	buffer_manager.ReleaseBlock(index_tree_root);
 	delete result_ptr;
@@ -438,7 +438,7 @@ void Catalog::UpdateTablePrimaryIndex(const std::string & table_name, uint32_t n
 	int row = table_block_ptr->FindRecordIndex(table_name.c_str());
 	if(row < 0 || strcmp(table_name.c_str(), (char*)table_block_ptr->GetTableInfoPtr(row)) != 0){
 		buffer_manager.ReleaseBlock((Block* &) table_block_ptr);
-		throw TableNotFound(table_name.c_str());
+		throw TableNotFound("table not found " + table_name);
 	}
 	*(uint32_t*)(table_block_ptr->GetTableInfoPtr(row) + 40) = new_addr;
 	buffer_manager.ReleaseBlock((Block* &)table_block_ptr);
@@ -451,7 +451,7 @@ void Catalog::UpdateTableDataAddr(const std::string & table_name, uint32_t new_a
 	unsigned short row = table_block_ptr->FindRecordIndex(table_name.c_str());
 	if(strcmp(table_name.c_str(), (char*)table_block_ptr->GetTableInfoPtr(row)) != 0){
 		buffer_manager.ReleaseBlock((Block* &) table_block_ptr);
-		throw TableNotFound(table_name.c_str());
+		throw TableNotFound("table not found " + table_name);
 	}
 	*(uint32_t*)(table_block_ptr->GetTableInfoPtr(row) + 36) = new_addr;
 	buffer_manager.ReleaseBlock((Block* &)table_block_ptr);
