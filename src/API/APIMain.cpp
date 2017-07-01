@@ -87,7 +87,7 @@ int main()
 		}
 		catch (...)
 		{
-			cout << "Fatal Error in API:" << endl;
+			cout << "Fatal Error in API" << endl;
 			Flush();
 			goto _QUIT;
 		}
