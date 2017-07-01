@@ -881,7 +881,6 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 	delete index_manager;
 	delete result_ptr;
 	Flush();
-
 }
 
 void ExeInsert(const std::string& tableName, InsertValueVector& values){
