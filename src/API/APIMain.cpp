@@ -37,40 +37,49 @@ int main()
 		catch (const InvalidCommand &e)
 		{
 			cout << "Invalid Command: " + e.ErrorCommand << endl;
+			cout << "end_result" << endl;
 			Flush();
 			goto _QUIT;
 		}
 		catch (const DatabaseNotFound &e) {
 			cout << "Database Not Found: " << e.Message << endl;
+			cout << "end_result" << endl;
 			Flush();
 		}
 		catch (const DatabaseNotSelected &e) {
 			cout << "Database Not Seleted" << endl;
+			cout << "end_result" << endl;
 			Flush();
 		}
 		catch (const DuplicatedTableName &e)
 		{
 			cout << "Duplicated Table Name: " << e.Message << endl;
+			cout << "end_result" << endl;
 			Flush();
 		}
 		catch (const DuplicatedIndexName &e) {
 			cout << "Duplicated Index Name: " << e.Message << endl;
+			cout << "end_result" << endl;
 			Flush();
 		}
 		catch (const TableNotFound &e) {
 			cout << "Table Not Found: " << e.Message << endl;
+			cout << "end_result" << endl;
 			Flush();
 		}
 		catch (const IndexNotFound &e) {
 			cout << "Index Not Found: " << e.Message << endl;
+			cout << "end_result" << endl;
 			Flush();
 		}
 		catch (const AttributeNotFound &e) {
 			cout << "Attribute Not Found: " << e.Message << endl;
+			cout << "end_result" << endl;
 			Flush();
 		}
 		catch (const TableAliasNotFound &e) {
 			cout << "Table Alias Not Found: " << e.Message << endl;
+			cout << "end_result" << endl;
 			Flush();
 		}
 		catch (const Exception &e)

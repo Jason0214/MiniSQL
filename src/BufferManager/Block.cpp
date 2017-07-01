@@ -73,18 +73,18 @@ void TableBlock::DropTable(const char* table_name){
 	uint16_t attr_addr = *(uint16_t*)&this->block_data[table_offset + 32];
 	uint8_t attr_num = *(uint8_t*)&this->block_data[table_offset + 34];
 	uint16_t attr_size = attr_num * ATTR_RECORD_SIZE;
-	while(attr_addr - attr_size != this->StackPtr()){
-		memcpy(&this->block_data[attr_addr], &this->block_data[attr_addr - attr_size], ATTR_RECORD_SIZE);
-		attr_addr -= ATTR_RECORD_SIZE;
+	uint16_t pointer = attr_addr;
+	while(pointer - attr_size != this->StackPtr()){
+		memcpy(&this->block_data[pointer], &this->block_data[pointer - attr_size], ATTR_RECORD_SIZE);
+		pointer -= ATTR_RECORD_SIZE;
 	}
 	this->StackPtr() += attr_size;
-	this->RecordNum()--;
-
 	for(uint16_t i = table_index; i < this->RecordNum(); i++){
 		memcpy((char*)&this->block_data[table_addr],(char*)&this->block_data[table_addr + TABLE_RECORD_SIZE], TABLE_RECORD_SIZE);
 		table_addr += TABLE_RECORD_SIZE;
 	}
 
+	this->RecordNum()--;
 	for(uint16_t i = 0; i < this->RecordNum(); i++){
 		if(*(uint16_t*)&(this->block_data[DATA_BEG + i * TABLE_RECORD_SIZE + 32]) < attr_addr){
 			*(uint16_t*)&(this->block_data[DATA_BEG + i * TABLE_RECORD_SIZE + 32]) += attr_size;
