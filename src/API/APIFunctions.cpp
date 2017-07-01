@@ -833,7 +833,8 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 
 	if(table_meta->is_primary_key){
 		int i = record_block_ptr->FindTupleIndex(data_list[table_meta->key_index]);
-		if(i >= 0 && ptr_compare(data_list[table_meta->key_index], record_block_ptr->GetDataPtr(i, table_meta->key_index), key_type) == 0){
+		if(i >= 0 && i < record_block_ptr->RecordNum() && 
+		ptr_compare(data_list[table_meta->key_index], record_block_ptr->GetDataPtr(i, table_meta->key_index), key_type) == 0){
 			cout << "Duplicated Primary key" << endl;
 			cout << "end_result" << endl;
 			Flush();
@@ -1173,7 +1174,8 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 			RecordBlock* target_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager->GetBlock(target_block_addr));
 			target_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
 			int target_index = target_block_ptr->FindTupleIndex(temp_ptr);
-			if (target_index >= 0 && ptr_compare(temp_ptr, target_block_ptr->GetDataPtr(target_index, table_meta->key_index), attr_type) == 0) {
+			if (target_index >= 0 && target_index < target_block_ptr->RecordNum() && 
+					ptr_compare(temp_ptr, target_block_ptr->GetDataPtr(target_index, table_meta->key_index), attr_type) == 0) {
 				cout << "Duplicated Primary Key" << endl;
 				cout << "end_result" << endl;
 				Flush();
