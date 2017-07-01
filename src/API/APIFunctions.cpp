@@ -181,6 +181,8 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	const void** tuple = (const void**)(new void*[tableMeta->attr_num]);
@@ -272,7 +274,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 				}
 			}
 			if (*(int*)srcBlock->GetDataPtr(i, 0) == 254) {
-				cout << "catch" << endl;
+			//	cout << "catch" << endl;
 			}
 			//if the tuple fit the comparisonVector
 			if (checkTuple(srcBlock, i, tableMeta, cmpVec)) {
@@ -330,6 +332,8 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	Block* block = bufferManager->GetBlock(tableMeta->table_addr);
@@ -670,6 +674,8 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
@@ -726,6 +732,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	}
 	std::cout << horizontalBorder << std::endl;
 	std::cout << "end_result" << std::endl;
+	Flush();
 #else
 	//print out data
 	while (true) {
@@ -796,6 +803,8 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 								data_list[table_meta->key_index], key_type) == 0){
 			if(table_meta->is_primary_key){
 				cout << "Duplicated Primary Key" << endl;
+				cout << "end_result" << endl;
+				Flush();
 				buffer_manager->ReleaseBlock(index_root);
 				delete result_ptr;
 				return;					
@@ -826,6 +835,8 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 		int i = record_block_ptr->FindTupleIndex(data_list[table_meta->key_index]);
 		if(i >= 0 && ptr_compare(data_list[table_meta->key_index], record_block_ptr->GetDataPtr(i, table_meta->key_index), key_type) == 0){
 			cout << "Duplicated Primary key" << endl;
+			cout << "end_result" << endl;
+			Flush();
 			buffer_manager->ReleaseBlock(index_root);
 			buffer_manager->ReleaseBlock((Block* &)record_block_ptr);
 			delete result_ptr;
@@ -864,6 +875,7 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 	delete result_ptr;
 	cout << "1 Row Affected" << endl;
 	cout << "end_result" << endl;
+	Flush();
 }
 
 void ExeInsert(const std::string& tableName, InsertValueVector& values){
@@ -874,6 +886,8 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values){
 	}
 	catch(const TableNotFound &){
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	int temp_int_buf[32];
@@ -884,6 +898,8 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values){
 	float temp_float;
 	if(table_meta->attr_num != values.size()){
 		cout << "Attributes Number Unmatch" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	bool error = false;
@@ -913,6 +929,8 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values){
 	}
 	if(error){
 		cout << "Attributes Types Not Satisfied" << endl;
+		cout << "end_result" << endl;
+		Flush();
 	}
 	else{
 		InsertTuple(table_meta, data_list);
@@ -1053,6 +1071,8 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	}
 	catch(const TableNotFound &){
 		cout << "Table Name `" << tableName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	// find attribute index and make sure it exists in the tab;e
@@ -1066,6 +1086,8 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	if(attr_index == -1){
 		delete table_meta;
 		cout << "Attribute Name `" << attrName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 
@@ -1153,6 +1175,8 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 			int target_index = target_block_ptr->FindTupleIndex(temp_ptr);
 			if (target_index >= 0 && ptr_compare(temp_ptr, target_block_ptr->GetDataPtr(target_index, table_meta->key_index), attr_type) == 0) {
 				cout << "Duplicated Primary Key" << endl;
+				cout << "end_result" << endl;
+				Flush();
 				return;
 			}
 		}
@@ -1250,6 +1274,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	delete table_meta;
 	cout << updated_tuple_count << " Row Affected" << endl;
 	cout << "end_result" << endl;
+	Flush();
 }
 
 //
@@ -1347,6 +1372,7 @@ void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 	delete index_manager_ptr;
 	cout << deleted_tuple_count << " Rows Affected" << endl;
 	cout << "end_result" << endl;
+	Flush();
 }
 
 void ExeDropIndex(const std::string& tableName, const std::string& indexName)
@@ -1357,10 +1383,13 @@ void ExeDropIndex(const std::string& tableName, const std::string& indexName)
 	}
 	catch(const IndexNotFound &){
 		cout << "Index `" << indexName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	cout << "Drop Index Named `" << indexName << "` Successfully" << endl;
 	cout << "end_result" << endl;
+	Flush();
 	return;
 }
 
@@ -1373,10 +1402,12 @@ void ExeDropTable(const std::string& tableName, bool echo)
 	catch (const TableNotFound){
 		if (echo) cout << "Table `" << tableName << "` Not Found" << endl;
 		if (echo) cout << "end_result" << endl;
+		Flush();
 		return ;
 	}
 	if (echo) cout << "Drop Table `" << tableName << "` Successfully" << endl;
 	if (echo) cout << "end_result" << endl;
+	Flush();
 	return;
 }
 
@@ -1389,17 +1420,24 @@ void ExeCreateIndex(const std::string& tableName, const std::string& attrName, c
 	}
 	catch(const DuplicatedIndexName &){
 		cout << "Duplicated Index Name `" << indexName << "`" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	catch (const TableNotFound) {
 		cout << "Table `" << tableName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 		return;
 	}
 	catch (const AttributeNotFound) {
 		cout << "Attribute `" << attrName << "` Not Found" << endl;
+		cout << "end_result" << endl;
+		Flush();
 	}
 	cout << "Create Index on `" << tableName << "` Successfully" << endl;
 	cout << "end_result" << endl;
+	Flush();
 }
 
 void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& defVec)
@@ -1435,5 +1473,6 @@ void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& de
 	}
 	cout << "Create Table `" << tableName << "` Successfully" << endl;
 	cout << "end_result" << endl;
+	Flush();
 	return;
 }
