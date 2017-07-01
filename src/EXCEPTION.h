@@ -60,3 +60,8 @@ class DatabaseNotSelected : public Exception {
 public:
 	DatabaseNotSelected(string msg) :Exception(msg){}
 };
+
+class TableAliasNotFound : public Exception {
+public:
+	TableAliasNotFound(string msg) :Exception(msg) {}
+};

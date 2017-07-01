@@ -467,7 +467,7 @@ TableMeta* Catalog::GetTableMeta(const string & table_name){
 	try{
 		table_block_ptr->GetTableMeta(ret->table_name.c_str(), ret->table_addr, ret->primary_index_addr, attr_num,  attr_addr, key_index);
 	}
-	catch(const Exception & e){
+	catch(const TableNotFound & e){
 		delete ret;
 		buffer_manager.ReleaseBlock((Block* &) table_block_ptr);
 		throw e;

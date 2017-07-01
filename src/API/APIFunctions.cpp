@@ -4,6 +4,7 @@
 #include "../CatalogManager/Catalog.h"
 #include "../IndexManager/IndexManager.h"
 #include "../Type/ConstChar.h"
+#include "../EXCEPTION.h"
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -171,20 +172,11 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	try {
 		tableName = tableAlias.at(sourceTableName);
 	}
-	catch (exception& e) {
-		std::cout << e.what() << std::endl;
-		throw(e);
+	catch (const exception& e) {
+		throw(TableAliasNotFound(sourceTableName));
 	}
 	TableMeta* tableMeta;
-	try{
-		tableMeta = catalog->GetTableMeta(tableName);
-	}
-	catch(const TableNotFound &){
-		cout << "Table `" << tableName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
+	tableMeta = catalog->GetTableMeta(tableName);
 	const void** tuple = (const void**)(new void*[tableMeta->attr_num]);
 	RecordBlock* srcBlock;
 	vector<Comparison> indexCmp;
@@ -274,7 +266,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 				}
 			}
 			if (*(int*)srcBlock->GetDataPtr(i, 0) == 254) {
-			//	cout << "catch" << endl;
+				cout << "catch" << endl;
 			}
 			//if the tuple fit the comparisonVector
 			if (checkTuple(srcBlock, i, tableMeta, cmpVec)) {
@@ -323,19 +315,10 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 		tableName = tableAlias.at(sourceTableName);
 	}
 	catch (exception& e) {
-		std::cout << e.what() << std::endl;
-		throw(e);
+		throw(TableAliasNotFound(sourceTableName));
 	}
 	TableMeta* tableMeta;
-	try{
-		tableMeta = catalog->GetTableMeta(tableName);
-	}
-	catch(const TableNotFound &){
-		cout << "Table `" << tableName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
+	tableMeta = catalog->GetTableMeta(tableName);
 	Block* block = bufferManager->GetBlock(tableMeta->table_addr);
 	std::vector<int> attrIndexVec;
 	//get attr index
@@ -411,11 +394,15 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::string tableName1,tableName2;
 	try {
 		tableName1 = tableAlias.at(sourceTableName1);
+	}
+	catch (exception& e) {
+		throw(TableAliasNotFound(sourceTableName1));
+	}
+	try {
 		tableName2 = tableAlias.at(sourceTableName2);
 	}
 	catch (exception& e) {
-		std::cout << e.what() << std::endl;
-		throw(e);
+		throw(TableAliasNotFound(sourceTableName2));
 	}
 	TableMeta* tableMeta1 = catalog->GetTableMeta(tableName1), *tableMeta2 = catalog->GetTableMeta(tableName2);
 	//const void** tuple = (const void**)(new void*[tableMeta->attr_num]);
@@ -562,11 +549,15 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 	std::string tableName1, tableName2;
 	try {
 		tableName1 = tableAlias.at(sourceTableName1);
+	}
+	catch (exception& e) {
+		throw(TableAliasNotFound(sourceTableName1));
+	}
+	try {
 		tableName2 = tableAlias.at(sourceTableName2);
 	}
 	catch (exception& e) {
-		std::cout << e.what() << std::endl;
-		throw(e);
+		throw(TableAliasNotFound(sourceTableName2));
 	}
 	TableMeta* tableMeta1 = catalog->GetTableMeta(tableName1), *tableMeta2 = catalog->GetTableMeta(tableName2);
 	RecordBlock* srcBlock1, *srcBlock2;
@@ -669,15 +660,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	BufferManager* bufferManager = &BufferManager::Instance();
 
 	TableMeta* tableMeta;
-	try{
-		tableMeta = catalog->GetTableMeta(tableName);
-	}
-	catch(const TableNotFound &){
-		cout << "Table `" << tableName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
+	tableMeta = catalog->GetTableMeta(tableName);
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
 
 	RecordBlock* result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
@@ -728,11 +711,9 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		}
 		bufferManager->ReleaseBlock((Block* &)result_block_ptr);
 		result_block_ptr =  dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
-		result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, tableMeta->key_index);
 	}
 	std::cout << horizontalBorder << std::endl;
 	std::cout << "end_result" << std::endl;
-	Flush();
 #else
 	//print out data
 	while (true) {
@@ -754,7 +735,6 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		}
 		bufferManager->ReleaseBlock((Block* &)result_block_ptr);
 		result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
-		result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, tableMeta->key_index);
 	}
 #endif
 	// if table is a temperary table not on disk
@@ -803,8 +783,6 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 								data_list[table_meta->key_index], key_type) == 0){
 			if(table_meta->is_primary_key){
 				cout << "Duplicated Primary Key" << endl;
-				cout << "end_result" << endl;
-				Flush();
 				buffer_manager->ReleaseBlock(index_root);
 				delete result_ptr;
 				return;					
@@ -835,8 +813,6 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 		int i = record_block_ptr->FindTupleIndex(data_list[table_meta->key_index]);
 		if(i >= 0 && ptr_compare(data_list[table_meta->key_index], record_block_ptr->GetDataPtr(i, table_meta->key_index), key_type) == 0){
 			cout << "Duplicated Primary key" << endl;
-			cout << "end_result" << endl;
-			Flush();
 			buffer_manager->ReleaseBlock(index_root);
 			buffer_manager->ReleaseBlock((Block* &)record_block_ptr);
 			delete result_ptr;
@@ -875,21 +851,13 @@ void InsertTuple(TableMeta* table_meta, const void** data_list)
 	delete result_ptr;
 	cout << "1 Row Affected" << endl;
 	cout << "end_result" << endl;
-	Flush();
 }
 
 void ExeInsert(const std::string& tableName, InsertValueVector& values){
 	Catalog* catalog_manager = &Catalog::Instance();
 	TableMeta* table_meta = NULL;
-	try{
-		table_meta = catalog_manager->GetTableMeta(tableName);
-	}
-	catch(const TableNotFound &){
-		cout << "Table `" << tableName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
+	table_meta = catalog_manager->GetTableMeta(tableName);
+	cout << "Table `" << tableName << "` Not Found" << endl;
 	int temp_int_buf[32];
 	int temp_int_pointer = 0;
 	float temp_float_buf[32];
@@ -898,8 +866,6 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values){
 	float temp_float;
 	if(table_meta->attr_num != values.size()){
 		cout << "Attributes Number Unmatch" << endl;
-		cout << "end_result" << endl;
-		Flush();
 		return;
 	}
 	bool error = false;
@@ -929,8 +895,6 @@ void ExeInsert(const std::string& tableName, InsertValueVector& values){
 	}
 	if(error){
 		cout << "Attributes Types Not Satisfied" << endl;
-		cout << "end_result" << endl;
-		Flush();
 	}
 	else{
 		InsertTuple(table_meta, data_list);
@@ -1066,15 +1030,7 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	Catalog* catalog_manager = &Catalog::Instance();
 	TableMeta* table_meta = NULL;
 	int updated_tuple_count = 0;
-	try{
-		table_meta = catalog_manager->GetTableMeta(tableName);
-	}
-	catch(const TableNotFound &){
-		cout << "Table Name `" << tableName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
+	table_meta = catalog_manager->GetTableMeta(tableName);
 	// find attribute index and make sure it exists in the tab;e
 	int attr_index = -1;
 	for(int i = 0; i < table_meta->attr_num; i++){
@@ -1086,8 +1042,6 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	if(attr_index == -1){
 		delete table_meta;
 		cout << "Attribute Name `" << attrName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
 		return;
 	}
 
@@ -1175,8 +1129,6 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 			int target_index = target_block_ptr->FindTupleIndex(temp_ptr);
 			if (target_index >= 0 && ptr_compare(temp_ptr, target_block_ptr->GetDataPtr(target_index, table_meta->key_index), attr_type) == 0) {
 				cout << "Duplicated Primary Key" << endl;
-				cout << "end_result" << endl;
-				Flush();
 				return;
 			}
 		}
@@ -1274,7 +1226,6 @@ void ExeUpdate(const std::string& tableName, const std::string& attrName,
 	delete table_meta;
 	cout << updated_tuple_count << " Row Affected" << endl;
 	cout << "end_result" << endl;
-	Flush();
 }
 
 //
@@ -1372,42 +1323,23 @@ void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 	delete index_manager_ptr;
 	cout << deleted_tuple_count << " Rows Affected" << endl;
 	cout << "end_result" << endl;
-	Flush();
 }
 
 void ExeDropIndex(const std::string& tableName, const std::string& indexName)
 {
 	Catalog* catalog = &Catalog::Instance();
-	try{
-		catalog->DropIndex(indexName);
-	}
-	catch(const IndexNotFound &){
-		cout << "Index `" << indexName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
+	catalog->DropIndex(indexName);
 	cout << "Drop Index Named `" << indexName << "` Successfully" << endl;
 	cout << "end_result" << endl;
-	Flush();
 	return;
 }
 
 void ExeDropTable(const std::string& tableName, bool echo)
 {
 	Catalog* catalog = &Catalog::Instance();
-	try{
-		catalog->DropTable(tableName);
-	}
-	catch (const TableNotFound){
-		if (echo) cout << "Table `" << tableName << "` Not Found" << endl;
-		if (echo) cout << "end_result" << endl;
-		Flush();
-		return ;
-	}
+	catalog->DropTable(tableName);
 	if (echo) cout << "Drop Table `" << tableName << "` Successfully" << endl;
 	if (echo) cout << "end_result" << endl;
-	Flush();
 	return;
 }
 
@@ -1415,29 +1347,9 @@ void ExeCreateIndex(const std::string& tableName, const std::string& attrName, c
 
 {
 	Catalog* catalog = &Catalog::Instance();
-	try{
-		catalog->CreateIndex(indexName, tableName, attrName);
-	}
-	catch(const DuplicatedIndexName &){
-		cout << "Duplicated Index Name `" << indexName << "`" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
-	catch (const TableNotFound) {
-		cout << "Table `" << tableName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
-	catch (const AttributeNotFound) {
-		cout << "Attribute `" << attrName << "` Not Found" << endl;
-		cout << "end_result" << endl;
-		Flush();
-	}
+	catalog->CreateIndex(indexName, tableName, attrName);
 	cout << "Create Index on `" << tableName << "` Successfully" << endl;
 	cout << "end_result" << endl;
-	Flush();
 }
 
 void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& defVec)
@@ -1462,17 +1374,8 @@ void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& de
 			key_index = i;
 		}
 	}
-	try{
-		catalog->CreateTable(tableName, attr_name_list, attr_type_list, attr_num, key_index);
-	}
-	catch (const DuplicatedTableName){
-		cout << "Table Named `" << tableName << "` Already Existed" << endl;
-		cout << "end_result" << endl;
-		Flush();
-		return;
-	}
+	catalog->CreateTable(tableName, attr_name_list, attr_type_list, attr_num, key_index);
 	cout << "Create Table `" << tableName << "` Successfully" << endl;
 	cout << "end_result" << endl;
-	Flush();
 	return;
 }
