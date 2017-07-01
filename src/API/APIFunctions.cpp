@@ -172,8 +172,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 		tableName = tableAlias.at(sourceTableName);
 	}
 	catch (exception& e) {
-		std::cout << e.what() << std::endl;
-		throw(e);
+		throw TableAliasNotFound(sourceTableName);
 	}
 	TableMeta* tableMeta;
 	try{
@@ -323,8 +322,7 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 		tableName = tableAlias.at(sourceTableName);
 	}
 	catch (exception& e) {
-		std::cout << e.what() << std::endl;
-		throw(e);
+		throw TableAliasNotFound(sourceTableName);
 	}
 	TableMeta* tableMeta;
 	try{
@@ -411,11 +409,15 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::string tableName1,tableName2;
 	try {
 		tableName1 = tableAlias.at(sourceTableName1);
+	}
+	catch (exception& e) {
+		throw TableAliasNotFound(sourceTableName1);
+	}
+	try{
 		tableName2 = tableAlias.at(sourceTableName2);
 	}
 	catch (exception& e) {
-		std::cout << e.what() << std::endl;
-		throw(e);
+		throw TableAliasNotFound(sourceTableName2);
 	}
 	TableMeta* tableMeta1 = catalog->GetTableMeta(tableName1), *tableMeta2 = catalog->GetTableMeta(tableName2);
 	//const void** tuple = (const void**)(new void*[tableMeta->attr_num]);
@@ -562,11 +564,15 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 	std::string tableName1, tableName2;
 	try {
 		tableName1 = tableAlias.at(sourceTableName1);
+	}
+	catch (exception& e) {
+		throw TableAliasNotFound(sourceTableName1);
+	}
+	try{
 		tableName2 = tableAlias.at(sourceTableName2);
 	}
 	catch (exception& e) {
-		std::cout << e.what() << std::endl;
-		throw(e);
+		throw TableAliasNotFound(sourceTableName2);
 	}
 	TableMeta* tableMeta1 = catalog->GetTableMeta(tableName1), *tableMeta2 = catalog->GetTableMeta(tableName2);
 	RecordBlock* srcBlock1, *srcBlock2;
