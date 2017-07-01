@@ -1383,7 +1383,7 @@ void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec)
 	Flush();
 }
 
-void ExeDropIndex(const std::string& tableName, const std::string& indexName)
+void ExeDropIndex(const std::string& indexName)
 {
 	Catalog* catalog = &Catalog::Instance();
 	try{

@@ -227,9 +227,8 @@ void AcceptCreateIndex()
 
 void AcceptDropIndex()
 {
-	string tableName = GetString();
 	string indexName = GetString();
-	ExeDropIndex(tableName, indexName);
+	ExeDropIndex(indexName);
 }
 
 void OnQuit()
