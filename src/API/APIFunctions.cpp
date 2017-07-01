@@ -265,9 +265,6 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 					break;
 				}
 			}
-			if (*(int*)srcBlock->GetDataPtr(i, 0) == 254) {
-				cout << "catch" << endl;
-			}
 			//if the tuple fit the comparisonVector
 			if (checkTuple(srcBlock, i, tableMeta, cmpVec)) {
 				for (int j = 0;j < tableMeta->attr_num;j++) {

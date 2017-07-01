@@ -40,6 +40,14 @@ int main()
 			Flush();
 			goto _QUIT;
 		}
+		catch (const DatabaseNotFound &e) {
+			cout << "Database Not Found: " << e.Message << endl;
+			Flush();
+		}
+		catch (const DatabaseNotSelected &e) {
+			cout << "Database Not Seleted" << endl;
+			Flush();
+		}
 		catch (const DuplicatedTableName &e)
 		{
 			cout << "Duplicated Table Name: " << e.Message << endl;

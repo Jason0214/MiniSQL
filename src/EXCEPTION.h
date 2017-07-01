@@ -62,6 +62,6 @@ public:
 };
 
 class TableAliasNotFound : public Exception {
-public:
+	public:
 	TableAliasNotFound(string msg) :Exception(msg) {}
 };
