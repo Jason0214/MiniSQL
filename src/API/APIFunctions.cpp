@@ -722,6 +722,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		}
 		bufferManager->ReleaseBlock((Block* &)result_block_ptr);
 		result_block_ptr =  dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
+		result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, tableMeta->key_index);
 	}
 	std::cout << horizontalBorder << std::endl;
 	std::cout << "end_result" << std::endl;
@@ -746,6 +747,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		}
 		bufferManager->ReleaseBlock((Block* &)result_block_ptr);
 		result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(next));
+		result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, tableMeta->key_index);
 	}
 #endif
 	// if table is a temperary table not on disk
