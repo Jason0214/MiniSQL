@@ -17,7 +17,7 @@ namespace MiniSQL.SQLAnalyzer
 
         private static List<string> keywords = new List<string>() 
         { 
-            "select", "where", "from", "group by", "having", "order by", 
+            "select", "where", "from", "group by", "having", "order by", "float",
             "in", "not in", "and", "or", "between", "union", "intersect", "except", "as", "all", "distinct", "join", 
             "natural join", "using", "is null", "is not null", "avg", "count", "sum", "is not null", "exists", 
             "not exists", "unique", "not unique", "delete", "insert into", "values", "update", "set", "char", "varchar", 

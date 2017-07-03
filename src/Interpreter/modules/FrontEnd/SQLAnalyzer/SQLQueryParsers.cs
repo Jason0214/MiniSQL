@@ -84,8 +84,8 @@ namespace MiniSQL.SQLAnalyzer.ParserComponents
 
                 Parser<Comparand> otherOperand =
                 (
-                    from lex in P_Id | P_Int | P_Float | P_String
-                    select new Comparand(lex.TypeName, lex.Content)
+                    from lex in P_Int | P_Float | P_String
+                    select Comparand.FromIdentifier(lex)
                 );
 
                 return attrOperand | otherOperand;
@@ -158,13 +158,13 @@ namespace MiniSQL.SQLAnalyzer.ParserComponents
 
                 disjParser.ParserFunction =
                 (
-                    from conjList in P_List(conjParser | subParser, P_Or, predict => predict)
+                    from conjList in P_List(conjParser | subParser, P_Or, exp => exp)
                     select (Expression)new DisjunctionExpression(conjList)
                 ).ParserFunction;
 
                 conjParser.ParserFunction =
                 (
-                    from list in P_List(P_CompareExpression | subParser, P_And, predict => predict)
+                    from list in P_List(P_CompareExpression | subParser, P_And, exp => exp)
                     select (Expression)new ConjunctionExpression(list)
                 ).ParserFunction;
 

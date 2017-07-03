@@ -80,11 +80,13 @@ namespace MiniSQL.Executor.Validator
     {
         private Update update;
         private TableManager tableManager;
+        private ExpManager expManager;
 
         public UpdateValidator(Update update, ICatalog catalogInterface = null)
         {
             this.update = update;
             tableManager = new TableManager(this.Errors, catalogInterface);
+            expManager = new ExpManager(update.Where.Exp, Errors, tableManager);
         }
 
         public override List<SQLError> Validate()
@@ -111,6 +113,9 @@ namespace MiniSQL.Executor.Validator
             {
                 Errors.Add(new SQLError(string.Format("Validator: {0} and {1}, Type Mismatch", type1, type2)));
             }
+
+            expManager.OnlyConjunctionSupported();
+            expManager.ScanExpression();
 
             return Errors;
         }

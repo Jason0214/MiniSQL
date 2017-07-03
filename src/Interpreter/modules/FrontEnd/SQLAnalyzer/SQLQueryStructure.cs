@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Compiler.Parser;
+using System.Collections.Generic;
 
 namespace MiniSQL.SQLAnalyzer.Structures
 {
@@ -44,6 +45,15 @@ namespace MiniSQL.SQLAnalyzer.Structures
         {
             OperandType = type;
             OperandEntity = entity;
+        }
+
+        public static Comparand FromIdentifier(Lexeme id)
+        {
+            switch (id.TypeName)
+            {
+                case "single": return new Comparand("string", id.Content.Substring(1, id.Content.Length - 2));
+                default: return new Comparand(id.TypeName, id.Content);
+            }
         }
     }
 

@@ -5,6 +5,11 @@ using MiniSQL.Errors;
 
 namespace MiniSQL.Executor.Interface
 {
+    public interface IDB
+    {
+        void AcceptOutput(TextWriter writer);
+    }
+
     internal class APIProcess
     {
         public Process cmd;
@@ -15,7 +20,7 @@ namespace MiniSQL.Executor.Interface
             {
                 cmd = new Process();
                 cmd.StartInfo.Arguments = "asd";
-                cmd.StartInfo.FileName = @"E:\ZJU\dbs\miniSQL\ConsoleTest\Release\ConsoleTest.exe";
+                cmd.StartInfo.FileName = "API.exe";
                 cmd.StartInfo.UseShellExecute = false;
                 cmd.StartInfo.RedirectStandardInput = true;
                 cmd.StartInfo.RedirectStandardOutput = true;
@@ -26,7 +31,7 @@ namespace MiniSQL.Executor.Interface
             }
             catch (Exception)
             {
-                throw new InterfaceError("Fail to start catalog manager");
+                throw new InterfaceError("Fail to start api process");
             }
         }
 
@@ -36,15 +41,15 @@ namespace MiniSQL.Executor.Interface
         }
     }
 
-    public abstract class DatabaseInterface
+    public abstract class DatabaseInterface : IDB
     {
         internal static APIProcess Cmd = new APIProcess();
 
-        internal StreamWriter In { get { return Cmd.cmd.StandardInput; } }
+        internal StreamWriter In { get { CheckConnection(); return Cmd.cmd.StandardInput; } }
 
-        internal StreamReader Out { get { return Cmd.cmd.StandardOutput; } }
+        internal StreamReader Out { get { CheckConnection(); return Cmd.cmd.StandardOutput; } }
 
-        internal StreamReader Err { get { return Cmd.cmd.StandardError; } }
+        internal StreamReader Err { get { CheckConnection(); return Cmd.cmd.StandardError; } }
 
         internal void CheckConnection()
         {
@@ -52,12 +57,23 @@ namespace MiniSQL.Executor.Interface
             {
                 if (Cmd.cmd.HasExited)
                 {
-                    throw new InterfaceError("Connection to Catalog Manager Failed : 1");
+                    throw new InterfaceError("Connection to API Failed : 1");
                 }
             }
             catch (Exception)
             {
-                throw new InterfaceError("Connection to Catalog Manager Failed : 2");
+                throw new InterfaceError("Connection to API Failed : 2");
+            }
+        }
+
+        public void AcceptOutput(TextWriter writer)
+        {
+            string resultLine = Out.ReadLine();
+
+            while (resultLine != "end_result")
+            {
+                writer.WriteLine(resultLine);
+                resultLine = Out.ReadLine();
             }
         }
     }

@@ -1,13 +1,12 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
+using MiniSQL.SQLAnalyzer.Structures;
 
 namespace MiniSQL.Executor.Interface
 {
-    public interface IQuery
+    public interface IQuery : IDB
     {
-        void ExeCommand(string command, string sourceTableName, string resultTableName, string Param = null);
-
-        void ExeCommand(string command, string sourceTableName1, string sourceTableName2,
-            string resultTableName, string Param = null);
+        void TableInfo(List<WithAlias<string>> nameAlias);
 
         void CopyResultTo(string tableName, TextWriter writer);
     }
@@ -16,38 +15,21 @@ namespace MiniSQL.Executor.Interface
     {
         public static QueryInterface Instance = new QueryInterface();
 
-        public void ExeCommand(string command, string sourceTableName, string resultTableName, string Param = null)
+        public void TableInfo(List<WithAlias<string>> nameAlias)
         {
-            In.WriteLines(command, sourceTableName, resultTableName);
+            In.WriteLines("table_info", nameAlias.Count);
 
-            if (Param != null)
+            foreach (var namePair in nameAlias)
             {
-                In.WriteLine(Param);
-            }
-        }
-
-        public void ExeCommand(string command, string sourceTableName1, string sourceTableName2,
-            string resultTableName, string Param = null)
-        {
-            In.WriteLines(command, sourceTableName1, sourceTableName2, resultTableName);
-
-            if (Param != null)
-            {
-                In.WriteLine(Param);
+                In.WriteLine((namePair.Alias == "__Default_Alias" ? namePair.Entity : namePair.Alias)
+                    + " " + namePair.Entity);
             }
         }
 
         public void CopyResultTo(string tableName, TextWriter writer)
         {
-            In.WriteLines("get result", tableName);
-
-            string resultLine = Out.ReadLine();
-
-            while (resultLine != "end result")
-            {
-                writer.WriteLine(resultLine); 
-                resultLine = Out.ReadLine();
-            }
+            In.WriteLines("get_result", tableName);
+            AcceptOutput(writer);
         }
     }
 }

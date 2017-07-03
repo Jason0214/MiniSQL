@@ -28,7 +28,8 @@ namespace Compiler.Parser
             });
         }
 
-        public static Parser<TResult> Select<TSource, TResult>(this Parser<TSource> parser, Func<TSource, TResult> resultSelector)
+        public static Parser<TResult> Select<TSource, TResult>(this Parser<TSource> parser, 
+            Func<TSource, TResult> resultSelector)
         {
             return new Parser<TResult>(scanner =>
             {

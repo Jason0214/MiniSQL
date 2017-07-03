@@ -28,7 +28,7 @@ void ExeUpdate(const string& tableName, const string& attrName, const string& va
 
 void ExeDelete(const string& tableName, const ComparisonVector& cmpVec);
 
-void ExeDropIndex(const string& tableName, const string& indexName);
+void ExeDropIndex(const string& indexName);
 
 void ExeDropTable(const string& tableName, bool echo = false);
 

@@ -20,8 +20,8 @@ namespace MiniSQL.Executor
 
         public override void Execute()
         {
-            exeInterface.In.WriteLines(drop.TableName, drop.IndexName);
-            outStream.WriteLine(exeInterface.Out.ReadLine());
+            exeInterface.In.WriteLines("begin_drop_index", drop.IndexName);
+            exeInterface.AcceptOutput(outStream);
         }
     }
 
@@ -42,8 +42,8 @@ namespace MiniSQL.Executor
 
         public override void Execute()
         {
-            exeInterface.In.WriteLines(drop.TableName);
-            outStream.WriteLine(exeInterface.Out.ReadLine());
+            exeInterface.In.WriteLines("begin_drop_table", drop.TableName);
+            exeInterface.AcceptOutput(outStream);
         }
     }
 
@@ -64,8 +64,8 @@ namespace MiniSQL.Executor
 
         public override void Execute()
         {
-            exeInterface.In.WriteLines(create.TableName, create.AttrName, create.IndexName);
-            outStream.WriteLine(exeInterface.Out.ReadLine());
+            exeInterface.In.WriteLines("begin_create_index", create.TableName, create.AttrName, create.IndexName);
+            exeInterface.AcceptOutput(outStream);
         }
     }
 
@@ -86,16 +86,16 @@ namespace MiniSQL.Executor
 
         public override void Execute()
         {
-            exeInterface.In.WriteLines(create.TableName);
+            exeInterface.In.WriteLines("begin_create_table", create.TableName, create.Definitions.Count);
 
             foreach (var attr in create.Definitions)
             {
                 exeInterface.In.WriteLine(string.Format("{0} {1} {2} {3} {4} {5}", 
                     attr.AttrName, attr.Type.TypeName, attr.Type.Param,
-                    attr.IsPrimaryKey, attr.IsUnique, attr.IsNotNull));
+                    attr.IsPrimaryKey.ToZeroOne(), attr.IsUnique.ToZeroOne(), attr.IsNotNull.ToZeroOne()));
             }
 
-            outStream.WriteLine(exeInterface.Out.ReadLine());
+            exeInterface.AcceptOutput(outStream);
         }
     }
 }
