@@ -45,12 +45,14 @@ namespace MiniSQL.Executor.Optimizer
 
             foreach (var cmp in query.whereClause.ToCompareList())
             {
-                if (cmp.IsDoubleTablesInvolvedExp())
+                if (cmp.IsDoubleTablesInvolvedExp() && cmp.Operation == "=")
                 {
                     string tableName1 = (cmp.Operand1.OperandEntity as Attr).TableName;
                     string tableName2 = (cmp.Operand2.OperandEntity as Attr).TableName;
 
                     disjSet.UnionRoot(tableName1, tableName2);
+
+                    (query.whereClause.Exp as ConjunctionExpression).ExpressionList.Remove(cmp);
                 }
             }
 
@@ -85,6 +87,8 @@ namespace MiniSQL.Executor.Optimizer
                     }
 
                     tablesNeedSelect[tableName].Add(cmp);
+
+                    (query.whereClause.Exp as ConjunctionExpression).ExpressionList.Remove(cmp);
                 }
             }
 

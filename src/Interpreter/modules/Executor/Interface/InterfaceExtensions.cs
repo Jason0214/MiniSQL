@@ -6,7 +6,7 @@ namespace MiniSQL.Executor.Interface
     {
         public static void WriteLines(this StreamWriter writer, params object[] str)
         {
-            foreach (string s in str)
+            foreach (object s in str)
             {
                 writer.WriteLine(s);
             }

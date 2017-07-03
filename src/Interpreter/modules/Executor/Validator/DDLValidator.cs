@@ -42,13 +42,14 @@ namespace MiniSQL.Executor.Validator
 
         public override List<SQLError> Validate()
         {
-            tableManager.AddInfo(drop.TableName);
+          /*  tableManager.AddInfo(drop.TableName);
 
             if (indexInterface.IndexExist(drop.IndexName) == false)
             {
                 Errors.Add(new SQLError("Validator: Not Exist Index: " + drop.IndexName));
             }
 
+            return Errors;*/
             return Errors;
         }
     }

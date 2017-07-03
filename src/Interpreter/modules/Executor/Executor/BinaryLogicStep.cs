@@ -92,12 +92,12 @@ namespace MiniSQL.Executor
 
         public static BinaryLogicStep Project(BinaryLogicStep sourceStep, List<WithAlias<Attr>> attributeAlias, string resultTableName)
         {
-            return SingleSource("select", sourceStep, resultTableName, attributeAlias);
+            return SingleSource("project", sourceStep, resultTableName, attributeAlias);
         }
 
         public static BinaryLogicStep NaturalJoin(BinaryLogicStep sourceStep1, BinaryLogicStep sourceStep2, string resultTableName)
         {
-            return BinarySource("natural join", sourceStep1, sourceStep2, resultTableName);
+            return BinarySource("natural_join", sourceStep1, sourceStep2, resultTableName);
         }
 
         public static BinaryLogicStep Cartesian(BinaryLogicStep sourceStep1, BinaryLogicStep sourceStep2, string resultTableName)

@@ -6,7 +6,7 @@ namespace MiniSQL.Executor.Validator
 {
     public abstract class SQLValidator
     {
-        protected List<SQLError> Errors;
+        protected List<SQLError> Errors = new List<SQLError>();
 
         public abstract List<SQLError> Validate();
 

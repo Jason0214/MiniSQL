@@ -2,7 +2,7 @@
 
 namespace MiniSQL.Executor.Interface
 {
-    public interface IDirectExe
+    public interface IDirectExe : IDB
     {
         StreamWriter In { get; }
 

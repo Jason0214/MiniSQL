@@ -125,10 +125,8 @@ namespace MiniSQL.SQLAnalyzer.ParserComponents
                     from _1 in P_Drop
                     from _2 in P_Index
                     from name in P_Id
-                    from _3 in P_On
-                    from table in P_Id
-                    from _4 in P_Semicolon
-                    select new DropIndex(name.Content, table.Content)
+                    from _3 in P_Semicolon
+                    select new DropIndex(name.Content)
                 );
             }
         }
@@ -137,11 +135,17 @@ namespace MiniSQL.SQLAnalyzer.ParserComponents
         {
             get
             {
+                Parser<NewValue> stringParser =
+                (
+                    from id in P_String
+                    select new NewValue(id.TypeName, id.Content.Substring(1, id.Content.Length - 2))
+                );
+
                 return
                 (
-                    from id in P_String | P_Int | P_Float
+                    from id in P_Int | P_Float
                     select new NewValue(id.TypeName, id.Content)
-                );
+                ) | stringParser;
             }
         }
 
@@ -165,6 +169,8 @@ namespace MiniSQL.SQLAnalyzer.ParserComponents
         {
             get
             {
+                Parser<WhereClause> nullWhereParser = ParserCombinators.Succeed(WhereClause.nullWhere);
+
                 return
                 (
                     from _1 in P__Update
@@ -173,8 +179,9 @@ namespace MiniSQL.SQLAnalyzer.ParserComponents
                     from attr in P_Id
                     from _3 in P_Equal
                     from value in P_NewValue
+                    from w in P_SimpleWhereClause | nullWhereParser
                     from _4 in P_Semicolon
-                    select new Update(table.Content, attr.Content, value)
+                    select new Update(table.Content, attr.Content, value, w)
                 );
             }
         }

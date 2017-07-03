@@ -97,12 +97,9 @@ namespace MiniSQL.SQLAnalyzer.Structures
     {
         public string IndexName { get; private set; }
 
-        public string TableName { get; private set; }
-
-        public DropIndex(string indexName, string tableName)
+        public DropIndex(string indexName)
         {
             IndexName = indexName;
-            TableName = tableName;
         }
     }
 
@@ -143,11 +140,14 @@ namespace MiniSQL.SQLAnalyzer.Structures
 
         public NewValue Value { get; private set; }
 
-        public Update(string tableName, string attrName, NewValue value)
+        public WhereClause Where { get; private set; }
+
+        public Update(string tableName, string attrName, NewValue value, WhereClause where)
         {
             TableName = tableName;
             AttrName = attrName;
             Value = value;
+            Where = where;
         }
     }
 

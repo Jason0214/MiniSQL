@@ -21,14 +21,14 @@ namespace MiniSQL.Executor
 
         public override void Execute()
         {
-            exeInterface.In.WriteLines(insert.TableName, insert.ValuesList.Count);
+            exeInterface.In.WriteLines("begin_insert", insert.TableName, insert.ValuesList.Count);
 
             foreach (var value in insert.ValuesList)
             {
                 exeInterface.In.WriteLine(value.Value);
             }
 
-            outStream.WriteLine(exeInterface.Out.ReadLine());
+            exeInterface.AcceptOutput(outStream);
         }
     }
 
@@ -49,8 +49,9 @@ namespace MiniSQL.Executor
 
         public override void Execute()
         {
-            exeInterface.In.WriteLines(update.TableName, update.AttrName, update.Value);
-            outStream.WriteLine(exeInterface.Out.ReadLine());
+            exeInterface.In.WriteLines("begin_update", update.TableName, update.AttrName, update.Value.Value);
+            exeInterface.In.WriteLine(update.Where.ToCompareList().ToCommandString());
+            exeInterface.AcceptOutput(outStream);
         }
     }
 
@@ -71,20 +72,9 @@ namespace MiniSQL.Executor
 
         public override void Execute()
         {
-            exeInterface.In.WriteLine(delete.TableName);
-
-            string cmpCommand = "";
-
-            List<CompareExpression> compares = delete.Where.ToCompareList();
-
-            foreach (var cmp in compares)
-            {
-                cmpCommand += cmp.ToCommandString();
-            }
-
-            exeInterface.In.WriteLine(cmpCommand);
-
-            outStream.WriteLine(exeInterface.Out.ReadLine());
+            exeInterface.In.WriteLines("begin_delete", delete.TableName);
+            exeInterface.In.WriteLine(delete.Where.ToCompareList().ToCommandString());
+            exeInterface.AcceptOutput(outStream);
         }
     }
 }

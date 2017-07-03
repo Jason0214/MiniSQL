@@ -24,7 +24,6 @@ namespace MiniSQL.Executor.Validator
         public QueryValidator(Query query, ICatalog catalogInterface = null)
         {
             InitQuery = query;
-            Errors = new List<SQLError>();
             tableManager = new TableManager(Errors, catalogInterface);
             expManager = new ExpManager(query.whereClause.Exp, Errors, tableManager);
         }

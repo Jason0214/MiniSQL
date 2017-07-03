@@ -18,7 +18,7 @@ namespace MiniSQL.Executor.Interface
 
         public bool TableExist(string name)
         {
-            CheckConnection();
+        //    CheckConnection();
 
             In.WriteLines("table_exist_check", name);
             return Out.ReadLine() == "true";
@@ -26,15 +26,16 @@ namespace MiniSQL.Executor.Interface
 
         public bool AttrExist(string tableName, string attrName)
         {
-            CheckConnection();
+        /*    CheckConnection();
 
             In.WriteLines("attr_exist_check", tableName, attrName);
-            return Out.ReadLine() == "true";
+            return Out.ReadLine() == "true";*/
+            return false;
         }
         
         public Schema GetSchemaInfo(string name)
         {
-            CheckConnection();
+        //    CheckConnection();
             
             In.WriteLines("schema_info", name);
 
