@@ -6,7 +6,11 @@
 
 using namespace std;
 
+//#define _LOG_
+
+#ifdef _LOG_
 static ofstream logg("log.txt");
+#endif
 
 void Flush()
 {
@@ -18,9 +22,11 @@ static void CheckConnection()
 {
 	if (cin.fail())
 	{
+#ifdef _LOG_
 		// If parent process fails, exit child process
 		logg << "IO Failed" << endl;
 		logg.flush();
+#endif
 		throw IOFailure();
 	}
 }
@@ -30,8 +36,10 @@ template <typename T> T GetObject()
 	CheckConnection();
 	T result;
 	cin >> result;
+#ifdef _LOG_
 	logg << result << endl;
 	logg.flush();
+#endif
 	return result;
 }
 

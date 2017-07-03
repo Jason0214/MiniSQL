@@ -213,7 +213,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 			break;
 		}
 		//check if the attribute is a secondary index
-		else {
+		/*else {
 			for (int j = 0;j < tableMeta->attr_num;j++) {
 				uint32_t index = catalog->GetIndex(tableName,j);
 				if (index) {
@@ -224,7 +224,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 					indexPos = i - cmpVec.begin();
 				}
 			}
-		}
+		}*/
 	}
 	
 	//primary index found
@@ -687,7 +687,6 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	unsigned short record_key = tableMeta->key_index < 0 ? 0 : tableMeta->key_index;	
 
 	RecordBlock* result_block_ptr = dynamic_cast<RecordBlock*>(bufferManager->GetBlock(tableMeta->table_addr));
-	result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, record_key);
 #ifdef __PRETTY__
 	//adjust align
 	std::cout << std::left;
@@ -715,6 +714,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	std::cout << "|" << std::endl << horizontalBorder << std::endl;
 	//print out data
 	while(true){
+		result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, record_key);
 		for(unsigned int i = 0; i < result_block_ptr->RecordNum(); i++){
 			for(int j = 0; j < tableMeta->attr_num; j++){
 				std::cout << "|";
@@ -742,6 +742,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 #else
 	//print out data
 	while (true) {
+		result_block_ptr->Format(tableMeta->attr_type_list, tableMeta->attr_num, record_key);
 		for (unsigned int i = 0; i < result_block_ptr->RecordNum(); i++) {
 			for (int j = 0; j < tableMeta->attr_num; j++) {
 				if(j) std::cout << "|";
@@ -1426,8 +1427,8 @@ void ExeCreateIndex(const std::string& tableName, const std::string& attrName, c
 	try{
 		catalog->CreateIndex(indexName, tableName, attrName);
 	}
-	catch(const DuplicatedIndexName &){
-		cout << "Duplicated Index Name `" << indexName << "`" << endl;
+	catch(const DuplicatedIndex &){
+		cout << "Duplicated Index `" << indexName << "`" << endl;
 		cout << "end_result" << endl;
 		Flush();
 		return;
