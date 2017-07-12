@@ -109,6 +109,7 @@ public:
 		this->RecordNum() = 0;
 		this->size = NULL;
 		this->type = NULL;
+		this->is_formated = false;
 	}
 	RecordBlock(uint8_t* buf):Block(buf){
 		this->size = NULL;
@@ -140,6 +141,7 @@ public:
 	unsigned short tuple_size;
 private:
 	static const size_t DATA_BEG = BLOCK_HEAD_SIZE + 2;
+	bool is_formated;
 	unsigned short* size;
 	DBenum* type;
 	unsigned short key_index;

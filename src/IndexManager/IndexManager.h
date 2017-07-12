@@ -3,23 +3,84 @@
 #include "../BufferManager/Block.h"
 #include "../BufferManager/BufferManager.h"
 #include "BPlusTree.h"
-#include "IndexMethod.h"
-#include "../Type/ConstChar.h"
+#include "IndexExecutor.h"
 
-//virtual class to derive TypedIndexManager of different types
-class IndexManager {
+
+class IndexManager{
 public:
-	IndexManager() {};
-	virtual ~IndexManager() {};
-	virtual Block* insertEntryArray(Block* root, MethodType type, void* keys_void, uint32_t* addrs, int num) = 0;
-	virtual Block* insertEntry(Block* root, MethodType type, void* key_void, uint32_t addr) = 0;
-	virtual Block* removeEntry(Block* root, MethodType type, SearchResult* pos) = 0;
-	virtual SearchResult* searchEntry(Block* root, MethodType type, void* key_void) = 0;
-	virtual void removeIndex(Block* root, MethodType type) = 0;
-	virtual void printAll(Block* root, MethodType type) = 0;
-	virtual void initRootBlock(Block* block, MethodType type) = 0;
-	virtual void writeAll() = 0;
+	static IndexManager & Instance(){
+		static IndexManager theIndexManager;
+		return theIndexManager;
+	}
+	~IndexManager() {};
+	Block* insertEntryArray(DBenum index_type, 
+							Block* root, 
+							DBenum key_type, 
+							const void* keys_void,
+							size_t stride,
+							const uint32_t* addrs, 
+							int num){
+		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
+		for(int i = 0; i < num; i++){
+			executor->insert(keys_void + i * stride, addrs[i]);
+		}
+		delete executor;
+	}
+	Block* insertEntry(DBenum index_type, 
+						Block* root, 
+						DBenum key_type, 
+						const void* key_void, 
+						uint32_t addr){
+		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
+		executor->insert(key_void, addr);
+		delete executor;
+	}
+	Block* removeEntry(DBenum index_type, 
+						Block* root, 
+						DBenum key_type, 
+						SearchResult* pos){
+		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
+		executor->remove(pos);
+		delete executor;
+	}
+	SearchResult* searchEntry(DBenum index_type, 
+								Block* root, 
+								DBenum key_type, 
+								const void* key_void){
+		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
+		executor->insert(key_void);
+		delete executor;
+	}
+	void removeIndex(DBenum index_type, Block* root, DBenum key_type){
+		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
+		executor->removeAll();
+		delete executor;		
+	}
+	void printAll(DBenum index_type, Block* root, DBenum key_type){
+		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
+		executor->printAll();
+		delete executor;
+	}
+	void initRootBlock(DBenum index_type, Block* root, DBenum key_type){
+		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
+		executor->initBlock(root);
+		delete executor;
+	}
+	void writeAll(){
+
+	}
+private:
+	IndexManager();
+	IndexManager(const IndexManager &);
+	IndexManager & operator=(const IndexManager &);
+
+	IndexExecutor* getIndexExecutor(DBenum index_type, Block* root, DBenum key_type){
+		if(index_type == DB_BPTREE_INDEX) return new BPlusTree(root, key_type);
+		//TODO hash index
+	}
 };
+
+
 
 template<class T>
 class TypedIndexManager:public IndexManager {
@@ -106,30 +167,3 @@ protected:
 	//store methods
 	std::vector<IndexMethod<T>*> methods;
 };
-
-//get index manager according to type
-inline IndexManager* getIndexManager(DBenum type) {
-	IndexManager* indexManager;
-	if (type == DB_TYPE_INT) {
-		indexManager = new TypedIndexManager<int>();
-	}
-	else if (type == DB_TYPE_FLOAT) {
-		indexManager = new TypedIndexManager<float>();
-	}
-	else if (type - DB_TYPE_CHAR < 16) {
-		indexManager = new TypedIndexManager<ConstChar<16>>();
-	}
-	else if (type - DB_TYPE_CHAR < 33) {
-		indexManager = new TypedIndexManager<ConstChar<33>>();
-	}
-	else if (type - DB_TYPE_CHAR < 64) {
-		indexManager = new TypedIndexManager<ConstChar<64>>();
-	}
-	else if (type - DB_TYPE_CHAR < 128) {
-		indexManager = new TypedIndexManager<ConstChar<128>>();
-	}
-	else {
-		indexManager = new TypedIndexManager<ConstChar<256>>();
-	}
-	return indexManager;
-}
