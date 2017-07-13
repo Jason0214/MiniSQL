@@ -7,10 +7,7 @@
 class SearchResult {
 public:
 	int index;
-	int dataLen;
-	void* data;
-	uint32_t* ptrs;
-	Block* node;
+	BPlusNode* leaf_node;
 };
 
 

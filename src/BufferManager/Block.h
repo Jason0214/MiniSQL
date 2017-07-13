@@ -148,4 +148,31 @@ private:
 	unsigned short attr_num;
 };
 
+class BPlusNode :public Block {
+public:
+	BPlusNode():Block(){
+		this->dataCnt() = 0;
+	}
+	inline bool & isLeaf() {
+		return *(bool*)(&this->block_data[BLOCK_HEAD_SIZE]);
+	}
+	inline uint32_t & parent() {
+		return *(uint32_t*)(&this->block_data[BLOCK_HEAD_SIZE + 1]);
+	}
+	inline uint32_t & rightSibling() {
+		return *(uint32_t*)(&this->block_data[BLOCK_HEAD_SIZE + 5]);
+	}
+	inline int & dataCnt() {
+		return *(int*)(&this->block_data[BLOCK_HEAD_SIZE + 9]);
+	}
+	inline void** data() {
+		return (void**)(&this->block_data[BLOCK_HEAD_SIZE + 13]);
+	}
+	inline uint32_t *ptrs() {
+		return (uint32_t*)(&this->block_data[BLOCK_HEAD_SIZE + 13 + this->order * this->key_len]);//not order-1: one more position for split easily
+	}
+	size_t key_len;
+	int order;
+};
+
 #endif

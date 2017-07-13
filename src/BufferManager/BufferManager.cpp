@@ -122,6 +122,7 @@ Block* BufferManager::CreateBlock(DBenum block_type) {
 	switch (block_type) {
 	case(DB_TABLE_BLOCK) : block_ptr = new TableBlock(); break;
 	case(DB_SCHEMA_BLOCK) : block_ptr = new SchemaBlock(); break;
+	case(DB_BPNODE_BLOCK) : block_ptr = new BPlusNode(); break;
 	case(0) : block_ptr = new Block(); break;
 	default: block_ptr = new RecordBlock(); break;
 	}
@@ -148,6 +149,7 @@ Block* BufferManager::LoadFromDisc(uint32_t blk_index){
 	switch ((DBenum)*(uint8_t*)buf) {
 		case(DB_TABLE_BLOCK) : block_ptr = new TableBlock(buf); break;
 		case(DB_SCHEMA_BLOCK) : block_ptr = new SchemaBlock(buf); break;
+		case(DB_BPNODE_BLOCK) : block_ptr = new BPlusNode(buf); break;
 		case(DB_DELETED_BLOCK) : block_ptr = new Block(buf); break;
 		default: block_ptr = new RecordBlock(buf); break;
 	}
