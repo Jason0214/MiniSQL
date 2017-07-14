@@ -7,7 +7,7 @@
 class SearchResult {
 public:
 	int index;
-	BPlusNode* leaf_node;
+	BPlusNode* node;
 };
 
 

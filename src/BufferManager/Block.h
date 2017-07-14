@@ -1,11 +1,9 @@
 #ifndef _BLOCK_H_
 #define _BLOCK_H_
 
-#define BLOCK_SIZE 4096
-#define BLOCK_HEAD_SIZE 14
+#include <sys/types.h>
 #include "../CONSTANT.h"
 #include "../EXCEPTION.h"
-#include <cstdint>
 #include <cstring>
 
 // only class Block has real data,
@@ -37,6 +35,8 @@ public:
 	}
 	uint8_t* block_data;
 	bool is_dirty; //dirty tag
+	static const int BLOCK_SIZE = 4096;
+	static const int BLOCK_HEAD_SIZE = 14;
 protected:
 	Block(const Block &);
 	Block & operator=(const Block &);
@@ -153,6 +153,7 @@ public:
 	BPlusNode():Block(){
 		this->dataCnt() = 0;
 	}
+	BPlusNode(uint8_t* buf):Block(buf){};
 	inline bool & isLeaf() {
 		return *(bool*)(&this->block_data[BLOCK_HEAD_SIZE]);
 	}
@@ -165,14 +166,17 @@ public:
 	inline int & dataCnt() {
 		return *(int*)(&this->block_data[BLOCK_HEAD_SIZE + 9]);
 	}
-	inline void** data() {
-		return (void**)(&this->block_data[BLOCK_HEAD_SIZE + 13]);
+	inline void* getKey(int index) {
+		return (void*)(&this->block_data[BLOCK_HEAD_SIZE + 13 + index * this->key_len]);
 	}
-	inline uint32_t *ptrs() {
-		return (uint32_t*)(&this->block_data[BLOCK_HEAD_SIZE + 13 + this->order * this->key_len]);//not order-1: one more position for split easily
+	inline uint32_t* addrs() {
+		//not order-1: one more position for split easily
+		return (uint32_t*)(&this->block_data[BLOCK_HEAD_SIZE + 13 + 
+							this->order * this->key_len]);
 	}
 	size_t key_len;
 	int order;
+	static const int BPNODE_HEAD_SIZE = 13;
 };
 
 #endif

@@ -1,20 +1,19 @@
 #pragma once
 
-#include <iostream>
 #include <cmath>
+#include <cassert>
+#include "../SharedFunc.h"
 #include "../BufferManager/Block.h"
 #include "IndexExecutor.h"
 
 class BPlusTree : public IndexExecutor {
 public:
 	BPlusTree(Block *root, DBenum key_type) : type(key_type) {
-		this->root = dynamic_cast<BPlusNode<T>*>(root);
-		this->order = this->getOrder(this->type);
-		this->key_len = typeLen(this->type);
+		this->root = dynamic_cast<BPlusNode*>(root);
+		this->SetOrder();
 	};
-	~BPlusTree() {
-		operateTree(root, &BufferManager::ReleaseBlock);
-	}
+	~BPlusTree() {}
+
 	//insert a entry into the b+tree
 	void insert(const void* key, uint32_t addr);
 
@@ -41,16 +40,12 @@ public:
 	}
 
 	//remove the whole b+tree
-	void removeAll() {
-		operateTree(root, &BufferManager::DeleteBlock);
-		this->root = nullptr;
-	}
+	void removeAll();
 
 	//initialize a block (always the root node)
 	void initBlock(Block* block) {
-		BPlusNode<T>* theNode = BlockToBPNode(block);
+		BPlusNode* theNode = BlockToBPNode(block);
 		theNode->isLeaf() = true;
-		theNode->order() = order;
 		theNode->dataCnt() = 0;
 		theNode->parent() = 0;
 		theNode->rightSibling() = 0;
@@ -62,7 +57,7 @@ protected:
 	size_t key_len;
 
 	BPlusNode* BlockToBPNode(Block* block_ptr){
-		BPlusNode ret = static_cast<BPlusNode*>(block_ptr);
+		BPlusNode* ret = dynamic_cast<BPlusNode*>(block_ptr);
 		ret->order = this->order;
 		ret->key_len = this->key_len;
 		return ret;
@@ -71,11 +66,17 @@ protected:
 	//get minimal dataCnt in a node
 	int getMinCnt(BPlusNode* theNode) {
 		int ret;
-		if (root == theNode) ret = 1;
-		else if (theNode->isLeaf()) ret = (int)ceil((order - 1)*0.5);
-		else ret = (int)ceil(order*0.5) - 1;
+		if (this->root == theNode) ret = 1;
+		else if (theNode->isLeaf()) ret = this->order & 1 ? (this->order - 1) >> 1 : this->order >> 1;
+		else ret = this->order & 1 ? this->order >> 1 : (this->order >> 1) - 1;
 		return ret;
 	}
+
+	void SetOrder(){
+		this->key_len = typeLen(this->type);
+		this->order = (Block::BLOCK_SIZE - BPlusNode::BPNODE_HEAD_SIZE - Block::BLOCK_HEAD_SIZE) / (this->key_len + sizeof(uint32_t));
+	}
+	void recursiveDelete(BPlusNode *);
 
 	// insert a new entry
 	void insertInBlock(const void* key, uint32_t addr, BPlusNode* theNode);
@@ -87,7 +88,7 @@ protected:
 	int findFirstInBlock(const void* key, BPlusNode* theNode) {
 		int index = findLargerInBlock(key, theNode);
 		//trace back the first matched key
-		while (index > 0 && compare(theNode->data()[index - 1], key, this->type) == 0) index--;
+		while (index > 0 && compare(theNode->getKey(index - 1), key, this->type) == 0) index--;
 		return index;
 	}
 

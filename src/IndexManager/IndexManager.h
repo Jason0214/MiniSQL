@@ -1,10 +1,7 @@
 #pragma once
-#include <vector>
 #include "../BufferManager/Block.h"
 #include "../BufferManager/BufferManager.h"
 #include "BPlusTree.h"
-#include "IndexExecutor.h"
-
 
 class IndexManager{
 public:
@@ -22,7 +19,7 @@ public:
 							int num){
 		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
 		for(int i = 0; i < num; i++){
-			executor->insert(keys_void + i * stride, addrs[i]);
+			executor->insert((const void*)((unsigned long)keys_void + i * stride), addrs[i]);
 		}
 		Block* ret = executor->getRoot();
 		delete executor;
@@ -34,16 +31,19 @@ public:
 						const void* key_void, 
 						uint32_t addr){
 		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
-		Block* ret = executor->insert(key_void, addr);
+		executor->insert(key_void, addr);
+		Block* ret = executor->getRoot();
 		delete executor;
 		return ret;
 	}
 	Block* removeEntry(DBenum index_type, 
 						Block* root, 
 						DBenum key_type, 
-						SearchResult* pos){
+						SearchResult* & pos){
 		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
-		Block* ret = executor->remove(pos);
+		executor->remove(pos);
+		this->destroySearchResult(pos);
+		Block* ret = executor->getRoot();
 		delete executor;
 		return ret;
 	}
@@ -52,7 +52,7 @@ public:
 								DBenum key_type, 
 								const void* key_void){
 		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
-		SearchResult* ret = executor->insert(key_void);
+		SearchResult* ret = executor->search(key_void);
 		delete executor;
 		return ret;
 	}
@@ -75,16 +75,21 @@ public:
 
 	}
 
-	void destroySearchResult(SearchResult* ){
-
+	void destroySearchResult(SearchResult* & res){
+		BufferManager::Instance().ReleaseBlock((Block* &)res->node);
+		delete res;
+		res = NULL;
 	}
 private:
-	IndexManager();
+	IndexManager(){};
 	IndexManager(const IndexManager &);
 	IndexManager & operator=(const IndexManager &);
 
 	IndexExecutor* getIndexExecutor(DBenum index_type, Block* root, DBenum key_type){
 		if(index_type == DB_BPTREE_INDEX) return new BPlusTree(root, key_type);
+		else {
+			return NULL;
+		}
 		//TODO hash index
 	}
 };

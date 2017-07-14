@@ -137,7 +137,7 @@ Block* BufferManager::CreateBlock(DBenum block_type) {
 Block* BufferManager::LoadFromDisc(uint32_t blk_index){
 	FILE* fp = fopen(this->SRC_FILE_NAME.c_str(),"rb");
 	Block* block_ptr = NULL;
-	uint8_t* buf = new uint8_t[BLOCK_SIZE];
+	uint8_t* buf = new uint8_t[Block::BLOCK_SIZE];
 	//XXX: possible solution: https://stackoverflow.com/questions/6980063/how-to-handle-file-whose-size-is-more-than-2-gb
 	fseek(fp, 0, SEEK_SET);
 	while(blk_index >= (1 << 19)){
@@ -145,7 +145,7 @@ Block* BufferManager::LoadFromDisc(uint32_t blk_index){
 		blk_index -= (1 << 19);
 	}
 	fseek(fp, blk_index << 12, SEEK_CUR);
-	fread(buf, BLOCK_SIZE, 1, fp);
+	fread(buf, Block::BLOCK_SIZE, 1, fp);
 	switch ((DBenum)*(uint8_t*)buf) {
 		case(DB_TABLE_BLOCK) : block_ptr = new TableBlock(buf); break;
 		case(DB_SCHEMA_BLOCK) : block_ptr = new SchemaBlock(buf); break;
@@ -169,7 +169,7 @@ void BufferManager::WriteToDisc(Block* block_ptr){
 		blk_index -= (1 << 19);
 	}
 	fseek(fp, blk_index << 12, SEEK_CUR);
-	fwrite(block_ptr->block_data, BLOCK_SIZE, 1, fp);
+	fwrite(block_ptr->block_data, Block::BLOCK_SIZE, 1, fp);
 	fclose(fp);	
 	block_ptr->is_dirty = false;
 }
