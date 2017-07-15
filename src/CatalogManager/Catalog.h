@@ -1,5 +1,6 @@
 #ifndef _Catalog_H_
 #define _Catalog_H_
+#include "../SharedFunc.h"
 #include "../CONSTANT.h"
 #include "../EXCEPTION.h"
 #include "../IndexManager/IndexManager.h"

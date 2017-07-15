@@ -169,14 +169,15 @@ public:
 	inline int & dataCnt() {
 		return *(int*)(&this->block_data[BLOCK_HEAD_SIZE + 9]);
 	}
-	inline void* getKey(int index) {
-		return (void*)(&this->block_data[BLOCK_HEAD_SIZE + 13 + index * this->key_len]);
-	}
 	inline uint32_t* addrs() {
-		//not order-1: one more position for split easily
-		return (uint32_t*)(&this->block_data[BLOCK_HEAD_SIZE + 13 + 
-							this->order * this->key_len]);
+		return (uint32_t*)(&this->block_data[BLOCK_HEAD_SIZE + 13]);
 	}
+	inline void* getKey(int index) {
+		//not order-1: one more position for split easily
+		return (void*)(&this->block_data[BLOCK_HEAD_SIZE + 13 
+					+ this->order * sizeof(uint32_t) +index * this->key_len]);
+	}
+
 	size_t key_len;
 	int order;
 	static const int BPNODE_HEAD_SIZE = 13;

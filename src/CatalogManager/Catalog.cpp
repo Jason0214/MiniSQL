@@ -9,6 +9,7 @@
 using namespace std;
 
 static BufferManager & buffer_manager = BufferManager::Instance();
+static IndexManager & index_manager = IndexManager::Instance();
 
 Catalog::Catalog(){
 	SchemaBlock* schema_ptr = dynamic_cast<SchemaBlock*>(buffer_manager.GetBlock(0));
@@ -156,15 +157,13 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 	}
 
 /* find the block where `table_name` should insert in */
-	TypedIndexManager<ConstChar<32> > index_manager;
+	DBenum char_31 = (DBenum)(DB_TYPE_CHAR + 31)
 	Block* index_tree_root = buffer_manager.GetBlock(this->table_index_addr);
-	SearchResult* result_ptr = index_manager.searchEntry(index_tree_root, BPTree, &ConstChar<32>(table_name.c_str()));
+	SearchResult* result_ptr = index_manager.searchEntry(DB_BPTREE_INDEX, index_tree_root, char_31, table_name.c_str());
 
 	uint32_t table_block_addr;
 	if(result_ptr){
-		BPlusNode<ConstChar<32> >* leaf_node = static_cast<BPlusNode<ConstChar<32> >*>(result_ptr->node);
-		ConstChar<32> & key = leaf_node->data()[result_ptr->index];
-		if(key ==  ConstChar<32>(table_name.c_str())){
+		if(compare(table_name.c_str(), result_ptr->node->getKey(result_ptr->index), char_31) == 0){
 			buffer_manager.ReleaseBlock((Block* &)index_tree_root);
 			throw DuplicatedTableName(table_name);
 		}
@@ -211,16 +210,16 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 	// calculate the size of the record
 	short size = TableBlock::TABLE_RECORD_SIZE + TableBlock::ATTR_RECORD_SIZE * attr_num;
 	if (!result_ptr) {
-		index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, &ConstChar<32>(table_name.c_str()), this->table_data_addr);
+		index_tree_root = index_manager.insertEntry(DB_BPTREE_INDEX, index_tree_root, char_31, table_name.c_str(), this->table_data_addr);
 	}
 	else if (strcmp((char*)table_block_ptr->GetTableInfoPtr(0), table_name.c_str()) == 0) {
-		index_tree_root = index_manager.removeEntry(index_tree_root, BPTree, result_ptr);
-		index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, &ConstChar<32>(table_name.c_str()), table_block_addr);
+		index_tree_root = index_manager.removeEntry(DB_BPTREE_INDEX, index_tree_root, result_ptr);
+		index_tree_root = index_manager.insertEntry(DB_BPTREE_INDEX, index_tree_root, char_31, table_name.c_str(), table_block_addr);
 	}
 	if (size > table_block_ptr->EmptySize()) {
 		TableBlock* new_block_ptr = this->SplitTableBlock(table_block_ptr);
-		index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, 
-							&ConstChar<32>((char*)new_block_ptr->GetTableInfoPtr(0)), new_block_ptr->BlockIndex());
+		index_tree_root = index_manager.insertEntry(DB_BPTREE_INDEX, index_tree_root, char_31,
+									new_block_ptr->GetTableInfoPtr(0), new_block_ptr->BlockIndex());
 		buffer_manager.ReleaseBlock((Block* &)new_block_ptr);
 	}
 	if (index_tree_root->BlockIndex() != this->table_index_addr) {
@@ -237,8 +236,7 @@ void Catalog::DeleteTable(const string & table_name){
 	if(table_meta->key_index >= 0){
 		DBenum key_type = table_meta->attr_type_list[table_meta->key_index];
 		Block* index_tree_root = buffer_manager.GetBlock(table_meta->primary_index_addr);
-		TypedIndexManager<int> index_manager;
-		index_manager.removeIndex(index_tree_root, BPTree);
+		index_manager.removeIndex(DB_BPTREE_INDEX, index_tree_root);
 		buffer_manager.ReleaseBlock(index_tree_root);
 	}
 	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(table_meta->table_addr));
@@ -257,15 +255,13 @@ void Catalog::DropTable(const string & table_name){
 /* delete data */
 	this->DeleteTable(table_name);
 /* search */
-	TypedIndexManager<ConstChar<32> > index_manager;
+	DBenum char_31 = (DBenum)(DB_TYPE_CHAR + 31);
 	Block* index_tree_root = buffer_manager.GetBlock(this->table_index_addr);
-	SearchResult* result_ptr = index_manager.searchEntry(index_tree_root, BPTree, &ConstChar<32>(table_name.c_str()));
+	SearchResult* result_ptr = index_manager.searchEntry(DB_BPTREE_INDEX, index_tree_root, char_31, table_name.c_str());
 
 	uint32_t table_block_addr;
 	if(result_ptr){
-		BPlusNode<ConstChar<32> >* leaf_node = static_cast<BPlusNode<ConstChar<32> >*>(result_ptr->node);
-		ConstChar<32> & key = leaf_node->data()[result_ptr->index];
-		if(key == ConstChar<32>(table_name.c_str())){
+		if(compare(table_name.c_str(), result_ptr->node->getKey(result_ptr->index), char_31) == 0){
 			table_block_addr = leaf_node->ptrs()[result_ptr->index + 1];
 		}
 		else{
@@ -311,12 +307,12 @@ void Catalog::DropTable(const string & table_name){
 
 /* update index */
 	if(i == 0 && table_block_ptr->RecordNum() > 0){
-		index_tree_root = index_manager.removeEntry(index_tree_root, BPTree, result_ptr);
-		index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, 
-				&ConstChar<32>((char*)table_block_ptr->GetTableInfoPtr(0)), table_block_ptr->BlockIndex());	
+		index_tree_root = index_manager.removeEntry(DB_BPTREE_INDEX, index_tree_root, result_ptr);
+		index_tree_root = index_manager.insertEntry(DB_BPTREE_INDEX, index_tree_root, char_31,
+				table_block_ptr->GetTableInfoPtr(0), table_block_ptr->BlockIndex());	
 	}
 	else if(table_block_ptr->RecordNum() == 0){
-		index_tree_root = index_manager.removeEntry(index_tree_root, BPTree, result_ptr);
+		index_tree_root = index_manager.removeEntry(DB_BPTREE_INDEX, index_tree_root, result_ptr);
 		// the block would be empty remove it from link list
 		if(table_block_ptr->PreBlockIndex() == 0 && table_block_ptr->NextBlockIndex() == 0){}
 		else if(table_block_ptr->PreBlockIndex() == 0){
@@ -403,9 +399,9 @@ TableBlock* Catalog::SplitTableBlock(TableBlock* table_block_ptr){
 uint32_t Catalog::FindTableBlock(const std::string & table_name){
 	if(!this->database_selected) throw DatabaseNotSelected("database not selected");
 /* find the record of `table_name` */
-	TypedIndexManager<ConstChar<32> > index_manager;
+	DBenum char_31 = (DBenum)(DB_TYPE_CHAR + 31);
 	Block* index_tree_root = buffer_manager.GetBlock(this->table_index_addr);
-	SearchResult* result_ptr = index_manager.searchEntry(index_tree_root, BPTree, &ConstChar<32>(table_name.c_str()));
+	SearchResult* result_ptr = index_manager.searchEntry(DB_BPTREE_INDEX, index_tree_root, char_31, table_name.c_str());
 	if(!result_ptr){
 	// table_name not existed
 		buffer_manager.ReleaseBlock((Block* &)index_tree_root);
@@ -523,15 +519,21 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	string table_name_mix_key = table_name;
 	table_name_mix_key.append((char*)&secondary_key_index);
 
-	TypedIndexManager<ConstChar<33> > index_manager;
+	DBenum type_list[3];
+	type_list[0] = (DBenum)(DB_TYPE_CHAR + 32);
+	type_list[1] = (DBenum)(DB_TYPE_CHAR + 31);
+	type_list[2] = DB_TYPE_INT;
+	const void* data_list[3];
+	data_list[0] = table_name_mix_key.c_str();
+	data_list[1] = index_name.c_str();
+	data_list[2] = &new_block_addr;
+
 	Block* index_tree_root = buffer_manager.GetBlock(this->index_index_addr);
-	SearchResult* result_ptr = index_manager.searchEntry(index_tree_root, BPTree, &ConstChar<33>(table_name_mix_key.c_str()));
+	SearchResult* result_ptr = index_manager.searchEntry(DB_BPTREE_INDEX ,index_tree_root, type_list[0], data_list[0]);
 
 	uint32_t index_block_addr;
 	if(result_ptr){
-		BPlusNode<ConstChar<33> >* leaf_node = static_cast<BPlusNode<ConstChar<33> >*>(result_ptr->node);
-		ConstChar<33> & key = leaf_node->data()[result_ptr->index];
-		if(key == ConstChar<33>(table_name_mix_key.c_str())){
+		if(compare(table_name_mix_key.c_str(), result_ptr->node->getKey(result_ptr->index), type_list[0]) == 0){
 			buffer_manager.ReleaseBlock(index_tree_root);
 			throw DuplicatedIndex(table_name.c_str(), secondary_key_index);			
 		}
@@ -550,21 +552,17 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	}
 				
 /* do real insertion record */
-	DBenum type_list[3];
-	type_list[0] = (DBenum)(DB_TYPE_CHAR + 32);
-	type_list[1] = (DBenum)(DB_TYPE_CHAR + 31);
-	type_list[2] = DB_TYPE_INT;
 
 	RecordBlock* index_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(index_block_addr));
 	index_block_ptr->Format(type_list, 3, 0);
 
 	Block* index_root = buffer_manager.CreateBlock();
 	this->InitBPIndexRoot(index_root, type);
-	IndexManager* index_manager_ptr = getIndexManager(type);
 	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(table_meta->table_addr));
 	while (true) {
 		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
-		index_root = index_manager_ptr->insertEntry(index_root, BPTree, data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
+		index_root = index_manager.insertEntry(DB_BPTREE_INDEX, index_root, table_meta->attr_type_list[table_meta->key_index], 
+												data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
 		uint32_t next = data_block_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock((Block* &)data_block_ptr);
 		if (next == 0) break;
@@ -572,30 +570,24 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	}
 	uint32_t new_block_addr = index_root->BlockIndex();
 	delete table_meta;
-	delete index_manager_ptr;
 	buffer_manager.ReleaseBlock(index_root);
-
-	const void* data_list[3];
-	data_list[0] = table_name_mix_key.c_str();
-	data_list[1] = index_name.c_str();
-	data_list[2] = &new_block_addr;
 	index_block_ptr->InsertTuple(data_list);
 
 /* update index */
 	if(!result_ptr){
-		index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, 
-						&ConstChar<33>(table_name_mix_key.c_str()), index_block_ptr->BlockIndex());
+		index_tree_root = index_manager.insertEntry(DB_BPTREE_INDEX ,index_tree_root, type_list[0],
+						data_list[0], index_block_ptr->BlockIndex());
 	}
 	else if(strcmp(table_name_mix_key.c_str(), (char*)index_block_ptr->GetDataPtr(0, 0)) == 0){
-		index_tree_root = index_manager.removeEntry(index_tree_root, BPTree, result_ptr);
-		index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, 
-						&ConstChar<33>(table_name_mix_key.c_str()), index_block_ptr->BlockIndex());
+		index_tree_root = index_manager.removeEntry(DB_BPTREE_INDEX, index_tree_root, result_ptr);
+		index_tree_root = index_manager.insertEntry(DB_BPTREE_INDEX, index_tree_root, type_list[0],
+						data_list[0],, index_block_ptr->BlockIndex());
 	}
 	// split if needed
 	if(!index_block_ptr->CheckEmptySpace()){
 		RecordBlock* new_block_ptr = this->SplitRecordBlock(index_block_ptr, type_list, 3, 0);
-		index_tree_root = index_manager.insertEntry(index_tree_root, BPTree, 
-						&ConstChar<33>((char*)new_block_ptr->GetDataPtr(0,0)), new_block_ptr->BlockIndex());
+		index_tree_root = index_manager.insertEntry(DB_BPTREE_INDEX, index_tree_root, type_list[0],
+						new_block_ptr->GetDataPtr(0,0), new_block_ptr->BlockIndex());
 		buffer_manager.ReleaseBlock((Block* &)new_block_ptr);
 	}
 
@@ -650,11 +642,11 @@ void Catalog::DropIndex(const string & index_name){
 				index_root_block = *(uint32_t*)index_data_ptr->GetDataPtr(i, 2);
 				if(i == 0 && index_data_ptr->RecordNum() > 1){
 					//update primary index
-					TypedIndexManager<ConstChar<33> > index_manager;
 					Block* index_root = buffer_manager.GetBlock(this->index_index_addr);
-					SearchResult* index_data_entry = index_manager.searchEntry(index_root, BPTree, index_data_ptr->GetDataPtr(0, 0));
-					index_root = index_manager.removeEntry(index_root, BPTree, index_data_entry);
-					index_root = index_manager.insertEntry(index_root, BPTree, index_data_ptr->GetDataPtr(1, 0), index_data_ptr->BlockIndex());
+					SearchResult* index_data_entry = index_manager.searchEntry(DB_BPTREE_INDEX ,index_root, type_list[0], index_data_ptr->GetDataPtr(0, 0));
+					index_root = index_manager.removeEntry(DB_BPTREE_INDEX ,index_root, type_list[0], index_data_entry);
+					index_root = index_manager.insertEntry(DB_BPTREE_INDEX ,index_root, type_list[0], 
+											index_data_ptr->GetDataPtr(1, 0), index_data_ptr->BlockIndex());
 					buffer_manager.ReleaseBlock(index_root);
 					delete index_data_entry;
 				}
@@ -671,8 +663,9 @@ void Catalog::DropIndex(const string & index_name){
 		index_data_ptr->Format(type_list, 3, 0);
 	}
 
-	TypedIndexManager<int> index_manager;
-	index_manager.removeIndex(buffer_manager.GetBlock(index_root_block), BPTree);
+	// attention: DB_TYPE_INT is not the real type of index, however
+	// type is irralevant when perform removeIndex.
+	index_manager.removeIndex(DB_BPTREE_INDEX, buffer_manager.GetBlock(index_root_block), DB_TYPE_INT);
 
 	if(index_data_ptr->RecordNum() == 0){
 		if(index_data_ptr->PreBlockIndex() == 0 && index_data_ptr->NextBlockIndex() == 0){
@@ -740,16 +733,15 @@ RecordBlock* Catalog::SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* ty
 uint32_t Catalog::FindIndexBlock(const std::string & table_name_mix_key){
 	if (!this->database_selected) throw DatabaseNotSelected("database not selected");
 /* find through index */
-	TypedIndexManager<ConstChar<32> > index_manager;
+	DBenum char_32 = (DBenum)(DB_TYPE_CHAR + 32);
 	Block* index_tree_root = buffer_manager.GetBlock(this->index_index_addr);
-	SearchResult* result_ptr = index_manager.searchEntry(index_tree_root, BPTree, &ConstChar<33>(table_name_mix_key.c_str()));
+	SearchResult* result_ptr = index_manager.searchEntry(DB_BPTREE_INDEX, index_tree_root, char_32, table_name_mix_key.c_str());
 	if(!result_ptr){
 		buffer_manager.ReleaseBlock(index_tree_root);
 		throw IndexNotFound();
 	}
 	uint32_t record_block_addr;
-	BPlusNode<ConstChar<33> >* leaf_node = static_cast<BPlusNode<ConstChar<33> >*>(result_ptr->node);
-	if(leaf_node->data()[result_ptr->index] == ConstChar<33>(table_name_mix_key.c_str())){
+	if(compare(result_ptr->node->getKey(result_ptr->index) ,table_name_mix_key.c_str(), char_32) == 0){
 		record_block_addr = leaf_node->ptrs()[result_ptr->index + 1];
 	}
 	else if(result_ptr->index != 0){
