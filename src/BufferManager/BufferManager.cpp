@@ -2,6 +2,7 @@
 #include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <cassert>
 #include <iostream>
 using namespace std;
 
@@ -68,7 +69,6 @@ BlockNode* & BufferManager::GetBlockNode(uint32_t block_index){
 // if block in buffer, move it to the head of the list and return it
 // otherwise read it from src file and insert to the head of list and return
 Block* BufferManager::GetBlock(uint32_t block_index){
-	this->pinned_block_count++;
 	BlockNode* block_node_ptr = this->GetBlockNode(block_index);
 	if(block_node_ptr){
 		if(block_node_ptr->pre){
@@ -94,13 +94,13 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 			this->block_list_head->pre = block_node_ptr;
 			this->block_list_head = block_node_ptr;
 		}
-		block_node_ptr->is_pined = true;
+		block_node_ptr->refer_count++;
 		return block_node_ptr->data;
 	}
 	else{
 		Block* block_ptr = this->LoadFromDisc(block_index);
 		block_node_ptr = this->AddBlock(block_ptr);
-		block_node_ptr->is_pined = true;		
+		block_node_ptr->refer_count++;	
 		return block_ptr;
 	}
 }
@@ -112,8 +112,7 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 void BufferManager::ReleaseBlock(Block* & block_ptr){
 	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
 	block_ptr = NULL;
-	block_node_ptr->is_pined = false;
-	this->pinned_block_count--;
+	block_node_ptr->refer_count--;
 }
 
 // interface for outer program to get an empty block which not on the disc
@@ -129,7 +128,7 @@ Block* BufferManager::CreateBlock(DBenum block_type) {
 	block_ptr->Init(this->AllocNewBlock(),block_type);
 	this->WriteToDisc(block_ptr);
 	BlockNode* block_node_ptr = this->AddBlock(block_ptr);
-	block_node_ptr->is_pined = true;	
+	block_node_ptr->refer_count++;
 	return block_ptr;
 }
 
@@ -184,7 +183,7 @@ BlockNode* BufferManager::AddBlock(Block* blk_to_add){
 		BlockNode* last_node_ptr = this->block_list_tail;
 		last_node_ptr->pre->next = NULL;
 		this->block_list_tail = last_node_ptr->pre;
-		while(last_node_ptr->is_pined){
+		while(last_node_ptr->refer_count == 0){
 			last_node_ptr = last_node_ptr->pre;			
 		}
 		this->RemoveBlock(last_node_ptr);
@@ -272,6 +271,6 @@ void BufferManager::DeleteBlock(Block* & block_ptr){
 		this->ReleaseBlock((Block* &)schema_block);
 
 		block_to_delete->is_dirty = true;
-		block_node_ptr->is_pined = false;
+		assert(--block_node_ptr->refer_count == 0);
 	}
 }

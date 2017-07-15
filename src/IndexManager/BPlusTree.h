@@ -75,6 +75,7 @@ protected:
 	void SetOrder(){
 		this->key_len = typeLen(this->type);
 		this->order = (Block::BLOCK_SIZE - BPlusNode::BPNODE_HEAD_SIZE - Block::BLOCK_HEAD_SIZE) / (this->key_len + sizeof(uint32_t));
+		assert(this->order > 0);
 	}
 	void recursiveDelete(BPlusNode *);
 
@@ -96,7 +97,7 @@ protected:
 	void split(BPlusNode* theNode);
 
 	//delete an entry from the block
-	void removeInBlock(BPlusNode* theNode, unsigned int index);
+	void removeInBlock(BPlusNode* & theNode, unsigned int index);
 
 	//merge the current node to other node
 	void merge(BPlusNode* & theNode);

@@ -10,14 +10,15 @@
 
 class BlockNode{
 public:
-	BlockNode():pre(NULL),next(NULL),data(NULL),is_pined(false){}
+	BlockNode():pre(NULL),next(NULL),data(NULL),refer_count(0),is_pined(false){}
 	~BlockNode(){
 		delete data;
 	}
 	BlockNode* pre;
 	BlockNode* next;
 	Block* data;
-	bool is_pined; // if a block is pined, it cannot be remove from buffer
+	int refer_count;
+	bool is_pined; // if a block is pined, it is being write back
 };
 
 class BufferManager{
@@ -29,7 +30,7 @@ public:
 	}
 	~BufferManager() {
 		this->WriteBackAll();
-		std::cout << "Pinned Block Count: " << this->pinned_block_count << std::endl;
+//		std::cout << "Pinned Block Count: " << this->pinned_block_count << std::endl;
 	};
 
 	Block* GetBlock(uint32_t blk_index);

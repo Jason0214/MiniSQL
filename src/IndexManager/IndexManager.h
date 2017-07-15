@@ -76,7 +76,9 @@ public:
 	}
 
 	void destroySearchResult(SearchResult* & res){
-		BufferManager::Instance().ReleaseBlock((Block* &)res->node);
+		if(res->node){
+			BufferManager::Instance().ReleaseBlock((Block* &)res->node);
+		}
 		delete res;
 		res = NULL;
 	}

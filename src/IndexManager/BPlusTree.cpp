@@ -18,6 +18,7 @@ void BPlusTree::insert(const void* key, uint32_t addr){
 		}
 	}
 	insertInBlock(key, addr, theNode);
+	theNode->is_dirty = true;
 	buffer_manager.ReleaseBlock((Block* &)theNode);
 }
 
@@ -58,7 +59,6 @@ void BPlusTree::insertInBlock(const void* key, uint32_t addr, BPlusNode* theNode
 	if (theNode->dataCnt() >= this->order) {
 		split(theNode);
 	}
-	buffer_manager.ReleaseBlock((Block* &)theNode);
 }
 
 int BPlusTree::findLargerInBlock(const void* key, BPlusNode* theNode) {
@@ -107,6 +107,7 @@ void BPlusTree::split(BPlusNode* theNode) {
 		//insert new entry to parent
 		BPlusNode* parent_node = BlockToBPNode(buffer_manager.GetBlock(newNode->parent()));
 		insertInBlock(newNode->getKey(0), newNode->BlockIndex(), parent_node);
+		parent_node->is_dirty = true;
 		buffer_manager.ReleaseBlock((Block* &)parent_node);
 	}
 	//non-leaf node
@@ -123,12 +124,15 @@ void BPlusTree::split(BPlusNode* theNode) {
 		//insert new entry to parent
 		BPlusNode* parent_node = BlockToBPNode(buffer_manager.GetBlock(newNode->parent()));
 		insertInBlock(theNode->getKey(order >> 1), newNode->BlockIndex(), parent_node);
+		parent_node->is_dirty = true;
 		buffer_manager.ReleaseBlock((Block* &)parent_node);
 	}
+	theNode->is_dirty = true;
+	newNode->is_dirty = true;
 	buffer_manager.ReleaseBlock((Block* &)newNode);
 }
 
-void BPlusTree::removeInBlock(BPlusNode* theNode, unsigned int index) {
+void BPlusTree::removeInBlock(BPlusNode* & theNode, unsigned int index) {
 	for (int i = index;i < theNode->dataCnt() - 1;i++) {
 		memcpy(theNode->getKey(i), theNode->getKey(i + 1), this->key_len);
 		theNode->addrs()[i + 1] = theNode->addrs()[i + 2];
@@ -136,12 +140,12 @@ void BPlusTree::removeInBlock(BPlusNode* theNode, unsigned int index) {
 	theNode->dataCnt()--;
 	//check if there's too few data
 	int minCnt = getMinCnt(theNode);
+	theNode->is_dirty = true;
 	if (!theNode->dataCnt() && theNode == root && theNode->isLeaf()) {
 		return;
 	}
 	else if (theNode->dataCnt() < minCnt) {
 		merge(theNode);
-		buffer_manager.ReleaseBlock((Block* &)theNode);
 	}
 }
 
@@ -207,6 +211,8 @@ void BPlusTree::merge(BPlusNode* & theNode) {
 		//update dataCnt
 		theNode->dataCnt() = totalCnt >> 1;
 		rightNode->dataCnt() = totalCnt - (totalCnt >> 1);
+		theNode->is_dirty = true;
+		rightNode->is_dirty = true;
 		buffer_manager.ReleaseBlock((Block* &)rightNode);
 	}
 	// put all data in one node
@@ -224,8 +230,12 @@ void BPlusTree::merge(BPlusNode* & theNode) {
 		//update rightSibling
 		theNode->rightSibling() = rightNode->rightSibling();
 		//delete block
+		theNode->is_dirty = true;
+		rightNode->is_dirty = true;
 		buffer_manager.DeleteBlock((Block* &)rightNode);
 	}
+	parentNode->is_dirty = true;
+	buffer_manager.ReleaseBlock((Block* &)parentNode);
 }
 
 

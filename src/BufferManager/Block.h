@@ -152,6 +152,9 @@ class BPlusNode :public Block {
 public:
 	BPlusNode():Block(){
 		this->dataCnt() = 0;
+		this->parent() = 0;
+		this->isLeaf() = 0;
+		this->rightSibling() = 0;
 	}
 	BPlusNode(uint8_t* buf):Block(buf){};
 	inline bool & isLeaf() {
