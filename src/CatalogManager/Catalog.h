@@ -80,8 +80,6 @@ private:
 	uint32_t FindIndexBlock(const std::string & table_name_mix_key);
 	RecordBlock* FindIndexByName(const std::string & index_name);
 
-	void InitBPIndexRoot(Block* root, DBenum type);
-
 	uint32_t database_block_addr;
 	uint32_t user_block_addr;
 

@@ -29,16 +29,16 @@ public:
 		return theBufferManager;
 	}
 	~BufferManager() {
-		this->WriteBackAll();
+		this->RemoveAllBlock();
 //		std::cout << "Pinned Block Count: " << this->pinned_block_count << std::endl;
 	};
 
 	Block* GetBlock(uint32_t blk_index);
-	Block* CreateBlock(DBenum = (DBenum)0);
+	Block* CreateBlock(DBenum block_type);
 	void WriteToDisc(Block* block_ptr);
-	void ReleaseBlock(Block* & block_ptr);
-	void DeleteBlock(Block* & block_ptr);
-	void WriteBackAll();
+	void ReleaseBlock(Block* block_ptr);
+	void DeleteBlock(Block* block_ptr);
+	void RemoveAllBlock();
 private:
 	BufferManager();
 	BufferManager(const BufferManager &);

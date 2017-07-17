@@ -9,8 +9,8 @@
 class BPlusTree : public IndexExecutor {
 public:
 	BPlusTree(Block *root, DBenum key_type) : type(key_type) {
-		this->root = dynamic_cast<BPlusNode*>(root);
 		this->SetOrder();
+		this->root = BlockToBPNode(root);
 	};
 	~BPlusTree() {}
 
@@ -35,8 +35,7 @@ public:
 	//remove a entry from the b+tree
 	//pos must be in the tree or an error will occur
 	void remove(SearchResult* pos) {
-		BPlusNode* theNode = BlockToBPNode(pos->node);
-		removeInBlock(theNode, pos->index);
+		removeInBlock(pos->node, pos->index);
 	}
 
 	//remove the whole b+tree
@@ -49,6 +48,7 @@ public:
 		theNode->dataCnt() = 0;
 		theNode->parent() = 0;
 		theNode->rightSibling() = 0;
+		theNode->is_dirty = true;
 	}
 protected:
 	BPlusNode* root;

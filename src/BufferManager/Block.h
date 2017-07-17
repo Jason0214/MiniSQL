@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include "../CONSTANT.h"
 #include "../EXCEPTION.h"
+#include "../SharedFunc.h"
 #include <cstring>
 
 // only class Block has real data,
@@ -157,6 +158,7 @@ public:
 		this->rightSibling() = 0;
 	}
 	BPlusNode(uint8_t* buf):Block(buf){};
+	virtual ~BPlusNode(){}
 	inline bool & isLeaf() {
 		return *(bool*)(&this->block_data[BLOCK_HEAD_SIZE]);
 	}

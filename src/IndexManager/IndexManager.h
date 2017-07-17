@@ -25,9 +25,9 @@ public:
 		delete executor;
 		return ret;
 	}
-	Block* insertEntry(DBenum index_type, 
-						Block* root, 
-						DBenum key_type, 
+	Block* insertEntry(DBenum index_type,
+						Block* root,
+						DBenum key_type,
 						const void* key_void, 
 						uint32_t addr){
 		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
@@ -38,11 +38,10 @@ public:
 	}
 	Block* removeEntry(DBenum index_type, 
 						Block* root, 
-						DBenum key_type, 
-						SearchResult* & pos){
+						DBenum key_type,
+						SearchResult* pos){
 		IndexExecutor* executor = this->getIndexExecutor(index_type, root, key_type);
 		executor->remove(pos);
-		this->destroySearchResult(pos);
 		Block* ret = executor->getRoot();
 		delete executor;
 		return ret;
@@ -76,17 +75,15 @@ public:
 	}
 
 	void destroySearchResult(SearchResult* & res){
-		if(res->node){
-			BufferManager::Instance().ReleaseBlock((Block* &)res->node);
+		if(!res) return;
+		else {
+			if (res->node) {
+				BufferManager::Instance().ReleaseBlock(res->node);
+			}
+			delete res;
+			res = NULL;
 		}
-		delete res;
-		res = NULL;
 	}
-private:
-	IndexManager(){};
-	IndexManager(const IndexManager &);
-	IndexManager & operator=(const IndexManager &);
-
 	IndexExecutor* getIndexExecutor(DBenum index_type, Block* root, DBenum key_type){
 		if(index_type == DB_BPTREE_INDEX) return new BPlusTree(root, key_type);
 		else {
@@ -94,4 +91,8 @@ private:
 		}
 		//TODO hash index
 	}
+private:
+	IndexManager(){};
+	IndexManager(const IndexManager &);
+	IndexManager & operator=(const IndexManager &);
 };

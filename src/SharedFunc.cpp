@@ -7,9 +7,9 @@ using namespace std;
 
 size_t typeLen(DBenum type) {
 	switch (type) {
-	case DB_TYPE_INT: return 4;
-	case DB_TYPE_FLOAT: return 4;
-	default: return (int)type - (int)DB_TYPE_CHAR;
+	case DB_TYPE_INT: return sizeof(int);
+	case DB_TYPE_FLOAT: return sizeof(float);
+	default: return (int)type - (int)DB_TYPE_CHAR + 1;
 	}
 }
 

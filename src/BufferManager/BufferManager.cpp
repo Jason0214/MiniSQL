@@ -35,7 +35,7 @@ void BufferManager::LoadSrcFile() {
 
 
 // before exit, check and write back all the blocks
-void BufferManager::WriteBackAll() {
+void BufferManager::RemoveAllBlock() {
 	while (this->block_list_head) {
 		this->RemoveBlock(this->block_list_head);
 	}
@@ -109,7 +109,7 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 // when outer program get a block, it will be 'pinned'
 // which means the block won't be freed by buffer manager
 // here release the 'pinned' flag
-void BufferManager::ReleaseBlock(Block* & block_ptr){
+void BufferManager::ReleaseBlock(Block* block_ptr){
 	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
 	block_ptr = NULL;
 	block_node_ptr->refer_count--;
@@ -122,7 +122,6 @@ Block* BufferManager::CreateBlock(DBenum block_type) {
 	case(DB_TABLE_BLOCK) : block_ptr = new TableBlock(); break;
 	case(DB_SCHEMA_BLOCK) : block_ptr = new SchemaBlock(); break;
 	case(DB_BPNODE_BLOCK) : block_ptr = new BPlusNode(); break;
-	case(0) : block_ptr = new Block(); break;
 	default: block_ptr = new RecordBlock(); break;
 	}
 	block_ptr->Init(this->AllocNewBlock(),block_type);
@@ -183,7 +182,7 @@ BlockNode* BufferManager::AddBlock(Block* blk_to_add){
 		BlockNode* last_node_ptr = this->block_list_tail;
 		last_node_ptr->pre->next = NULL;
 		this->block_list_tail = last_node_ptr->pre;
-		while(last_node_ptr->refer_count == 0){
+		while(last_node_ptr->refer_count > 0){
 			last_node_ptr = last_node_ptr->pre;			
 		}
 		this->RemoveBlock(last_node_ptr);
@@ -253,7 +252,7 @@ uint32_t BufferManager::AllocNewBlock(){
 }
 
 // interface for outer program to delete a block currently on the disc
-void BufferManager::DeleteBlock(Block* & block_ptr){
+void BufferManager::DeleteBlock(Block* block_ptr){
 	/* do not forget to set the next field of the previous block */
 	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
 	block_ptr = NULL;
@@ -271,6 +270,7 @@ void BufferManager::DeleteBlock(Block* & block_ptr){
 		this->ReleaseBlock((Block* &)schema_block);
 
 		block_to_delete->is_dirty = true;
+//		cout << block_node_ptr->refer_count << endl;
 		assert(--block_node_ptr->refer_count == 0);
 	}
 }
