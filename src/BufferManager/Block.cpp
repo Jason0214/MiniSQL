@@ -75,7 +75,7 @@ void TableBlock::DropTable(const char* table_name){
 	uint16_t attr_size = attr_num * ATTR_RECORD_SIZE;
 	uint16_t pointer = attr_addr;
 	while(pointer - attr_size != this->StackPtr()){
-		memcpy(&this->block_data[pointer], &this->block_data[pointer - attr_size], ATTR_RECORD_SIZE);
+		memcpy(&this->block_data[pointer - ATTR_RECORD_SIZE], &this->block_data[pointer - attr_size - ATTR_RECORD_SIZE], ATTR_RECORD_SIZE);
 		pointer -= ATTR_RECORD_SIZE;
 	}
 	this->StackPtr() += attr_size;
@@ -123,11 +123,7 @@ void RecordBlock::Format(DBenum* attr_type, uint16_t attr_num, unsigned short ke
 	this->size = new unsigned short[attr_num];
 	this->type = new DBenum[attr_num];
 	for(unsigned short i = 0; i < attr_num; i++){
-		switch(attr_type[i]){
-			case DB_TYPE_INT: this->size[i] = sizeof(int); break;
-			case DB_TYPE_FLOAT: this->size[i] = sizeof(float); break;
-			default: this->size[i] = attr_type[i] - DB_TYPE_CHAR + 1; break;
-		}
+		this->size[i] = typeLen(attr_type[i]);
 		this->type[i] = attr_type[i];
 		this->tuple_size += size[i];
 	}
