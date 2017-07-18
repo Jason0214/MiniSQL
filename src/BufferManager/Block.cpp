@@ -151,7 +151,8 @@ int RecordBlock::FindTupleIndex(const void* key_data){
 	int low = 0, mid, high = this->RecordNum()-1;
 	while(low <= high){
 		mid = (low + high) >> 1;
-		int cmp = this->Compare((uint8_t*)key_data,this->GetDataPtr(mid, this->key_index), this->key_index);
+		int cmp = this->compare((uint8_t*)key_data,
+				this->GetDataPtr(mid, this->key_index), this->type[this->key_index]);
 		if(cmp > 0) low = mid + 1;
 		else if(cmp < 0) high = mid - 1;
 		else return mid;
@@ -201,14 +202,4 @@ void RecordBlock::RemoveTuple(unsigned short row){
 		addr += this->tuple_size;
 	}
 	this->RecordNum()--;
-}
-
-// given two data pointers and attribute index
-// compare these two data
-int RecordBlock::Compare(uint8_t* data_1_ptr, uint8_t* data_2_ptr, unsigned short data_index){
-	switch(this->type[data_index]){
-		case DB_TYPE_INT: return *(int*)data_1_ptr - *(int*)data_2_ptr; break; 
-		case DB_TYPE_FLOAT: return (int)(*(float*)data_1_ptr - *(float*)data_2_ptr); break;
-		default: return strcmp((char*)data_1_ptr,(char*)data_2_ptr);	break;
-	}
 }

@@ -14,7 +14,8 @@ typedef enum {
 	DB_TYPE_CHAR = 100,
 	DB_TYPE_INT = 356,
 	DB_TYPE_FLOAT = 357,
-
+	DB_TEMPORAL,
+	DB_MATERIALIZED,
 }DBenum;
 
 // STATIC_ASSERT(sizeof(enum e_DBenum) == 1);
