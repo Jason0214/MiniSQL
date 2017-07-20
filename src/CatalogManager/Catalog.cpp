@@ -713,6 +713,39 @@ void Catalog::DropIndex(const string & index_name){
 	}
 }
 
+void RemoveRecordBlock(RecordBlock* block_to_remove){
+	if (block_to_remove->PreBlockIndex() == 0 && block_to_remove->NextBlockIndex() == 0) {}
+	else if (block_to_remove->PreBlockIndex() == 0) {
+		Catalog::Instance().UpdateTableDataAddr(tableName, block_to_remove->NextBlockIndex());
+		table_meta->table_addr = block_to_remove->NextBlockIndex();
+		Block* next_block_ptr = buffer_manager->GetBlock(block_to_remove->NextBlockIndex());
+		next_block_ptr->PreBlockIndex() = 0;
+		next_block_ptr->is_dirty = true;
+		buffer_manager->ReleaseBlock(next_block_ptr);
+		buffer_manager->DeleteBlock(block_to_remove);
+	}
+	else if (block_to_remove->NextBlockIndex() == 0) {
+		Block* pre_block_ptr = buffer_manager->GetBlock(block_to_remove->PreBlockIndex());
+		pre_block_ptr->NextBlockIndex() = 0;
+		pre_block_ptr->is_dirty = true;
+		buffer_manager->ReleaseBlock(pre_block_ptr);
+		buffer_manager->DeleteBlock(block_to_remove);
+	}
+	else {
+		Block* pre_block_ptr = buffer_manager->GetBlock(block_to_remove->PreBlockIndex());
+		Block* next_block_ptr = buffer_manager->GetBlock(block_to_remove->NextBlockIndex());
+		pre_block_ptr->NextBlockIndex() = next_block_ptr->BlockIndex();
+		next_block_ptr->PreBlockIndex() = pre_block_ptr->BlockIndex();
+		pre_block_ptr->is_dirty = true;
+		next_block_ptr->is_dirty = true;
+		buffer_manager->ReleaseBlock(next_block_ptr);
+		buffer_manager->ReleaseBlock(pre_block_ptr);
+		buffer_manager->DeleteBlock(block_to_remove);
+	}
+}
+
+
+
 RecordBlock* Catalog::SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key){
 	// create a new table block and move half of data in `record_block_ptr` to the new block	
 	RecordBlock* new_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.CreateBlock(DB_RECORD_BLOCK));

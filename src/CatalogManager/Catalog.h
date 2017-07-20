@@ -53,7 +53,8 @@ public:
 	void UpdateTableDataAddr(const std::string & table_name, uint32_t new_addr);
 	void UpdateTableSecondaryIndex(const std::string & table_name, int8_t key_index, uint32_t new_addr);
 
-	RecordBlock* SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key);
+	static RecordBlock* SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key);
+	static void RemoveRecordBlock(RecordBlock* block_to_remove);
 private:
 	Catalog();
 	Catalog(const Catalog&);

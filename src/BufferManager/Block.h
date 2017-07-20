@@ -1,3 +1,8 @@
+//
+// data of database stored on disc in the form of block,
+// different types of block are used in the program, however,  
+// they are inheirted the base class `Block`
+
 #ifndef _BLOCK_H_
 #define _BLOCK_H_
 
