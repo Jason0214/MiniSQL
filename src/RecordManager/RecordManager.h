@@ -7,8 +7,6 @@
 #include "../SharedFunc.h"
 
 
-#include <cassert>
-
 #define MAX_TEMPORAL_TABLE_SIZE (1 << 25) //32MB
 
 class RecordManager{

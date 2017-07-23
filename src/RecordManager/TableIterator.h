@@ -6,60 +6,64 @@ class Table;
 
 class TableIterator{
 public:
-	virtual ~TableIterator(){};
-	virtual void setCursor() = 0;
-	virtual void next() = 0;
-	virtual bool operator==(const TableIterator &) const = 0;
+    virtual ~TableIterator(){};
+//    virtual void setCursor() = 0;
+    virtual void next() = 0;
+    virtual bool isEqual(const TableIterator *) const = 0;
 };
 
 class TemporalTable_Iterator 
 :public TableIterator{
 public:
-	TemporalTable_Iterator(std::map<TupleKey,Tuple>::iterator & current_iter)
-	:map_iter(iterator){}
-	
-	virtual ~TemporalTable_Iterator(){}
-
-	bool operator==(const TableIterator & iter) const{
-		return *this == *dynamic_cast<TemporalTable_Iterator*>(&iter);
-	}
-	void next();
-	friend bool operator==(const TemporalTable_Iterator &, const TemporalTable_Iterator &);
-private:
-	std::map<TupleKey,Tuple>::iterator map_iter;
+    TemporalTable_Iterator(std::map<TupleKey,Tuple>::iterator & current_iter)
+    :map_iter(iterator){}
+    TemporalTable_Iterator(const TemporalTable_Iterator & right_v){
+        *this = right_v;
+    }
+    const TemporalTable_Iterator & operator=(const TemporalTable_Iterator & right_v){
+        if(this != &right_v){
+            this->map_iter = right_v.map_iter;
+        }
+        return *this;
+    }
+    virtual ~TemporalTable_Iterator(){}
+    bool isEqual(const TableIterator *) const const{
+        return CheckEqual(*this, *dynamic_cast<TemporalTable_Iterator*>(iter));
+    }
+    void next(){
+        this->map_iter++;
+    }
+  
+    friend bool CheckEqual(const TemporalTable_Iterator &, const TemporalTable_Iterator &);
+  
+    std::map<TupleKey,Tuple>::iterator map_iter;
 };
 
 class MaterializedTable_Iterator
 :public TableIterator{
 public:
-	MaterializedTable_Iterator(uint32_t 
-							block_addr, 
-							int tuple_index,
-							int attr_num, 
-							DBenum * attr_type, 
-							int key_index)
-	:block_addr(block_addr),
-	tuple_index(tuple_index),
-	block_ptr(NULL),
-	attr_type(attr_type),
-	attr_num(attr_num),
-	key_index(key_index){}
-	
-	virtual ~MaterializedTable_Iterator();
-	
-	bool operator==(const TableIterator & iter) const{
-		return *this == *dynamic_cast<MaterializedTable_Iterator*>(&iter)
-	}
-	void next();
-	friend bool operator==(const MaterializedTable_Iterator &, const MaterializedTable_Iterator &);
-private:
-	uint32_t block_addr;
-	int tuple_index;
-	int key_index;
-	int attr_num;
-	DBenum* attr_type;
-
-	RecordBlock* block_ptr;
+    MaterializedTable_Iterator(uint32_t block_addr, 
+                            int tuple_index,
+                            int attr_num, 
+                            DBenum * attr_type, 
+                            int key_index);
+    MaterializedTable_Iterator(const MaterializedTable_Iterator & right_v){
+        *this = right_v;
+    }
+    const MaterializedTable_Iterator & operator=(const MaterializedTable_Iterator & right_v); 
+    virtual ~MaterializedTable_Iterator();
+    bool isEqual(const TableIterator *) const{
+        return CheckEqual(*this, *dynamic_cast<MaterializedTable_Iterator*>(&iter));
+    }
+    void next();
+   
+    friend bool CheckEqual(const MaterializedTable_Iterator &, const MaterializedTable_Iterator &);
+    
+    RecordBlock* block_ptr;    
+    int tuple_index;
+    int key_index;
+    int attr_num;
+    DBenum* attr_type;
 };
 
 
