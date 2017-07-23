@@ -18,7 +18,7 @@ public:
 	BlockNode* next;
 	Block* data;
 	int refer_count;
-	bool is_pined; // if a block is pined, it is being write back
+	bool is_pined; // if a block is pined, it is being write back, currently not used
 };
 
 class BufferManager{
@@ -30,11 +30,11 @@ public:
 	}
 	~BufferManager() {
 		this->RemoveAllBlock();
-//		std::cout << "Pinned Block Count: " << this->pinned_block_count << std::endl;
 	};
 
 	Block* GetBlock(uint32_t blk_index);
 	Block* CreateBlock(DBenum block_type);
+//	const Block* GetBlock(uint32_t blk_index) const;
 	void WriteToDisc(Block* block_ptr);
 	void ReleaseBlock(Block* block_ptr);
 	void DeleteBlock(Block* block_ptr);
@@ -68,9 +68,6 @@ private:
 	uint64_t hash(uint32_t blk_index);
 	BlockNode* & GetBlockNode(uint32_t blk_index); 
 	BlockNode* block_table[BLOCK_NUM*2];
-
-	// for text
-	int pinned_block_count;
 };
 
 #endif

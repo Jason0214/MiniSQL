@@ -151,7 +151,7 @@ int RecordBlock::FindTupleIndex(const void* key_data){
 	int low = 0, mid, high = this->RecordNum()-1;
 	while(low <= high){
 		mid = (low + high) >> 1;
-		int cmp = this->compare((uint8_t*)key_data,
+		int cmp = compare((uint8_t*)key_data,
 				this->GetDataPtr(mid, this->key_index), this->type[this->key_index]);
 		if(cmp > 0) low = mid + 1;
 		else if(cmp < 0) high = mid - 1;

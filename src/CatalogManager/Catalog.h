@@ -7,6 +7,8 @@
 #include <string>
 
 class TableMeta{
+	// wrap all the needed meta information
+	// about a TableMeta
 public:
 	TableMeta(const std::string & table_name):table_name(table_name),attr_name_list(NULL),attr_type_list(NULL),
 					attr_num(0),table_addr(0),key_index(-1),primary_index_addr(0),is_primary_key(true){}
@@ -15,13 +17,19 @@ public:
 		delete [] this->attr_type_list;
 	}
 	std::string table_name;
-	uint32_t table_addr;
-	int attr_num;
+	// block address of the first block containing records
+	uint32_t table_addr; 
+	int attr_num; 
+	// attribute name
 	std::string* attr_name_list;
+	// attribute type
 	DBenum* attr_type_list;
-	int key_index;
-	uint32_t primary_index_addr; // address of primary index
-	bool is_primary_key;
+	// key's index in the attributes. Records stores according to key
+	int key_index; 
+	// the root block address of the index of this table
+	uint32_t primary_index_addr; 
+	// if is_primary_key is set, then the key attribute is distinct
+	bool is_primary_key; 
 	std::string & GetAttrName(int index){return this->attr_name_list[index];}
 	DBenum & GetAttrType(int index){return this->attr_type_list[index];}
 private:
@@ -30,6 +38,8 @@ private:
 };
 
 class Catalog{
+	// Singleton, has interfaces to get meta information
+	// Database, Index, Table.
 public:
 	static Catalog & Instance(){
 		static Catalog theCatalog;
@@ -49,12 +59,13 @@ public:
 	uint32_t GetIndex(const std::string & table_name, int8_t secondary_key_index);
 	void DropIndex(const std::string & index_name);
 
+	// interface to change the root block of Index.
+	// root of Index may change after insertion and deletion
 	void UpdateTablePrimaryIndex(const std::string & table_name, uint32_t new_addr);
 	void UpdateTableDataAddr(const std::string & table_name, uint32_t new_addr);
 	void UpdateTableSecondaryIndex(const std::string & table_name, int8_t key_index, uint32_t new_addr);
 
 	static RecordBlock* SplitRecordBlock(RecordBlock* origin_block_ptr, DBenum* types, int8_t num, int8_t key);
-	static void RemoveRecordBlock(RecordBlock* block_to_remove);
 private:
 	Catalog();
 	Catalog(const Catalog&);

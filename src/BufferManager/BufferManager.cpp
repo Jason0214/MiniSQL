@@ -21,7 +21,6 @@ BufferManager::BufferManager():SRC_FILE_NAME(DB_FILE),MAX_BLOCK_NUM(BLOCK_NUM){
 	else{
 		this->LoadSrcFile();
 	}
-	this->pinned_block_count = 0;
 }
 void BufferManager::CreateSrcFile() {
 	SchemaBlock* block_zero = new SchemaBlock();
@@ -34,7 +33,7 @@ void BufferManager::LoadSrcFile() {
 }
 
 
-// before exit, check and write back all the blocks
+// before exit, check and write back all the blocks in buffer
 void BufferManager::RemoveAllBlock() {
 	while (this->block_list_head) {
 		this->RemoveBlock(this->block_list_head);
@@ -110,9 +109,10 @@ Block* BufferManager::GetBlock(uint32_t block_index){
 // which means the block won't be freed by buffer manager
 // here release the 'pinned' flag
 void BufferManager::ReleaseBlock(Block* block_ptr){
-	BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
-	block_ptr = NULL;
-	block_node_ptr->refer_count--;
+	if(block_ptr->BlockType() != DB_DELETED_BLOCK){
+		BlockNode* block_node_ptr = this->GetBlockNode(block_ptr->BlockIndex());
+		block_node_ptr->refer_count--;		
+	}
 }
 
 // interface for outer program to get an empty block which not on the disc
@@ -202,9 +202,9 @@ BlockNode* BufferManager::AddBlock(Block* blk_to_add){
 
 // free a block from buffer
 void BufferManager::RemoveBlock(BlockNode* node_to_remove){
-//	if(node_to_remove->data->is_dirty){
-//		this->WriteBack(node_to_remove);
-//	}
+	if(node_to_remove->data->is_dirty){
+		this->WriteBack(node_to_remove);
+	}
 	this->WriteBack(node_to_remove);
 	if(node_to_remove->pre){
 		node_to_remove->pre->next = node_to_remove->next;

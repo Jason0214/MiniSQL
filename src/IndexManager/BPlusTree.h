@@ -8,9 +8,10 @@
 
 class BPlusTree : public IndexExecutor {
 public:
-	BPlusTree(Block *root, DBenum key_type) : type(key_type) {
+	BPlusTree(uint32_t root_addr, DBenum key_type) 
+		: type(key_type),
+		root(root_addr){
 		this->SetOrder();
-		this->root = BlockToBPNode(root);
 	};
 	~BPlusTree() {}
 
@@ -28,30 +29,23 @@ public:
 	void printAll();
 
 	//get root block pointer
-	Block* getRoot() {
-		return root;
+	uint32_t getRoot() {
+		return this->root;
 	}
 
 	//remove a entry from the b+tree
 	//pos must be in the tree or an error will occur
 	void remove(SearchResult* pos) {
-		removeInBlock(pos->node, pos->index);
+		removeInBlock(pos->node.raw_ptr, pos->index);
 	}
 
 	//remove the whole b+tree
 	void removeAll();
 
 	//initialize a block (always the root node)
-	void initBlock(Block* block) {
-		BPlusNode* theNode = BlockToBPNode(block);
-		theNode->isLeaf() = true;
-		theNode->dataCnt() = 0;
-		theNode->parent() = 0;
-		theNode->rightSibling() = 0;
-		theNode->is_dirty = true;
-	}
+	void initBlock(uint32_t block_addr);
 protected:
-	BPlusNode* root;
+	uint32_t root;
 	int order;
 	DBenum type;
 	size_t key_len;
@@ -66,7 +60,7 @@ protected:
 	//get minimal dataCnt in a node
 	int getMinCnt(BPlusNode* theNode) {
 		int ret;
-		if (this->root == theNode) ret = 1;
+		if (this->root == theNode->BlockIndex()) ret = 1;
 		else if (theNode->isLeaf()) ret = this->order & 1 ? (this->order - 1) >> 1 : this->order >> 1;
 		else ret = this->order & 1 ? this->order >> 1 : (this->order >> 1) - 1;
 		return ret;
@@ -97,8 +91,8 @@ protected:
 	void split(BPlusNode* theNode);
 
 	//delete an entry from the block
-	void removeInBlock(BPlusNode* & theNode, unsigned int index);
+	void removeInBlock(BPlusNode* theNode, unsigned int index);
 
 	//merge the current node to other node
-	void merge(BPlusNode* & theNode);
+	void merge(BPlusNode* theNode);
 };
