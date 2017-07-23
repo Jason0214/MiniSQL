@@ -79,7 +79,7 @@ void Catalog::CreateDatabase(const string & db_name){
 	index_manager.initRootBlock(DB_BPTREE_INDEX, table_index_ptr->BlockIndex(), (DBenum)(DB_TYPE_CHAR + 31));
 	BlockPtr<Block> index_data_ptr(buffer_manager.CreateBlock(DB_RECORD_BLOCK));
 	BlockPtr<Block> index_index_ptr(buffer_manager.CreateBlock(DB_BPNODE_BLOCK));
-	index_manager.initRootBlock(DB_BPTREE_INDEX, table_index_ptr->BlockIndex(), (DBenum)(DB_TYPE_CHAR + 32));
+	index_manager.initRootBlock(DB_BPTREE_INDEX, index_index_ptr->BlockIndex(), (DBenum)(DB_TYPE_CHAR + 32));
 
 	data_list[0] = db_name.c_str();
 	data_list[1] = &table_data_ptr->BlockIndex();
