@@ -5,6 +5,8 @@
 #include "RecordStructures.h"
 #include "TableInterator.h"
 
+#define MAX_TABLE_SIZE 30 * (1 << 20) //30MB
+
 class Table{
 public:
     Table(const std::string & table_name);
@@ -20,6 +22,11 @@ public:
         const Table & based_table2, 
         const AttrAlias & attr_name_map2,
         TableImplement op);
+
+    ~Table(){
+        delete [] attr_name;
+        delete [] attr_type;
+    }
 
     TableIterator* begin(){
         if(this->table_flag = DB_TEMPORAL){
@@ -48,18 +55,19 @@ public:
     void insertTule(const void** tuple_data){
         if(this->table_flag == DB_TEMPORAL){
             this->temporal_InsertTuple(tuple_data);
+            //check table size, 
+            size_t total_size = (tupleLen(this->attr_type, this->attr_name) 
+                        + typeLen(this->attr_type[this->key_index])) * this->tuple_data.size();
+            if(total_size >= MAX_TABLE_SIZE){
+                this->materialize();
+            }
         }
         else{
             //DB_MATERIALIZED
             this->materialized_InsertTuple(tuple_data);
         }
-        //TODO: check table size
     }
 
-    ~Table(){
-        delete [] attr_name;
-        delete [] attr_type;
-    }
     const std::string & getAttrName(int index) const{
         return this->attr_name[index];
     }
@@ -69,12 +77,21 @@ public:
     DBenum getAttrType(int index) const{
         return this->attr_type[index];
     }
+
+    static void BlockFilter(const std::string & op,
+                        const void* value,
+                        DBenum key_type,
+                        uint32_t index_addr,
+                        uint32_t* begin_block,
+                        uint32_t* end_block);
+
 private:
     Table(const Table &);    
     const Table & operator=(const Table &);
 
     void materialized_InsertTuple(const void** );
     void temporal_InsertTuple(const void** );
+    void materialize();
 
     DBenum table_flag;
 

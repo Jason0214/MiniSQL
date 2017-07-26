@@ -29,6 +29,8 @@ public:
 
 size_t typeLen(DBenum type);
 
+size_t tupleLen(DBenum* type_list, int attr_num);
+
 int compare(const void* v1, const void* v2, DBenum type);
 
 void printByType(const void* v, DBenum type);

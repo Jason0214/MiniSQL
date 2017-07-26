@@ -43,7 +43,7 @@ const MaterializedTable_Iterator & operator=(const MaterializedTable_Iterator & 
         this->attr_type = right_v.attr_type;
         this->key_index = right_v.key_index;
         this->tuple_index = right_v.tuple_index;
-        this->block_ptr  dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(right_v.block_ptr->BlockIndex()));
+        this->block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(right_v.block_ptr->BlockIndex()));
         this->block_ptr->Format(this->attr_type, this->attr_num, this->key_index);         
     }
     return *this;

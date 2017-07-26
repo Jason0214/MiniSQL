@@ -13,6 +13,14 @@ size_t typeLen(DBenum type) {
 	}
 }
 
+size_t tupleLen(DBenum* attr_type_list, int attr_num){
+	size_t ret = 0;
+	for(int i = 0; i < attr_num; i++){
+		ret += typeLen(attr_type_list[i]);
+	}
+	return ret;
+}
+
 int compare(const void* v1, const void* v2, DBenum type) {
 	switch (type) {
 	case DB_TYPE_INT: return *(int*)v1 - *(int*)v2;

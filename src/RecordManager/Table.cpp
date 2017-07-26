@@ -1,4 +1,5 @@
 #include "Table.h"
+#include <pair>
 
 using namespace std;
 
@@ -68,30 +69,48 @@ Table::Table(const std::string & table_name,
 
 }
 
-pair<TableIterator*, TableIterator*> PrimaryFilter(string op, const void* value){
+pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op, const void* value){
     if(this->table_flag == DB_TEMPORAL){
         TupleKey map_key = TupleKey(value, this->attr_type[this->key_index]);
-        map<TupleKey,Tuple> map_iterator = this->map.find(map_key);
-        TemproalTable_iterator* iterator = TemproalTable_iterator(map_iterator);
         if(op == "<"){
+            map<TupleKey,Tuple> map_iterator = ++this->map.lower_bound(map_key);
+            TemproalTable_iterator* iterator =  new TemproalTable_iterator(map_iterator);
             return make_pair(this->begin(), iterator);
         }
         else if(op == ">"){
-            iterator->next();
+            map<TupleKey,Tuple> map_iterator = this->map.upper_bound(map_key);
+            TemproalTable_iterator* iterator = new TemproalTable_iterator(map_iterator);
             return make_pair(iterator, this->end());
         }
         else if(op == "<="){
-
+            map<TupleKey,Tuple> map_iterator = this->map.upper_bound(map_key);
+            TemproalTable_iterator* iterator = new TemproalTable_iterator(map_iterator);
+            return make_pair(this->begin(), iterator);           
         }
         else if(op == ">="){
-
+            map<TupleKey,Tuple> map_iterator = ++this->map.lower_bound(map_key);
+            TemproalTable_iterator* iterator = new TemproalTable_iterator(map_iterator);
+            return make_pair(iterator, this->end());                
         }
-        else{
-
+        else if(op == "=="){
+            map<TupleKey,Tuple> map_iterator = this->map.upper_bound(map_key);
+            TemproalTable_iterator* iterator_end = new TemproalTable_iterator(map_iterator);
+            map_iterator = ++this->map.lower_bound(map_key);
+            TemproalTable_iterator* iterator_begin = new TemproalTable_iterator(map_iterator);
+            return make_pair(iterator_begin, iterator_end);
+        }
+        else if(op == "!="){
+            return make_pair(this->begin(), this->end());
         }
     }
     else{
-
+        uint32_t begin_addr, end_addr;
+        Table::BlockFilter(op, value, this->index_addr, this->attr_type[this->key_index], &begin_addr, &end_addr);
+        MaterializedTable_Iterator* iterator_begin 
+            = new MaterializedTable_Iterator(begin_addr, 0, this->attr_num, this->attr_type, this->key_index);
+        MaterializedTable_Iterator* iterator_end 
+            = new MaterializedTable_Iterator(end_addr, 0, this->attr_num, this->attr_type, this->key_index);
+        return make_pair(iterator_begin, iterator_end);
     }
 }
 
@@ -177,3 +196,11 @@ void Table::temporal_InsertTuple(const void** tuple_data){
     this->table_data.insert(make_pair(new_tuple_key, new_tuple));
 }
 
+void Table::BlockFilter(const std::string & op,
+                        const void* value,
+                        DBenum key_type,
+                        uint32_t index_addr,
+                        uint32_t* begin_block,
+                        uint32_t* end_block){
+
+}
