@@ -102,21 +102,19 @@ RecordBlock* Catalog::FindDatabaseBlock(const string & db_name){
 	type_list[2] = DB_TYPE_INT;
 	type_list[3] = DB_TYPE_INT;
 	type_list[4] = DB_TYPE_INT;
-	RecordBlock* db_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->database_block_addr));
-	db_block_ptr->Format(type_list, 5, 0);
-
-	while(true){
+	
+	uint32_t next_block_addr = this->database_block_addr;
+	while(next_block_addr != 0){
+		RecordBlock* db_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next_block_addr));
+		db_block_ptr->Format(type_list, 5, 0);
 		int i = db_block_ptr->FindTupleIndex(db_name.c_str());
 		if(i >= 0 && strcmp((char*)db_block_ptr->GetDataPtr(i, 0), db_name.c_str()) == 0){
-			break;
+			return db_block_ptr;
 		}
-		uint32_t next = db_block_ptr->NextBlockIndex();		
+		next_block_addr = db_block_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock(db_block_ptr);
-		if(next == 0) throw DatabaseNotFound(db_name);
-		db_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
-		db_block_ptr->Format(type_list, 5, 0);
 	}
-	return db_block_ptr;
+	throw DatabaseNotFound(db_name);
 }
 
 void Catalog::UseDatabase(const string & db_name){
@@ -537,18 +535,18 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 
 	Block* record_index_root_block = buffer_manager.CreateBlock(DB_BPNODE_BLOCK);
 	uint32_t record_index_root = record_index_root_block->BlockIndex();
+	buffer_manager.ReleaseBlock(record_index_root_block);
 	index_manager.initRootBlock(DB_BPTREE_INDEX , record_index_root, type);
-	RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(table_meta->table_addr));
-	while (true) {
+
+	uint32_t next_block_addr = table_meta->table_addr;
+	while (next_block_addr != 0) {
+		RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next_block_addr));	
 		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
 		record_index_root = index_manager.insertEntry(DB_BPTREE_INDEX, record_index_root, table_meta->attr_type_list[table_meta->key_index],
 											data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
-		uint32_t next = data_block_ptr->NextBlockIndex();
+		next_block_addr = data_block_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock(data_block_ptr);
-		if (next == 0) break;
-		else data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
 	}
-	buffer_manager.ReleaseBlock(record_index_root_block);
 
 	const void* data_list[3];
 	data_list[0] = table_name_mix_key.c_str();
@@ -588,21 +586,19 @@ RecordBlock* Catalog::FindIndexByName(const string & index_name){
 	type_list[1] = (DBenum)(DB_TYPE_CHAR + 31);
 	type_list[2] = DB_TYPE_INT;
 
-	RecordBlock* index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->index_data_addr));
-	index_data_ptr->Format(type_list, 3, 0);
-
-	while(true){
+	uint32_t next_block_addr = this->index_data_addr;
+	while(next_block_addr != 0){
+		RecordBlock* index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next_block_addr));
+		index_data_ptr->Format(type_list, 3, 0);
 		for(unsigned int i = 0; i < index_data_ptr->RecordNum(); i++){
 			if(strcmp((char*)index_data_ptr->GetDataPtr(i, 1), index_name.c_str()) == 0){
 				return index_data_ptr;
 			}
 		}
-		uint32_t next = index_data_ptr->NextBlockIndex();
+		next_block_addr = index_data_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock(index_data_ptr);
-		if(next == 0) throw IndexNotFound();
-		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
-		index_data_ptr->Format(type_list, 5, 0);
-	}	
+	}
+	throw IndexNotFound();
 }
 
 void Catalog::DropIndex(const string & index_name){
@@ -611,8 +607,6 @@ void Catalog::DropIndex(const string & index_name){
 	type_list[1] = (DBenum)(DB_TYPE_CHAR + 31);
 	type_list[2] = DB_TYPE_INT;
 
-	RecordBlock* index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->index_data_addr));
-	index_data_ptr->Format(type_list, 3, 0);
 
 	// traversal all the index_name record, 
 	// find the one to be deleted;
@@ -620,7 +614,11 @@ void Catalog::DropIndex(const string & index_name){
 	bool flag = false;
 	uint32_t index_root_block;
 	string table_name_mix_key;
-	while(true){
+	uint32_t next_block_addr = this->index_data_addr;
+	RecordBlock* index_data_ptr;
+	while(next_block_addr != 0){
+		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->index_data_addr));
+		index_data_ptr->Format(type_list, 3, 0);
 		int record_num = index_data_ptr->RecordNum();
 		for(int i = record_num - 1; i >=0; i--){
 			if(strcmp((char*)index_data_ptr->GetDataPtr(i, 1), index_name.c_str()) == 0){
@@ -641,11 +639,11 @@ void Catalog::DropIndex(const string & index_name){
 			}
 		}
 		if(flag) break;
-		uint32_t next = index_data_ptr->NextBlockIndex();
+		next_block_addr = index_data_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock(index_data_ptr);
-		if(next == 0) throw IndexNotFound();
-		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next));
-		index_data_ptr->Format(type_list, 3, 0);
+	}
+	if(next_block_addr == 0){
+		throw IndexNotFound();
 	}
 
 	// drop the whole BP tree;

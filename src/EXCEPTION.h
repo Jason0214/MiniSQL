@@ -31,6 +31,11 @@ public:
 	int key_index;
 };
 
+class DuplicatedPrimaryKey : public Exception {
+public:
+	DuplicatedPrimaryKey(string msg):Exception(msg) {}
+};
+
 class DuplicatedIndexName : public Exception{
 public:
 	DuplicatedIndexName(string msg) :Exception(msg){}
