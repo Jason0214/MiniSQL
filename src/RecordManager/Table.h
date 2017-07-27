@@ -3,7 +3,7 @@
 
 #include <map>
 #include "RecordStructures.h"
-#include "TableInterator.h"
+#include "TableIterator.h"
 
 #define MAX_TABLE_SIZE 30 * (1 << 20) //30MB
 
@@ -30,10 +30,10 @@ public:
 
     TableIterator* begin(){
         if(this->table_flag = DB_TEMPORAL){
-            return new TemporalTable_iterator(this->table_data.begin());
+            return new TemporalTable_Iterator(this->table_data.begin());
         }
         else{
-            return new MaterializedTable_iterator(this->data_addr,
+            return new MaterializedTable_Iterator(this->data_addr,
                                                     0,
                                                     this->attr_num,
                                                     this->attr_type,
@@ -43,21 +43,21 @@ public:
 
     TableIterator* end(){
         if(this->table_flag == DB_TEMPORAL){
-            return new TemporalTable_iterator(this->table_data.end());
+            return new TemporalTable_Iterator(this->table_data.end());
         }
         else{
-            return new MaterializedTable_iterator(0,0,this->attr_num,this->attr_type,this->key_index);
+            return new MaterializedTable_Iterator(0,0,this->attr_num,this->attr_type,this->key_index);
         }
     }
 
-    pair<TableIterator*, TableIterator*> PrimaryFilter(char op, const void* value);
+    pair<TableIterator*, TableIterator*> PrimaryIndexFilter(const std::string & op, const void* value);
 
     void insertTule(const void** tuple_data){
         if(this->table_flag == DB_TEMPORAL){
             this->temporal_InsertTuple(tuple_data);
             //check table size, 
-            size_t total_size = (tupleLen(this->attr_type, this->attr_name) 
-                        + typeLen(this->attr_type[this->key_index])) * this->tuple_data.size();
+            size_t total_size = (tupleLen(this->attr_type, this->attr_num) 
+                        + typeLen(this->attr_type[this->key_index])) * this->table_data.size();
             if(total_size >= MAX_TABLE_SIZE){
                 this->materialize();
             }
@@ -78,10 +78,8 @@ public:
         return this->attr_type[index];
     }
 
-    static void BlockFilter(const std::string & op,
+   void BlockFilter(const std::string & op,
                         const void* value,
-                        DBenum key_type,
-                        uint32_t index_addr,
                         uint32_t* begin_block,
                         uint32_t* end_block);
 

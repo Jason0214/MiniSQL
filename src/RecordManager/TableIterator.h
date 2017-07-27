@@ -1,6 +1,7 @@
 #ifndef __TABLE_ITERATOR__
 #define __TABLE_ITERATOR__
 
+#include "../BufferManager/Block.h"
 #include "RecordStructures.h"
 class Table;
 
@@ -16,7 +17,7 @@ class TemporalTable_Iterator
 :public TableIterator{
 public:
     TemporalTable_Iterator(std::map<TupleKey,Tuple>::iterator & current_iter)
-    :map_iter(iterator){}
+    :map_iter(current_iter){}
     TemporalTable_Iterator(const TemporalTable_Iterator & right_v){
         *this = right_v;
     }
@@ -27,8 +28,8 @@ public:
         return *this;
     }
     virtual ~TemporalTable_Iterator(){}
-    bool isEqual(const TableIterator *) const const{
-        return CheckEqual(*this, *dynamic_cast<TemporalTable_Iterator*>(iter));
+    bool isEqual(const TableIterator * iter_ptr) const const{
+        return CheckEqual(*this, *dynamic_cast<const TemporalTable_Iterator*>(iter_ptr));
     }
     void next(){
         this->map_iter++;
@@ -52,14 +53,15 @@ public:
     }
     const MaterializedTable_Iterator & operator=(const MaterializedTable_Iterator & right_v); 
     virtual ~MaterializedTable_Iterator();
-    bool isEqual(const TableIterator *) const{
-        return CheckEqual(*this, *dynamic_cast<MaterializedTable_Iterator*>(&iter));
+    bool isEqual(const TableIterator * iter_ptr) const{
+        return CheckEqual(*this, *dynamic_cast<const MaterializedTable_Iterator*>(iter_ptr));
     }
     void next();
    
     friend bool CheckEqual(const MaterializedTable_Iterator &, const MaterializedTable_Iterator &);
     
-    RecordBlock* block_ptr;    
+    RecordBlock* block_ptr;
+	uint32_t block_addr;
     int tuple_index;
     int key_index;
     int attr_num;
