@@ -35,4 +35,6 @@ int compare(const void* v1, const void* v2, DBenum type);
 
 void printByType(const void* v, DBenum type);
 
+void string2Bytes(const std::string& value, DBenum type, void* raw_value);
+
 #endif

@@ -29,6 +29,26 @@ int compare(const void* v1, const void* v2, DBenum type) {
 	}
 }
 
+void string2Bytes(const std::string& value, DBenum type, void* raw_value){
+	// convert `value` to const void*
+	stringstream ss(value);
+	ss.exceptions(std::ios::failbit);
+	switch (table_meta->attr_type_list[attr_index]) {
+	case DB_TYPE_INT:
+		ss >> *(int*)raw_value;
+		break;
+	case DB_TYPE_FLOAT:
+		ss >> *(float*)raw_value;
+		break;
+	default:
+		if (table_meta->attr_type_list[i] - DB_TYPE_CHAR < (int)values[i].length()) {
+			throw AttrTypeUnmatch("");
+		}
+		memcpy(raw_value, ss.str().c_str(), typeLen(type));
+		break;
+	}
+}
+
 void printByType(const void* v, DBenum type) {
 	switch (type) {
 	case DB_TYPE_INT: cout << *(int*)v << " "; break;

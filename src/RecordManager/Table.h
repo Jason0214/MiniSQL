@@ -23,13 +23,10 @@ public:
         const AttrAlias & attr_name_map2,
         TableImplement op);
 
-    ~Table(){
-        delete [] attr_name;
-        delete [] attr_type;
-    }
+    ~Table();
 
     TableIterator* begin(){
-        if(this->table_flag = DB_TEMPORAL){
+        if(this->table_flag = DB_TEMPORAL_TABLE){
             return new TemporalTable_Iterator(this->table_data.begin());
         }
         else{
@@ -42,7 +39,7 @@ public:
     }
 
     TableIterator* end(){
-        if(this->table_flag == DB_TEMPORAL){
+        if(this->table_flag == DB_TEMPORAL_TABLE){
             return new TemporalTable_Iterator(this->table_data.end());
         }
         else{
@@ -53,7 +50,7 @@ public:
     pair<TableIterator*, TableIterator*> PrimaryIndexFilter(const std::string & op, const void* value);
 
     void insertTule(const void** tuple_data){
-        if(this->table_flag == DB_TEMPORAL){
+        if(this->table_flag == DB_TEMPORAL_TABLE){
             this->temporal_InsertTuple(tuple_data);
             //check table size, 
             size_t total_size = (tupleLen(this->attr_type, this->attr_num) 
@@ -63,26 +60,54 @@ public:
             }
         }
         else{
-            //DB_MATERIALIZED
+            //DB_MATERIALIZED_TABLE, DB_ONDISC_TABLE
             this->materialized_InsertTuple(tuple_data);
         }
     }
 
+    void BlockFilter(const std::string & op,
+                    const void* value,
+                    uint32_t* begin_block,
+                    uint32_t* end_block);
+
+    void materialize();
+
+    const std::string & getTableName(int index) const{
+        return this->table_name;
+    }
     const std::string & getAttrName(int index) const{
         return this->attr_name[index];
     }
     const std::string & getKeyAttrName() const{
         return this->attr_name[this->key_index];
     }
+    const DBenum* getAttrTypeList() const{
+        return this->attr_type;
+    }
     DBenum getAttrType(int index) const{
         return this->attr_type[index];
     }
-
-   void BlockFilter(const std::string & op,
-                        const void* value,
-                        uint32_t* begin_block,
-                        uint32_t* end_block);
-
+    uint32_t getDataBlockAddr() const{
+        return this->data_addr;
+    }
+    void updateDataBlockAddr(uint32_t new_addr){
+        this->data_addr = new_addr;
+    }
+    uint32_t getIndexRoot() const{
+        return this->index_addr;
+    }
+    void updateIndexRoot(uint32_t new_root){
+        this->index_addr = new_root;
+    }
+    int getAttrNum() const{
+        return this->attr_num;
+    }
+    int getKeyIndex() const{
+        return this->key_index;
+    }
+    bool isPrimaryKey() const{
+        return this->is_primary_key;
+    }
 private:
     Table(const Table &);    
     const Table & operator=(const Table &);
@@ -103,7 +128,7 @@ private:
     // list is only used for DB_TEMPORAL table
     std::map<TupleKey, Tuple> table_data;
 
-    // only used for DB_MATERIALIZED table
+    // only used for table on disc
     uint32_t index_addr;
     uint32_t data_addr;
 };

@@ -11,7 +11,7 @@ static IndexManager & index_manager = IndexManager::Instance();
 
 // new table create from table already stored on disc, matrialized table
 Table::Table(const std::string & table_name):
-    table_flag(DB_MATERIALIZED),
+    table_flag(DB_ONDISC_TABLE),
     table_name(table_name)
     {
     TableMeta* table_meta = catalog.GetTableMeta(table_name);
@@ -35,7 +35,7 @@ Table::Table(const std::string & table_name,
     const Table & based_table, 
     const AttrAlias & attr_name_map, 
     TableImplement op)
-    :table_flag(DB_TEMPORAL),
+    :table_flag(DB_TEMPORAL_TABLE),
     table_name(table_name){
     if(op == TABLE_SELECT){
         this->attr_num = based_table.attr_num;
@@ -53,7 +53,16 @@ Table::Table(const std::string & table_name,
         }
     }
     else{
-        
+        this->attr_num = attr_name_map.size();
+        this->attr_type = new DBenum[this->attr_num];
+        for(int i = 0, j = 0; i < based_table.attr_num; i++){
+            AttrAlias::const_iterator temp = attr_name_map.find(based_table.attr_name[i]);
+            if(temp != attr_name_map.end()){
+                this->attr_name[j] = temp->second;
+                this->attr_type[j] = based_table.attr_type[i];
+                j++;
+            }
+        }
     }
 }
 
@@ -66,13 +75,27 @@ Table::Table(const std::string & table_name,
     const Table & based_table2, 
     const AttrAlias & attr_name_map2,
     TableImplement op)
-    :table_flag(DB_TEMPORAL),
+    :table_flag(DB_TEMPORAL_TABLE),
     table_name(table_name){
-
+    if(op == TABLE_JOIN){
+        
+    }
+    else if(op == TABLE_NATURAL_JOIN){
+        
+    }
 }
 
+Table::~Table(){
+    if(this->table_flag == DB_MATERIALIZED_TABLE){
+        catalog.DropTable(this->table_name);
+    }
+    delete [] this->attr_name;
+    delete [] this->attr_type;
+}
+
+
 pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op, const void* value){
-    if(this->table_flag == DB_TEMPORAL){
+    if(this->table_flag == DB_TEMPORAL_TABLE){
         TupleKey map_key = TupleKey(value, this->attr_type[this->key_index]);
         if(op == "<"){
             map<TupleKey,Tuple>::iterator map_iterator = ++this->table_data.lower_bound(map_key);
@@ -259,4 +282,22 @@ void Table::BlockFilter(const std::string & op,
         *begin_block_addr = data_addr;
         *end_block_addr = 0;
     }
+}
+
+void Table::materialize(){
+    if(this->table_flag != DB_TEMPORAL_TABLE){
+        return;
+    }
+    catalog.CreateTable(this->table_name, this->attr_name, this->attr_type, this->attr_num, this->key_index);
+    TableMeta* table_meta = catalog.GetTableMeta(this->table_name);
+    this->index_addr = table_meta->primary_index_addr;
+    this->data_addr = table_meta->table_addr;
+    delete table_meta;
+
+    map<TupleKey, Tuple>::iterator iter;
+    for(iter = this->table_data.begin(); iter != this->table_data.end(); iter++){
+        this->materialized_InsertTuple((const void **)(iter->second[0]));
+    }
+    this->table_data.clear();
+    this->table_flag == DB_MATERIALIZED_TABLE;
 }

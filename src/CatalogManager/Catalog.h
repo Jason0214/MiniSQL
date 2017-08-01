@@ -30,8 +30,6 @@ public:
 	uint32_t primary_index_addr; 
 	// if is_primary_key is set, then the key attribute is distinct
 	bool is_primary_key; 
-	std::string & GetAttrName(int index){return this->attr_name_list[index];}
-	DBenum & GetAttrType(int index){return this->attr_type_list[index];}
 private:
 	TableMeta(const TableMeta &);
 	TableMeta & operator=(const TableMeta &);

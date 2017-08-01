@@ -18,6 +18,15 @@ public:
 	DuplicatedTableName(string msg) :Exception(msg) {}
 };
 
+class AttrNumberUnmatch : public Exception{
+public:
+	AttrNumberUnmatch(string msg) : Exception(msg){}
+}
+class AttrTypeUnmatch : public Exception{
+public:
+	AttrTypeUnmatch(string msg) : Exception(msg){}
+}
+
 class TableNotFound : public Exception {
 public:
 	TableNotFound(string msg) :Exception(msg){}
