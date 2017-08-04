@@ -125,7 +125,7 @@ public:
 		delete [] this->size;
 		delete [] this->type;
 	}
-	void Format(DBenum* attr_type, uint16_t attr_num, unsigned short key);
+	void Format(const DBenum* attr_type, uint16_t attr_num, unsigned short key);
 	uint16_t & RecordNum(){
 		return *(uint16_t*)&(this->block_data[BLOCK_HEAD_SIZE]);
 	}

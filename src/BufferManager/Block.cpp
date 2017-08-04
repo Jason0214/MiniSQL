@@ -115,7 +115,7 @@ void TableBlock::GetAttrMeta(char* attr_name, DBenum & attr_type, uint16_t attr_
 
 // use a attributes type list to format block data
 // make access element convient
-void RecordBlock::Format(DBenum* attr_type, uint16_t attr_num, unsigned short key){
+void RecordBlock::Format(const DBenum* attr_type, uint16_t attr_num, unsigned short key){
 	if(this->is_formated) return;
 	this->tuple_size = 0;
 	this->key_index = key;
