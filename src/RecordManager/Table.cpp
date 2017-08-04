@@ -29,59 +29,119 @@ Table::Table(const std::string & table_name):
     delete table_meta;
 }
 
-// new table create from a base table through either `select` or `project` 
-// which will be specifed by parameter `op`.
+// new table create from a base table through `select` 
 Table::Table(const std::string & table_name, 
-    const Table & based_table, 
-    const AttrAlias & attr_name_map, 
-    TableImplement op)
+    const Table * based_table)
     :table_flag(DB_TEMPORAL_TABLE),
-    table_name(table_name){
-    if(op == TABLE_SELECT){
-        this->attr_num = based_table.attr_num;
-        this->attr_type = new DBenum[this->attr_num];
-        memcpy(this->attr_type, based_table.attr_type, sizeof(DBenum) * this->attr_num);
-        this->attr_name = new string[this->attr_num];
-        for(int i = 0; i < this->attr_num; i++){
-            AttrAlias::const_iterator temp = attr_name_map.find(based_table.attr_name[i]);
-            if(temp == attr_name_map.end()){
-                this->attr_name[i] = based_table.attr_name[i];
-            }
-            else{
-                this->attr_name[i] = temp->second;
-            }
+    table_name(table_name),
+    is_primary_key(false){
+    this->attr_num = based_table->attr_num;
+    this->attr_type = new DBenum[this->attr_num];
+    memcpy(this->attr_type, based_table->attr_type, sizeof(DBenum) * this->attr_num);
+    this->attr_name = new string[this->attr_num];
+    for(int i = 0; i < this->attr_num; i++){
+        this->attr_name[i] = based_table->attr_name[i];
+    }
+    this->indirect_attr_map = based_table->indirect_attr_map;
+}
+
+// new table create from a base table through `project` 
+Table::Table(const std::string & table_name, 
+    const Table * based_table, 
+    const AttrAlias & attr_name_alias)
+    :table_flag(DB_TEMPORAL_TABLE),
+    table_name(table_name),
+    is_primary_key(false){
+    this->attr_num = (int)attr_name_alias.size();
+    this->attr_type = new DBenum[this->attr_num];
+    for(unsigned int i = 0; i < attr_name_alias.size(); i++){
+        this->attr_name[i] = attr_name_alias[i].AttrName;
+        this->attr_type[i] = based_table->attr_type[attr_name_alias[i].OriginIndex];
+        
+        IndirectAttrMap::const_iterator iter = based_table->indirect_attr_map.find(this->attr_name[i]);
+        if(iter != based_table->indirect_attr_map.end()){
+            this->indirect_attr_map.insert(iter);
+        }
+        
+        if(attr_name_alias[i].OriginIndex == based_table->getKeyIndex()){
+            this->key_index = i;
         }
     }
-    else{
-        this->attr_num = attr_name_map.size();
-        this->attr_type = new DBenum[this->attr_num];
-        for(int i = 0, j = 0; i < based_table.attr_num; i++){
-            AttrAlias::const_iterator temp = attr_name_map.find(based_table.attr_name[i]);
-            if(temp != attr_name_map.end()){
-                this->attr_name[j] = temp->second;
-                this->attr_type[j] = based_table.attr_type[i];
-                j++;
+}
+
+// new table created from two base table, through `natural join` 
+Table::Table(const std::string & table_name, 
+    const Table * based_table1, 
+    const Table * based_table2, 
+    const AttrAlias & attr_name_alias)
+    :table_flag(DB_TEMPORAL_TABLE),
+    table_name(table_name){
+    this->attr_num = attr_name_alias.size();
+    this->attr_type = new DBenum[this->attr_num];
+    for(unsigned int i = 0; i < attr_name_alias.size(); i++){
+        this->attr_name[i] = attr_name_alias[i].AttrName;            
+        
+        int origin_index = attr_name_alias[i].OriginIndex;
+        if(origin_index < 0){
+            origin_index = ~origin_index;
+            this->attr_type[i] = based_table2->attr_type[origin_index];
+			// move indirect attr map from old table to new table
+			IndirectAttrMap::const_iterator iter = based_table2->indirect_attr_map.find(this->attr_name[i]);
+			if (iter != based_table2->indirect_attr_map.end()) {
+				this->indirect_attr_map.insert(iter);
+			}
+        }
+        else{
+            this->attr_type[i] = based_table1->attr_type[origin_index];
+			// move indirect attr map from old table to new table			
+			IndirectAttrMap::const_iterator iter = based_table1->indirect_attr_map.find(this->attr_name[i]);
+			if (iter != based_table1->indirect_attr_map.end()) {
+				this->indirect_attr_map.insert(iter);
+			}
+			// set new key
+			if(origin_index == based_table1->getKeyIndex()){
+                this->key_index = origin_index;
             }
         }
     }
 }
 
-
-// new table created from two base table, through either 'join' or
-// `natural join`which sepecifed by `op`
+// new table created from two base table, through `natural join` 
 Table::Table(const std::string & table_name, 
-    const Table & based_table1, 
-    const AttrAlias & attr_name_map1, 
-    const Table & based_table2, 
-    const AttrAlias & attr_name_map2,
-    TableImplement op)
+    const Table * based_table1, 
+    const Table * based_table2, 
+    const AttrAlias & attr_name_alias,
+    const IndirectAttrMap & indirect_attr_map)
     :table_flag(DB_TEMPORAL_TABLE),
-    table_name(table_name){
-    if(op == TABLE_JOIN){
-        
-    }
-    else if(op == TABLE_NATURAL_JOIN){
-        
+    table_name(table_name),
+    indirect_attr_map(indirect_attr_map){
+    this->attr_num = attr_name_alias.size();
+    this->attr_type = new DBenum[this->attr_num];
+	for (unsigned int i = 0; i < attr_name_alias.size(); i++) {
+		this->attr_name[i] = attr_name_alias[i].AttrName;
+
+		int origin_index = attr_name_alias[i].OriginIndex;
+		if (origin_index < 0) {
+			origin_index = ~origin_index;
+			this->attr_type[i] = based_table2->attr_type[origin_index];
+			// move indirect attr map from old table to new table
+			IndirectAttrMap::const_iterator iter = based_table2->indirect_attr_map.find(this->attr_name[i]);
+			if (iter != based_table2->indirect_attr_map.end()) {
+				this->indirect_attr_map.insert(iter);
+			}
+		}
+		else {
+			this->attr_type[i] = based_table1->attr_type[origin_index];
+			// move indirect attr map from old table to new table			
+			IndirectAttrMap::const_iterator iter = based_table1->indirect_attr_map.find(this->attr_name[i]);
+			if (iter != based_table1->indirect_attr_map.end()) {
+				this->indirect_attr_map.insert(iter);
+			}
+			// set new key
+			if (origin_index == based_table1->getKeyIndex()) {
+				this->key_index = origin_index;
+			}
+		}
     }
 }
 
@@ -94,9 +154,12 @@ Table::~Table(){
 }
 
 
-pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op, const void* value){
+pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op, const string & value){
+    DBenum key_type = this->attr_type[this->key_index];
+    void* value_ptr = new uint8_t[typeLen(key_type)];
+    string2Bytes(value, key_type, value_ptr);
     if(this->table_flag == DB_TEMPORAL_TABLE){
-        TupleKey map_key = TupleKey(value, this->attr_type[this->key_index]);
+        TupleKey map_key = TupleKey(value_ptr, key_type);
         if(op == "<"){
             map<TupleKey,Tuple>::iterator map_iterator = ++this->table_data.lower_bound(map_key);
 			TemporalTable_Iterator* iterator =  new TemporalTable_Iterator(map_iterator);
@@ -130,25 +193,26 @@ pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op
     }
     else{
         uint32_t begin_addr, end_addr;
-        Table::BlockFilter(op, value, &begin_addr, &end_addr);
+        Table::BlockFilter(op, value_ptr, &begin_addr, &end_addr);
         MaterializedTable_Iterator* iterator_begin 
             = new MaterializedTable_Iterator(begin_addr, 0, this->attr_num, this->attr_type, this->key_index);
         MaterializedTable_Iterator* iterator_end 
             = new MaterializedTable_Iterator(end_addr, 0, this->attr_num, this->attr_type, this->key_index);
         return make_pair(iterator_begin, iterator_end);
     }
+    delete [] value_ptr;
 }
 
-void Table::materialized_InsertTuple(const void** tuple_data){
+void Table::materialized_InsertTuple(const void ** tuple_data_ptr){
     uint32_t record_block_addr;
     /* do finding the tuple key through index */
     DBenum key_type = this->attr_type[this->key_index];
     uint32_t index_root = this->index_addr;
     AutoPtr<SearchResult> result_ptr(index_manager.searchEntry(DB_BPTREE_INDEX, index_root,
-                         key_type, tuple_data[this->key_index]));
+                         key_type, tuple_data_ptr[this->key_index]));
     if (result_ptr.raw_ptr) {
         if (compare(result_ptr->node->getKey(result_ptr->index),
-                        tuple_data[this->key_index], key_type) == 0) {
+			tuple_data_ptr[this->key_index], key_type) == 0) {
             if (this->is_primary_key) {
 				throw DuplicatedPrimaryKey("Duplicated Primary Key");
             }
@@ -172,15 +236,15 @@ void Table::materialized_InsertTuple(const void** tuple_data){
     record_block_ptr->Format(this->attr_type, this->attr_num, this->key_index);
 
     if (this->is_primary_key) {
-        int i = record_block_ptr->FindTupleIndex(tuple_data[this->key_index]);
+        int i = record_block_ptr->FindTupleIndex(tuple_data_ptr[this->key_index]);
         if (i >= 0 && i < record_block_ptr->RecordNum() &&
-            compare(tuple_data[this->key_index], record_block_ptr->GetDataPtr(i, this->key_index), key_type) == 0) {
+            compare(tuple_data_ptr[this->key_index], record_block_ptr->GetDataPtr(i, this->key_index), key_type) == 0) {
 			throw DuplicatedPrimaryKey("Duplicated Primary Key");
         }
-        record_block_ptr->InsertTupleByIndex(tuple_data, i >= 0 ? i : 0);
+        record_block_ptr->InsertTupleByIndex(tuple_data_ptr, i >= 0 ? i : 0);
     }
     else {
-        record_block_ptr->InsertTuple(tuple_data);
+        record_block_ptr->InsertTuple(tuple_data_ptr);
     }
 
     // update index
@@ -205,10 +269,13 @@ void Table::materialized_InsertTuple(const void** tuple_data){
     record_block_ptr->is_dirty = true;
 }
 
-void Table::temporal_InsertTuple(const void** tuple_data){
-    Tuple new_tuple = Tuple(tuple_data, this->attr_num, this->attr_type);
-    TupleKey new_tuple_key = TupleKey(new_tuple[this->key_index], this->attr_type[this->key_index]);
-    this->table_data.insert(make_pair(new_tuple_key, new_tuple));
+void Table::temporal_InsertTuple(const void ** tuple_data_ptr){
+	Tuple tuple(this->attr_num, this->attr_type);
+	for (int i = 0; i < this->attr_num; i++) {
+		memcpy(tuple[i], tuple_data_ptr[i], typeLen(this->attr_type[i]));
+	}
+    TupleKey new_tuple_key = TupleKey(tuple[this->key_index], this->attr_type[this->key_index]);
+    this->table_data.insert(make_pair(new_tuple_key, tuple));
 }
 
 void Table::BlockFilter(const std::string & op,
@@ -294,10 +361,10 @@ void Table::materialize(){
     this->data_addr = table_meta->table_addr;
     delete table_meta;
 
-    map<TupleKey, Tuple>::iterator iter;
+    TemporalTableData::iterator iter;
     for(iter = this->table_data.begin(); iter != this->table_data.end(); iter++){
-        this->materialized_InsertTuple((const void **)(iter->second[0]));
+        this->materialized_InsertTuple(iter->second.entry_ptr);
     }
     this->table_data.clear();
     this->table_flag == DB_MATERIALIZED_TABLE;
-}
+}  

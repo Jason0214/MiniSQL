@@ -8,7 +8,8 @@ class Table;
 class TableIterator{
 public:
     virtual ~TableIterator(){};
-    virtual const void * GetAttrData(int index) const = 0;
+    virtual const void * getAttrData(int index) const = 0;
+	virtual const void ** getDataList() const = 0;
     virtual void next() = 0;
     virtual bool isEqual(const TableIterator *) const = 0;
 };
@@ -28,9 +29,12 @@ public:
         return *this;
     }
     virtual ~TemporalTable_Iterator(){}
-    const void * GetAttrData(int index) const{
+    const void * getAttrData(int index) const{
         return map_iter->second[index];
     }
+	const void ** getDataList() const {
+		return map_iter->second.entry_ptr();
+	}
     bool isEqual(const TableIterator * iter_ptr) const const{
         return CheckEqual(*this, *dynamic_cast<const TemporalTable_Iterator*>(iter_ptr));
     }
@@ -56,9 +60,12 @@ public:
     }
     const MaterializedTable_Iterator & operator=(const MaterializedTable_Iterator & right_v); 
     virtual ~MaterializedTable_Iterator();
-    const void * GetAttrData(int index) const{
+    const void * getAttrData(int index) const{
         return block_ptr->GetDataPtr(this->tuple_index, index);
     }
+	const void ** getDataList() const {
+		return (const void**)(block_ptr->GetDataPtr(this->tuple_index, 0));
+	}
     bool isEqual(const TableIterator * iter_ptr) const{
         return CheckEqual(*this, *dynamic_cast<const MaterializedTable_Iterator*>(iter_ptr));
     }

@@ -2,31 +2,34 @@
 #define __RECORD_STRUCTURES__
 
 #include "../SharedFunc.h"
-#include <map>
+#include <vector>
 #include <string>
+#include <algorithm>
 
-typedef enum{
-    TABLE_SELECT,
-    TABLE_PROJECT,
-    TABLE_JOIN,
-    TABLE_NATURAL_JOIN,    
-}TableImplement;
+bool AttrAliasSort(const AliasStructure &v1, const AliasStructure &v2){
+    return v1.AttrName < v2.AttrName;
+}
 
+typedef struct attr_alias_struct{
+	std::string AttrName;
+	int OriginIndex;
+}AliasStructure;
 
-typedef std::map<std::string, std::string> AttrAlias;
+typedef std::vector<AliasStructure> AttrAlias;
 
 
 class Tuple{
 public:
-    Tuple(const void** data_list, int attr_num, DBenum* attr_type_list):
-    entry_num(attr_num),
-    tuple_size(0){
+    Tuple(int attr_num, const DBenum* attr_type_list):
+        entry_num(attr_num),
+        tuple_size(0){
+        // TODO store typeLen in a temp array
         for(int i = 0; i < attr_num; i++){
             this->tuple_size += typeLen(attr_type_list[i]);
         }
         this->tuple_data = new uint8_t[this->tuple_size];
         this->entry = new uint8_t*[attr_num];
-		this->entry[0] = &(this->tuple_data[0]);
+        this->entry[0] = &(this->tuple_data[0]);
         for(int i = 1; i < attr_num; i++){
             this->entry[i] = this->entry[i-1] + typeLen(attr_type_list[i]);
         }
@@ -44,9 +47,21 @@ public:
     int getTupleSize()const{
         return this->tuple_size;
     }
-    const uint8_t* operator[](int index)const{
-        return this->entry[index];
+
+    void* data_ptr(){
+        return (void*)(this->tuple_data);
     }
+
+    const void ** entry_ptr(){
+        return (const void**)(this->entry);
+    }
+
+    void* operator[](int index){
+        return (void*)(this->entry[index]);
+    }
+	const void* operator[](int index)const{
+		return (const void*)(this->entry[index]);
+	}
 
     const Tuple & operator=(const Tuple & rightv){
         if(&rightv != this){
@@ -54,10 +69,10 @@ public:
             this->tuple_size = rightv.getTupleSize();
             this->entry = new uint8_t*[this->entry_num];
             this->tuple_data = new uint8_t[this->tuple_size];
-            memcpy(this->tuple_data, rightv[0], this->tuple_size);
+            memcpy(this->tuple_data, rightv.tuple_data, this->tuple_size);
             this->entry[0] = &(this->tuple_data[0]);
             for(int i = 1; i < this->entry_num; i++){
-                this->entry[i] = this->entry[i-1] + (rightv[i] - rightv[i-1]);
+                this->entry[i] = (uint8_t*)((unsigned long)rightv[i] + (unsigned long)(this->tuple_data - rightv.tuple_data));
             }
         }
         return *this;
@@ -109,5 +124,11 @@ public:
     uint8_t* key_data; 
     DBenum type;
 };
+
+
+typedef std::map<TupleKey, Tuple> TemporalTableData;
+
+
+typedef std::map<std::string, pair<std::string, std::string>> IndirectAttrMap;
 
 #endif

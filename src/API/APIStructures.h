@@ -6,10 +6,6 @@
 #include <map>
 #include <string>
 
-#include "stdint.h"
-
-using namespace std;
-
 typedef string TableAlias;
 typedef string TableName;
 typedef map<TableAlias, TableName> TableAliasMap;

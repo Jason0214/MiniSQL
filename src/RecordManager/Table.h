@@ -2,6 +2,7 @@
 #define __TABLE__
 
 #include <map>
+#include <sstream>
 #include "RecordStructures.h"
 #include "TableIterator.h"
 
@@ -12,18 +13,26 @@ public:
     Table(const std::string & table_name);
 
     Table(const std::string & table_name, 
-        const Table & based_table, 
-        const AttrAlias & attr_name_map, 
-        TableImplement op);
+        const Table* based_table);
 
     Table(const std::string & table_name, 
-        const Table & based_table1, 
-        const AttrAlias & attr_name_map1, 
-        const Table & based_table2, 
-        const AttrAlias & attr_name_map2,
-        TableImplement op);
+        const Table* based_table, 
+        const AttrAlias & attr_name_alias);
+
+    Table(const std::string & table_name, 
+        const Table* based_table1,
+        const Table* based_table2,
+        const AttrAlias & attr_name_alias);
+
+    Table::Table(const std::string & table_name, 
+        const Table * based_table1, 
+        const Table * based_table2, 
+        const AttrAlias & attr_name_alias,
+        const IndirectAttrMap & indirect_attr_map);
 
     ~Table();
+
+	void materialize();
 
     TableIterator* begin(){
         if(this->table_flag = DB_TEMPORAL_TABLE){
@@ -47,11 +56,11 @@ public:
         }
     }
 
-    pair<TableIterator*, TableIterator*> PrimaryIndexFilter(const std::string & op, const void* value);
+    pair<TableIterator*, TableIterator*> PrimaryIndexFilter(const std::string & op, const string & value);
 
-    void insertTule(const void** tuple_data){
+    void insertTuple(const void** tuple_data_ptr){
         if(this->table_flag == DB_TEMPORAL_TABLE){
-            this->temporal_InsertTuple(tuple_data);
+            this->temporal_InsertTuple(tuple_data_ptr);
             //check table size, 
             size_t total_size = (tupleLen(this->attr_type, this->attr_num) 
                         + typeLen(this->attr_type[this->key_index])) * this->table_data.size();
@@ -61,18 +70,34 @@ public:
         }
         else{
             //DB_MATERIALIZED_TABLE, DB_ONDISC_TABLE
-            this->materialized_InsertTuple(tuple_data);
+            this->materialized_InsertTuple(tuple_data_ptr);
         }
     }
 
+	// use primary index to reduce the search area
+	// when doing tuple comparision
     void BlockFilter(const std::string & op,
                     const void* value,
                     uint32_t* begin_block,
                     uint32_t* end_block);
 
-    void materialize();
+    void insertIndirectAttr(const std::string & attr_alias, const std::string & table_name, const std::string & attr_name){
+        this->indirect_attr_map.insert(make_pair(attr_alias, make_pair(table_name, attr_name)));
+    }
 
-    const std::string & getTableName(int index) const{
+    // only used in output table meta
+    const std::string & getFullAttrName(int index) const{
+        const std::string & attr_name = this->getAttrName(index);
+        IndirectAttrMap::const_iterator result = this->indirect_attr_map.find(attr_name);
+        if(result == this->indirect_attr_map.end()){
+            return attr_name;
+        }
+        else{
+            return result->second.first + "." + result->second.second;
+        }
+    }
+
+    const std::string & getTableName() const{
         return this->table_name;
     }
     const std::string & getAttrName(int index) const{
@@ -86,6 +111,9 @@ public:
     }
     DBenum getAttrType(int index) const{
         return this->attr_type[index];
+    }
+    DBenum flag() const{
+        return this->table_flag;
     }
     uint32_t getDataBlockAddr() const{
         return this->data_addr;
@@ -112,8 +140,8 @@ private:
     Table(const Table &);    
     const Table & operator=(const Table &);
 
-    void materialized_InsertTuple(const void** );
-    void temporal_InsertTuple(const void** );
+    void materialized_InsertTuple(const void ** );
+    void temporal_InsertTuple(const void **);
     void materialize();
 
     DBenum table_flag;
@@ -124,9 +152,12 @@ private:
     int attr_num;
     int key_index;
     bool is_primary_key;
+
+    // map for attributes in the format of `tableName`.`AttrName`
+    IndirectAttrMap indirect_attr_map;
     
     // list is only used for DB_TEMPORAL table
-    std::map<TupleKey, Tuple> table_data;
+    TemporalTableData table_data;
 
     // only used for table on disc
     uint32_t index_addr;
