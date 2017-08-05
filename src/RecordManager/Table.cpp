@@ -48,7 +48,7 @@ Table::Table(const std::string & table_name,
 // new table create from a base table through `project` 
 Table::Table(const std::string & table_name, 
     const Table * based_table, 
-    const AttrAlias & attr_name_alias)
+    const AttributesAliasVector & attr_name_alias)
     :table_flag(DB_TEMPORAL_TABLE),
     table_name(table_name),
     is_primary_key(false){
@@ -60,7 +60,7 @@ Table::Table(const std::string & table_name,
         
         IndirectAttrMap::const_iterator iter = based_table->indirect_attr_map.find(this->attr_name[i]);
         if(iter != based_table->indirect_attr_map.end()){
-            this->indirect_attr_map.insert(iter);
+            this->indirect_attr_map.insert(*iter);
         }
         
         if(attr_name_alias[i].OriginIndex == based_table->getKeyIndex()){
@@ -73,7 +73,7 @@ Table::Table(const std::string & table_name,
 Table::Table(const std::string & table_name, 
     const Table * based_table1, 
     const Table * based_table2, 
-    const AttrAlias & attr_name_alias)
+    const AttributesAliasVector & attr_name_alias)
     :table_flag(DB_TEMPORAL_TABLE),
     table_name(table_name){
     this->attr_num = attr_name_alias.size();
@@ -88,7 +88,7 @@ Table::Table(const std::string & table_name,
 			// move indirect attr map from old table to new table
 			IndirectAttrMap::const_iterator iter = based_table2->indirect_attr_map.find(this->attr_name[i]);
 			if (iter != based_table2->indirect_attr_map.end()) {
-				this->indirect_attr_map.insert(iter);
+				this->indirect_attr_map.insert(*iter);
 			}
         }
         else{
@@ -96,7 +96,7 @@ Table::Table(const std::string & table_name,
 			// move indirect attr map from old table to new table			
 			IndirectAttrMap::const_iterator iter = based_table1->indirect_attr_map.find(this->attr_name[i]);
 			if (iter != based_table1->indirect_attr_map.end()) {
-				this->indirect_attr_map.insert(iter);
+				this->indirect_attr_map.insert(*iter);
 			}
 			// set new key
 			if(origin_index == based_table1->getKeyIndex()){
@@ -110,7 +110,7 @@ Table::Table(const std::string & table_name,
 Table::Table(const std::string & table_name, 
     const Table * based_table1, 
     const Table * based_table2, 
-    const AttrAlias & attr_name_alias,
+    const AttributesAliasVector & attr_name_alias,
     const IndirectAttrMap & indirect_attr_map)
     :table_flag(DB_TEMPORAL_TABLE),
     table_name(table_name),
@@ -127,7 +127,7 @@ Table::Table(const std::string & table_name,
 			// move indirect attr map from old table to new table
 			IndirectAttrMap::const_iterator iter = based_table2->indirect_attr_map.find(this->attr_name[i]);
 			if (iter != based_table2->indirect_attr_map.end()) {
-				this->indirect_attr_map.insert(iter);
+				this->indirect_attr_map.insert(*iter);
 			}
 		}
 		else {
@@ -135,7 +135,7 @@ Table::Table(const std::string & table_name,
 			// move indirect attr map from old table to new table			
 			IndirectAttrMap::const_iterator iter = based_table1->indirect_attr_map.find(this->attr_name[i]);
 			if (iter != based_table1->indirect_attr_map.end()) {
-				this->indirect_attr_map.insert(iter);
+				this->indirect_attr_map.insert(*iter);
 			}
 			// set new key
 			if (origin_index == based_table1->getKeyIndex()) {
@@ -185,9 +185,9 @@ pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op
 			TemporalTable_Iterator* iterator_end = new TemporalTable_Iterator(map_iterator);
             map_iterator = ++this->table_data.lower_bound(map_key);
 			TemporalTable_Iterator* iterator_begin = new TemporalTable_Iterator(map_iterator);
-            return make_pair(iterator_begin, iterator_end);
+            return make_pair((TableIterator *)iterator_begin, (TableIterator *)iterator_end);
         }
-        else if(op == "!="){
+        else{ //op == "!="
             return make_pair(this->begin(), this->end());
         }
     }
@@ -198,7 +198,7 @@ pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op
             = new MaterializedTable_Iterator(begin_addr, 0, this->attr_num, this->attr_type, this->key_index);
         MaterializedTable_Iterator* iterator_end 
             = new MaterializedTable_Iterator(end_addr, 0, this->attr_num, this->attr_type, this->key_index);
-        return make_pair(iterator_begin, iterator_end);
+        return make_pair((TableIterator *)iterator_begin, (TableIterator *)iterator_end);
     }
     delete [] value_ptr;
 }
@@ -361,10 +361,10 @@ void Table::materialize(){
     this->data_addr = table_meta->table_addr;
     delete table_meta;
 
-    TemporalTableData::iterator iter;
+	TemporalTableDataMap::iterator iter;
     for(iter = this->table_data.begin(); iter != this->table_data.end(); iter++){
-        this->materialized_InsertTuple(iter->second.entry_ptr);
+        this->materialized_InsertTuple(iter->second.entry_ptr());
     }
     this->table_data.clear();
-    this->table_flag == DB_MATERIALIZED_TABLE;
+    this->table_flag = DB_MATERIALIZED_TABLE;
 }  

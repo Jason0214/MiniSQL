@@ -6,34 +6,34 @@
 
 void BeginQuery();
 
-void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName, 
-	const string& resultTableName, const ComparisonVector& cmpVec);
+void ExeSelect(const TableAliasMap& tableAlias, const std::string& sourceTableName, 
+	const std::string& resultTableName, const ComparisonVector& cmpVec);
 
-void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
-	const string& resultTableName, const AttrNameAliasVector& attrVec);
+void ExeProject(const TableAliasMap& tableAlias, const std::string& sourceTableName,
+	const std::string& resultTableName, const AttrNameAliasVector& attrVec);
 
-void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableName1,
-	const string& sourceTableName2, const string& resultTableName);
+void ExeNaturalJoin(const TableAliasMap& tableAlias, const std::string& sourceTableName1,
+	const std::string& sourceTableName2, const std::string& resultTableName);
 
-void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName1,
-	const string& sourceTableName2, const string& resultTableName);
+void ExeCartesian(const TableAliasMap& tableAlias, const std::string& sourceTableName1,
+	const std::string& sourceTableName2, const std::string& resultTableName);
 
-void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableName);
+void ExeOutputTable(const TableAliasMap& tableAlias, const std::string& sourceTableName);
 
 void EndQuery();
 
-void ExeInsert(const string& tableName, InsertValueVector& values);
+void ExeInsert(const std::string& tableName, InsertValueVector& values);
 
-void ExeUpdate(const string& tableName, const string& attrName, const string& value, const ComparisonVector& cmpVec);
+void ExeUpdate(const std::string& tableName, const std::string& attrName, const std::string& value, const ComparisonVector& cmpVec);
 
-void ExeDelete(const string& tableName, const ComparisonVector& cmpVec);
+void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec);
 
-void ExeDropIndex(const string& indexName);
+void ExeDropIndex(const std::string& indexName);
 
-void ExeDropTable(const string& tableName, bool echo = false);
+void ExeDropTable(const std::string& tableName, bool echo = false);
 
-void ExeCreateIndex(const string& tableName, const string& attrName, const string& indexName);
+void ExeCreateIndex(const std::string& tableName, const std::string& attrName, const std::string& indexName);
 
-void ExeCreateTable(const string& tableName, const AttrDefinitionVector& defVec);
+void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& defVec);
 
 #endif

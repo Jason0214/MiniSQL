@@ -17,22 +17,20 @@ public:
 
     Table(const std::string & table_name, 
         const Table* based_table, 
-        const AttrAlias & attr_name_alias);
+        const AttributesAliasVector & attr_name_alias);
 
     Table(const std::string & table_name, 
         const Table* based_table1,
         const Table* based_table2,
-        const AttrAlias & attr_name_alias);
+        const AttributesAliasVector & attr_name_alias);
 
     Table::Table(const std::string & table_name, 
         const Table * based_table1, 
         const Table * based_table2, 
-        const AttrAlias & attr_name_alias,
+        const AttributesAliasVector & attr_name_alias,
         const IndirectAttrMap & indirect_attr_map);
 
     ~Table();
-
-	void materialize();
 
     TableIterator* begin(){
         if(this->table_flag = DB_TEMPORAL_TABLE){
@@ -56,6 +54,8 @@ public:
         }
     }
 
+    // use primary index to reduce the search area
+    // when doing tuple comparision 
     pair<TableIterator*, TableIterator*> PrimaryIndexFilter(const std::string & op, const string & value);
 
     void insertTuple(const void** tuple_data_ptr){
@@ -74,8 +74,8 @@ public:
         }
     }
 
-	// use primary index to reduce the search area
-	// when doing tuple comparision
+    // for materialized table, use primary index to reduce the 
+    // number of blocks need to be searched.
     void BlockFilter(const std::string & op,
                     const void* value,
                     uint32_t* begin_block,
@@ -86,7 +86,7 @@ public:
     }
 
     // only used in output table meta
-    const std::string & getFullAttrName(int index) const{
+    const std::string getFullAttrName(int index) const{
         const std::string & attr_name = this->getAttrName(index);
         IndirectAttrMap::const_iterator result = this->indirect_attr_map.find(attr_name);
         if(result == this->indirect_attr_map.end()){
@@ -157,7 +157,7 @@ private:
     IndirectAttrMap indirect_attr_map;
     
     // list is only used for DB_TEMPORAL table
-    TemporalTableData table_data;
+	TemporalTableDataMap table_data;
 
     // only used for table on disc
     uint32_t index_addr;

@@ -6,16 +6,16 @@
 #include <map>
 #include <string>
 
-typedef string TableAlias;
-typedef string TableName;
-typedef map<TableAlias, TableName> TableAliasMap;
+typedef std::string TableAlias;
+typedef std::string TableName;
+typedef std::map<TableAlias, TableName> TableAliasMap;
 
 typedef struct  
 {
 	// TypeName can be "Attribute" | "int" | "float" | "string"
-	string TypeName;
-	string Content;
-	string TableNameIfIsAttr;
+	std::string TypeName;
+	std::string Content;
+	std::string TableNameIfIsAttr;
 } Comparand;
 
 typedef struct  
@@ -24,32 +24,32 @@ typedef struct
 	Comparand Comparand2;
 
 	// Operation can be ">" | ">=" | "=" | "<" | "<=" | "<>"
-	string Operation;
+	std::string Operation;
 } Comparison;
 
-typedef vector<Comparison> ComparisonVector;
+typedef std::vector<Comparison> ComparisonVector;
 
 typedef struct  
 {
-	string AttrName;
-	string AttrAlias;
+	std::string AttrName;
+	std::string AttrAlias;
 } AttrNameAlias;
 
-typedef vector<AttrNameAlias> AttrNameAliasVector;
+typedef std::vector<AttrNameAlias> AttrNameAliasVector;
 
-typedef vector<string> InsertValueVector;
+typedef std::vector<std::string> InsertValueVector;
 
 typedef struct  
 {
-	string AttrName;
-	string TypeName; // Can be char, varchar, int, float
+	std::string AttrName;
+	std::string TypeName; // Can be char, varchar, int, float
 	int TypeParam;
 	bool bePrimaryKey;
 	bool beUnique;
 	bool beNotNull;
 } AttrDefinition;
 
-typedef vector<AttrDefinition> AttrDefinitionVector;
+typedef std::vector<AttrDefinition> AttrDefinitionVector;
 
 typedef struct
 {

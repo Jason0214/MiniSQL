@@ -139,20 +139,6 @@ void Catalog::UpdateDatabaseInfo(const string & db_name, unsigned int info_type,
 
 void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBenum* attr_type_list, int attr_num, int & key_index){
 	if(!this->database_selected) throw DatabaseNotSelected("data base not selected!");
-	// sort attr
-	for (int i = 1; i < attr_num; i++) {
-		string t1 = attr_name_list[i];
-		DBenum t2 = attr_type_list[i];
-		int j = i - 1;
-		for (; j >= 0 && attr_name_list[j] > t1; j--){
-			attr_name_list[j + 1] = attr_name_list[j];
-			attr_type_list[j + 1] = attr_type_list[j];
-		}
-		attr_name_list[j + 1] = t1;
-		attr_type_list[j + 1] = t2;
-		if(key_index == i) key_index = j + 1;
-		else if(key_index > j && key_index < i) key_index++;
-	}
 
 /* find the block where `table_name` should insert in */
 	DBenum char_31 = (DBenum)(DB_TYPE_CHAR + 31);

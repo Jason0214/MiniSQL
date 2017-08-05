@@ -234,5 +234,5 @@ void AcceptDropIndex()
 void OnQuit()
 {
 	BufferManager& buf = BufferManager::Instance();
-	buf.WriteBackAll();
+	buf.RemoveAllBlock();
 }

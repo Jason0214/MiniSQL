@@ -3,20 +3,55 @@
 
 #include "../SharedFunc.h"
 #include <vector>
+#include <map>
 #include <string>
 #include <algorithm>
-
-bool AttrAliasSort(const AliasStructure &v1, const AliasStructure &v2){
-    return v1.AttrName < v2.AttrName;
-}
 
 typedef struct attr_alias_struct{
 	std::string AttrName;
 	int OriginIndex;
 }AliasStructure;
 
-typedef std::vector<AliasStructure> AttrAlias;
+typedef std::vector<AliasStructure> AttributesAliasVector;
 
+inline bool AttrAliasSort(const AliasStructure &v1, const AliasStructure &v2) {
+	return v1.AttrName < v2.AttrName;
+}
+
+class TupleCmpInfo{
+public:
+    TupleCmpInfo():value(NULL),value_size(0),type(DB_TYPE_INT),origin_index(0){}
+    TupleCmpInfo(const TupleCmpInfo & tuple_cmp_info){
+        *this = tuple_cmp_info;
+    }
+    ~TupleCmpInfo(){
+        delete [] this->value;
+    }
+    void init(int index, DBenum type, const std::string & value_in_str){
+        this->type = type;
+        this->origin_index = index;
+        this->value_size = typeLen(type);
+        this->value = new uint8_t[this->value_size];
+        string2Bytes(value_in_str, type, this->value);
+    }
+    const TupleCmpInfo & operator=(const TupleCmpInfo & tuple_cmp_info){
+        if(this != &tuple_cmp_info){
+            this->value = tuple_cmp_info.value;
+            this->value_size = tuple_cmp_info.value_size;
+            this->type = tuple_cmp_info.type;
+            this->value = new uint8_t[this->value_size];
+            memcpy(this->value, tuple_cmp_info.value, this->value_size);
+        }
+        return *this;
+    }
+
+    void* value;
+    int value_size;
+    DBenum type;
+    int origin_index;
+};
+
+typedef std::vector<TupleCmpInfo> TupleComparisonVector;
 
 class Tuple{
 public:
@@ -52,7 +87,7 @@ public:
         return (void*)(this->tuple_data);
     }
 
-    const void ** entry_ptr(){
+    const void ** entry_ptr() const{
         return (const void**)(this->entry);
     }
 
@@ -126,9 +161,9 @@ public:
 };
 
 
-typedef std::map<TupleKey, Tuple> TemporalTableData;
+typedef std::map<TupleKey, Tuple> TemporalTableDataMap;
 
 
-typedef std::map<std::string, pair<std::string, std::string>> IndirectAttrMap;
+typedef std::map<std::string, std::pair<std::string, std::string> > IndirectAttrMap;
 
 #endif

@@ -17,7 +17,7 @@ public:
 class TemporalTable_Iterator 
 :public TableIterator{
 public:
-    TemporalTable_Iterator(std::map<TupleKey,Tuple>::iterator & current_iter)
+    TemporalTable_Iterator(TemporalTableDataMap::iterator & current_iter)
     :map_iter(current_iter){}
     TemporalTable_Iterator(const TemporalTable_Iterator & right_v){
         *this = right_v;
@@ -35,7 +35,7 @@ public:
 	const void ** getDataList() const {
 		return map_iter->second.entry_ptr();
 	}
-    bool isEqual(const TableIterator * iter_ptr) const const{
+    bool isEqual(const TableIterator * iter_ptr) const{
         return CheckEqual(*this, *dynamic_cast<const TemporalTable_Iterator*>(iter_ptr));
     }
     void next(){
@@ -44,7 +44,7 @@ public:
   
     friend bool CheckEqual(const TemporalTable_Iterator &, const TemporalTable_Iterator &);
   
-    std::map<TupleKey,Tuple>::iterator map_iter;
+	TemporalTableDataMap::iterator map_iter;
 };
 
 class MaterializedTable_Iterator

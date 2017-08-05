@@ -21,11 +21,12 @@ public:
 class AttrNumberUnmatch : public Exception{
 public:
 	AttrNumberUnmatch(string msg) : Exception(msg){}
-}
+};
+
 class AttrTypeUnmatch : public Exception{
 public:
 	AttrTypeUnmatch(string msg) : Exception(msg){}
-}
+};
 
 class TableNotFound : public Exception {
 public:
@@ -76,6 +77,11 @@ public:
 };
 
 class TableAliasNotFound : public Exception {
-	public:
+public:
 	TableAliasNotFound(string msg) :Exception(msg) {}
+};
+
+class SameAttrNameWithDifferType : public Exception{
+public:
+	SameAttrNameWithDifferType(string msg) : Exception(msg){}
 };
