@@ -12,7 +12,7 @@ BufferManager::BufferManager():SRC_FILE_NAME(DB_FILE),MAX_BLOCK_NUM(BLOCK_NUM){
 	this->block_list_head = NULL;
 	this->block_list_tail = NULL;
 	this->block_num = 0;
-	memset(this->block_table,0,sizeof(BlockNode*)*(BLOCK_NUM<<1));
+	memset(this->block_table, NULL, sizeof(BlockNode*)*(BLOCK_NUM << 1));
 	if(_access(this->SRC_FILE_NAME.c_str(),0) == -1){
 		FILE* fp = fopen(this->SRC_FILE_NAME.c_str(), "w");
 		fclose(fp);

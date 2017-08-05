@@ -67,7 +67,7 @@ private:
 //  table for fast access block
 	uint64_t hash(uint32_t blk_index);
 	BlockNode* & GetBlockNode(uint32_t blk_index); 
-	BlockNode* block_table[BLOCK_NUM*2];
+	BlockNode* block_table[BLOCK_NUM << 1];
 };
 
 #endif
