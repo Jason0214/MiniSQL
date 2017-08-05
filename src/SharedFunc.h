@@ -1,7 +1,7 @@
 #ifndef _SHARED_FUNC_
 #define _SHARED_FUNC_
 #include "CONSTANT.h"
-
+#include <string>
 class SmartPtr{
 public:
 	SmartPtr(){}

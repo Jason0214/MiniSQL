@@ -1,7 +1,9 @@
 #include "SharedFunc.h"
+#include "EXCEPTION.h"
 #include "CONSTANT.h"
 #include <cstring>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -33,7 +35,7 @@ void string2Bytes(const std::string& value, DBenum type, void* raw_value){
 	// convert `value` to const void*
 	stringstream ss(value);
 	ss.exceptions(std::ios::failbit);
-	switch (table_meta->attr_type_list[attr_index]) {
+	switch (type) {
 	case DB_TYPE_INT:
 		ss >> *(int*)raw_value;
 		break;
@@ -41,7 +43,7 @@ void string2Bytes(const std::string& value, DBenum type, void* raw_value){
 		ss >> *(float*)raw_value;
 		break;
 	default:
-		if (table_meta->attr_type_list[i] - DB_TYPE_CHAR < (int)values[i].length()) {
+		if (type - DB_TYPE_CHAR < (int)value.length()) {
 			throw AttrTypeUnmatch("");
 		}
 		memcpy(raw_value, ss.str().c_str(), typeLen(type));
