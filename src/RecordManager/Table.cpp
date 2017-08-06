@@ -5,8 +5,8 @@
 
 using namespace std;
 
-static Catalog & catalog = Catalog::Instance();
 static BufferManager & buffer_manager = BufferManager::Instance();
+static Catalog & catalog = Catalog::Instance();
 static IndexManager & index_manager = IndexManager::Instance();
 
 // new table create from table already stored on disc, matrialized table
@@ -156,10 +156,10 @@ Table::~Table(){
 
 pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op, const string & value){
     DBenum key_type = this->attr_type[this->key_index];
-    void* value_ptr = new uint8_t[typeLen(key_type)];
+    uint8_t* value_ptr = new uint8_t[typeLen(key_type)];
     string2Bytes(value, key_type, value_ptr);
     if(this->table_flag == DB_TEMPORAL_TABLE){
-        TupleKey map_key = TupleKey(value_ptr, key_type);
+        TupleKey map_key = TupleKey((const void*)value_ptr, key_type);
         if(op == "<"){
             map<TupleKey,Tuple>::iterator map_iterator = ++this->table_data.lower_bound(map_key);
 			TemporalTable_Iterator* iterator =  new TemporalTable_Iterator(map_iterator);
@@ -193,7 +193,7 @@ pair<TableIterator*, TableIterator*> Table::PrimaryIndexFilter(const string & op
     }
     else{
         uint32_t begin_addr, end_addr;
-        Table::BlockFilter(op, value_ptr, &begin_addr, &end_addr);
+        Table::BlockFilter(op, (const void*)value_ptr, &begin_addr, &end_addr);
         MaterializedTable_Iterator* iterator_begin 
             = new MaterializedTable_Iterator(begin_addr, 0, this->attr_num, this->attr_type, this->key_index);
         MaterializedTable_Iterator* iterator_end 

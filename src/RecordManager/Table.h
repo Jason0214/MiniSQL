@@ -24,7 +24,7 @@ public:
         const Table* based_table2,
         const AttributesAliasVector & attr_name_alias);
 
-    Table::Table(const std::string & table_name, 
+    Table(const std::string & table_name, 
         const Table * based_table1, 
         const Table * based_table2, 
         const AttributesAliasVector & attr_name_alias,
@@ -33,24 +33,24 @@ public:
     ~Table();
 
     TableIterator* begin(){
-        if(this->table_flag = DB_TEMPORAL_TABLE){
-            return new TemporalTable_Iterator(this->table_data.begin());
+        if(this->table_flag == DB_TEMPORAL_TABLE){
+            return (TableIterator*)new TemporalTable_Iterator(this->table_data.begin());
         }
         else{
-            return new MaterializedTable_Iterator(this->data_addr,
-                                                    0,
-                                                    this->attr_num,
-                                                    this->attr_type,
-                                                    this->key_index);
+            return (TableIterator*)new MaterializedTable_Iterator(this->data_addr,
+                                                                    0,
+                                                                    this->attr_num,
+                                                                    this->attr_type,
+                                                                    this->key_index);
         }
     }
 
     TableIterator* end(){
         if(this->table_flag == DB_TEMPORAL_TABLE){
-            return new TemporalTable_Iterator(this->table_data.end());
+            return (TableIterator*)new TemporalTable_Iterator(this->table_data.end());
         }
         else{
-            return new MaterializedTable_Iterator(0,0,this->attr_num,this->attr_type,this->key_index);
+            return (TableIterator*)new MaterializedTable_Iterator(0,0,this->attr_num,this->attr_type,this->key_index);
         }
     }
 

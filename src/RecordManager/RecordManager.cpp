@@ -1,9 +1,9 @@
 #include "RecordManager.h"
+#include "../BufferManager/BufferManager.h"
 #include "../CatalogManager/Catalog.h"
 
-
-Catalog & catalog = Catalog::Instance();
-BufferManager & buffer_manager = BufferManager::Instance();
+static BufferManager & buffer_manager = BufferManager::Instance();
+static Catalog & catalog = Catalog::Instance();
 
 void RecordManager::doubleBlockNestedNaturalJoin(Table* src_table1, Table* src_table2, Table* dst_table,
 				const AttributesAliasVector & attr_alias,  const vector<pair<int,int> > & commonAttrIndex){

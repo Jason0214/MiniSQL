@@ -1,7 +1,7 @@
 #ifndef _BUFFER_MANAGER_
 #define _BUFFER_MANAGER_
-#include <string>
 #include <cstring>
+#include <string>
 #include <iostream>
 #include "Block.h"
 
@@ -52,12 +52,12 @@ private:
 	Block* LoadFromDisc(uint32_t block_index);
 
 	void CreateSrcFile();
-	void LoadSrcFile();
 
 	const uint32_t MAX_BLOCK_NUM;
 	const std::string SRC_FILE_NAME;
 
 	BlockNode* AddBlock(Block*); 
+	BlockNode* & GetBlockNode(uint32_t blk_index);
 	void RemoveBlock(BlockNode*);
 // list structure for buffer-disc interchange
 	BlockNode* block_list_head; 
@@ -66,7 +66,6 @@ private:
 
 //  table for fast access block
 	uint64_t hash(uint32_t blk_index);
-	BlockNode* & GetBlockNode(uint32_t blk_index); 
 	BlockNode* block_table[BLOCK_NUM << 1];
 };
 

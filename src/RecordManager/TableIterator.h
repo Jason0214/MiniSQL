@@ -3,7 +3,6 @@
 
 #include "../BufferManager/Block.h"
 #include "RecordStructures.h"
-class Table;
 
 class TableIterator{
 public:
@@ -17,7 +16,7 @@ public:
 class TemporalTable_Iterator 
 :public TableIterator{
 public:
-    TemporalTable_Iterator(TemporalTableDataMap::iterator & current_iter)
+    TemporalTable_Iterator(TemporalTableDataMap::iterator current_iter)
     :map_iter(current_iter){}
     TemporalTable_Iterator(const TemporalTable_Iterator & right_v){
         *this = right_v;

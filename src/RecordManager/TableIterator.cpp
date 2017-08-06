@@ -1,9 +1,10 @@
-#include "../BufferManager/BufferManager.h"
 #include "TableIterator.h"
+
 #include <cassert>
 
-static BufferManager & buffer_manager =  BufferManager::Instance();
+#include "../BufferManager/BufferManager.h"
 
+static BufferManager & buffer_manager =  BufferManager::Instance();
 
 bool CheckEqual(const TemporalTable_Iterator & left_v, const TemporalTable_Iterator & right_v){
     return left_v.map_iter == right_v.map_iter;
@@ -27,12 +28,12 @@ MaterializedTable_Iterator(uint32_t block_addr,
                         int attr_num, 
                         DBenum * attr_type, 
                         int key_index)
-                        :tuple_index(tuple_index),
-                        block_ptr(NULL),
-						block_addr(block_addr),
-                        attr_type(attr_type),
-                        attr_num(attr_num),
-                        key_index(key_index){
+                        :block_ptr(NULL),
+                        block_addr(block_addr),
+                        tuple_index(tuple_index),
+                        key_index(key_index),
+						attr_num(attr_num),
+                        attr_type(attr_type){
     this->block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(block_addr));
     this->block_ptr->Format(this->attr_type, this->attr_num, this->key_index); 
 }

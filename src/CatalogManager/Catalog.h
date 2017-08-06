@@ -10,8 +10,8 @@ class TableMeta{
 	// wrap all the needed meta information
 	// about a TableMeta
 public:
-	TableMeta(const std::string & table_name):table_name(table_name),attr_name_list(NULL),attr_type_list(NULL),
-					attr_num(0),table_addr(0),key_index(-1),primary_index_addr(0),is_primary_key(true){}
+	TableMeta(const std::string & table_name):table_name(table_name),table_addr(0),attr_num(0),
+			attr_name_list(NULL),attr_type_list(NULL),key_index(-1),primary_index_addr(0),is_primary_key(true){}
 	~TableMeta(){
 		delete [] this->attr_name_list;
 		delete [] this->attr_type_list;

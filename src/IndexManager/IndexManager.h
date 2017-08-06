@@ -19,7 +19,7 @@ public:
 							int num){
 		IndexExecutor* executor = this->getIndexExecutor(index_type, root_addr, key_type);
 		for(int i = 0; i < num; i++){
-			executor->insert((const void*)((unsigned long)keys_void + i * stride), addrs[i]);
+			executor->insert((const void*)((const uint8_t*)keys_void + i * stride), addrs[i]);
 		}
 		uint32_t ret = executor->getRoot();
 		delete executor;

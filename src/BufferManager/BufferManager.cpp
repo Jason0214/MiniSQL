@@ -1,4 +1,5 @@
 #include "BufferManager.h"
+
 #include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -8,28 +9,22 @@ using namespace std;
 
 // make a new SRC_FILE
 // or load the existing one
-BufferManager::BufferManager():SRC_FILE_NAME(DB_FILE),MAX_BLOCK_NUM(BLOCK_NUM){
+BufferManager::BufferManager():MAX_BLOCK_NUM(BLOCK_NUM),SRC_FILE_NAME(DB_FILE){
 	this->block_list_head = NULL;
 	this->block_list_tail = NULL;
 	this->block_num = 0;
-	memset(this->block_table, NULL, sizeof(BlockNode*)*(BLOCK_NUM << 1));
+	memset(this->block_table, 0, sizeof(BlockNode*)*(BLOCK_NUM << 1));
 	if(_access(this->SRC_FILE_NAME.c_str(),0) == -1){
 		FILE* fp = fopen(this->SRC_FILE_NAME.c_str(), "w");
 		fclose(fp);
 		this->CreateSrcFile();
 	}
-	else{
-		this->LoadSrcFile();
-	}
-}
-void BufferManager::CreateSrcFile() {
-	SchemaBlock* block_zero = new SchemaBlock();
-	block_zero->Init(0,DB_SCHEMA_BLOCK);
-	this->WriteToDisc(block_zero);
 }
 
-void BufferManager::LoadSrcFile() {
-	Block* block_zero = this->LoadFromDisc(0);
+void BufferManager::CreateSrcFile() {
+	SchemaBlock* block_zero = new SchemaBlock();
+	block_zero->Init(0, DB_SCHEMA_BLOCK);
+	this->WriteToDisc(block_zero);
 }
 
 
@@ -45,7 +40,7 @@ uint64_t BufferManager::hash(uint32_t blk_index){
 	// sdmb hash, reference: http://www.cse.yorku.ca/~oz/hash.html
 	char* byte_ptr = (char*)&(blk_index);
 	unsigned long long hash = 0;
-	for(int i = 0; i < sizeof(uint32_t); i++){
+	for(unsigned int i = 0; i < sizeof(uint32_t); i++){
 		hash = *byte_ptr + (hash << 6) + (hash << 16) - hash;
 		byte_ptr++;
 	}
@@ -54,7 +49,6 @@ uint64_t BufferManager::hash(uint32_t blk_index){
 
 // found a block node when given the block index
 BlockNode* & BufferManager::GetBlockNode(uint32_t block_index){
-	bool flag = false;
 	uint64_t index = this->hash(block_index);
 	while(this->block_table[index]){
 		if(this->block_table[index]->data->BlockIndex() == block_index) break;

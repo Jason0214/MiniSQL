@@ -12,7 +12,7 @@ void BPlusTree::initBlock(uint32_t block_addr){
 	theNode->parent() = 0;
 	theNode->rightSibling() = 0;
 	theNode->is_dirty = true;
-	buffer_manager.ReleaseBlock(theNode);
+	BufferManager::Instance().ReleaseBlock(theNode);
 }
 
 void BPlusTree::insert(const void* key, uint32_t addr){

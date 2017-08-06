@@ -78,6 +78,8 @@ public:
 			case DB_NESTED_LOOP_JOIN:
 				tupleNestedLoopNaturalJoin(src_table1, src_table2, dst_table, attr_alias, commonAttrIndex);
 				break;
+			default:
+				break;
 		}
 	}
 
@@ -92,6 +94,8 @@ public:
 				break;
 			case DB_NESTED_LOOP_JOIN:
 				tupleNestedLoopJoin(src_table1, src_table2, dst_table, attr_alias);
+				break;
+			default:
 				break;
 		}
 	}

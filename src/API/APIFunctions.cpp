@@ -1,13 +1,19 @@
-#include "APIStructures.h"
 #include "APIFunctions.h"
-#include "IO.h"
-#include "../CatalogManager/Catalog.h"
-#include "../IndexManager/IndexManager.h"
-#include "../RecordManager/RecordManager.h"
+
 #include <string>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+
+#include "IO.h"
+#include "APIStructures.h"
+
+#include "../BufferManager/Block.h"
+#include "../BufferManager/BlockPtr.h"
+#include "../BufferManager/BufferManager.h"
+#include "../CatalogManager/Catalog.h"
+#include "../IndexManager/IndexManager.h"
+#include "../RecordManager/RecordManager.h"
 
 //#define __DEBUG__
 #define INTLEN 10
@@ -15,10 +21,10 @@
 #define STRLEN 15
 
 using namespace std;
-static RecordManager & record_manager = RecordManager::Instance();
-static Catalog & catalog = Catalog::Instance();
 static BufferManager & buffer_manager = BufferManager::Instance();
 static IndexManager & index_manager = IndexManager::Instance();
+static Catalog & catalog = Catalog::Instance();
+static RecordManager & record_manager = RecordManager::Instance();
 
 // call Flush() after cout.
 // Do not call cin, call GetString() / GetInt() / GetFloat() if necessary
@@ -411,7 +417,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 void ExeInsert(const string& tableName, InsertValueVector& values) {
 	AutoPtr<Table> table(new Table(tableName));
 
-	if (table->getAttrNum() != values.size()) {
+	if ((unsigned int)(table->getAttrNum()) != values.size()) {
 		throw AttrNumberUnmatch("");
 	}
 
@@ -748,7 +754,6 @@ void ExeCreateIndex(const string& tableName, const string& attrName, const strin
 
 void ExeCreateTable(const string& tableName, const AttrDefinitionVector& defVec)
 {
-	Catalog* catalog = &Catalog::Instance();
 	int attr_num = defVec.size();
 	int key_index = -1;
 	DBenum* attr_type_list = new DBenum[attr_num];
@@ -786,7 +791,7 @@ void ExeCreateTable(const string& tableName, const AttrDefinitionVector& defVec)
 	
 	// do create
 	try {
-		catalog->CreateTable(tableName, attr_name_list, attr_type_list, attr_num, key_index);
+		catalog.CreateTable(tableName, attr_name_list, attr_type_list, attr_num, key_index);
 	}
 	catch (const DuplicatedTableName & e) {
 		delete [] attr_name_list;

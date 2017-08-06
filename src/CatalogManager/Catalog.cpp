@@ -1,7 +1,7 @@
 #include "Catalog.h"
 #include "../EXCEPTION.h"
-#include "../BufferManager/BufferManager.h"
 #include "../BufferManager/BlockPtr.h"
+#include "../BufferManager/BufferManager.h"
 #include "../IndexManager/IndexManager.h"
 
 #define SINGLE_DATABSE
@@ -51,7 +51,7 @@ Catalog::Catalog(){
 }
 
 void Catalog::CreateDatabase(const string & db_name){
-	RecordBlock* database_block_ptr = dynamic_cast<RecordBlock*> (buffer_manager.GetBlock(this->database_block_addr));
+	RecordBlock* database_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->database_block_addr));
 
 	DBenum type_list[5];
 	type_list[0] = (DBenum)(DB_TYPE_CHAR + 31);
@@ -470,7 +470,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 		throw DuplicatedIndexName(index_name);
 	}
 
-	AutoPtr<TableMeta> table_meta = this->GetTableMeta(table_name);
+	AutoPtr<TableMeta> table_meta(this->GetTableMeta(table_name));
 	int secondary_key_index = -1;
 	DBenum type;
 	for (int i = 0; i < table_meta->attr_num; i++) {
@@ -493,7 +493,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	type_list[2] = DB_TYPE_INT;
 
 	uint32_t index_tree_root = this->index_index_addr;
-	AutoPtr<SearchResult> result_ptr = index_manager.searchEntry(DB_BPTREE_INDEX ,index_tree_root, type_list[0], table_name_mix_key.c_str());
+	AutoPtr<SearchResult> result_ptr(index_manager.searchEntry(DB_BPTREE_INDEX ,index_tree_root, type_list[0], table_name_mix_key.c_str()));
 
 	uint32_t index_block_addr;
 	if(result_ptr.raw_ptr){
@@ -601,7 +601,7 @@ void Catalog::DropIndex(const string & index_name){
 	uint32_t index_root_block;
 	string table_name_mix_key;
 	uint32_t next_block_addr = this->index_data_addr;
-	RecordBlock* index_data_ptr;
+	RecordBlock* index_data_ptr = NULL;
 	while(next_block_addr != 0){
 		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->index_data_addr));
 		index_data_ptr->Format(type_list, 3, 0);

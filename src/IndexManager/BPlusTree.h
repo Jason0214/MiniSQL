@@ -9,8 +9,8 @@
 class BPlusTree : public IndexExecutor {
 public:
 	BPlusTree(uint32_t root_addr, DBenum key_type) 
-		: type(key_type),
-		root(root_addr){
+		: root(root_addr),
+		type(key_type){
 		this->SetOrder();
 	};
 	~BPlusTree() {}

@@ -7,6 +7,8 @@
 #include <string>
 #include <algorithm>
 
+typedef std::map<std::string, std::pair<std::string, std::string> > IndirectAttrMap;
+
 typedef struct attr_alias_struct{
 	std::string AttrName;
 	int OriginIndex;
@@ -45,7 +47,7 @@ public:
         return *this;
     }
 
-    void* value;
+    uint8_t* value;
     int value_size;
     DBenum type;
     int origin_index;
@@ -56,8 +58,8 @@ typedef std::vector<TupleCmpInfo> TupleComparisonVector;
 class Tuple{
 public:
     Tuple(int attr_num, const DBenum* attr_type_list):
-        entry_num(attr_num),
-        tuple_size(0){
+        tuple_size(0),
+        entry_num(attr_num){
         // TODO store typeLen in a temp array
         for(int i = 0; i < attr_num; i++){
             this->tuple_size += typeLen(attr_type_list[i]);
@@ -107,7 +109,7 @@ public:
             memcpy(this->tuple_data, rightv.tuple_data, this->tuple_size);
             this->entry[0] = &(this->tuple_data[0]);
             for(int i = 1; i < this->entry_num; i++){
-                this->entry[i] = (uint8_t*)((unsigned long)rightv[i] + (unsigned long)(this->tuple_data - rightv.tuple_data));
+                this->entry[i] = (uint8_t*)((const uint8_t*)rightv[i] + (this->tuple_data - rightv.tuple_data));
             }
         }
         return *this;
@@ -160,10 +162,6 @@ public:
     DBenum type;
 };
 
-
 typedef std::map<TupleKey, Tuple> TemporalTableDataMap;
-
-
-typedef std::map<std::string, std::pair<std::string, std::string> > IndirectAttrMap;
 
 #endif

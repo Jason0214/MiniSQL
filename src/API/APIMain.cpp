@@ -1,9 +1,9 @@
+#include <string>
+#include <iostream>
 
 #include "APICommands.h"
 #include "../EXCEPTION.h"
 #include "IO.h"
-#include <string>
-#include <iostream>
 
 using namespace std;
 
