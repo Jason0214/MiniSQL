@@ -6,26 +6,28 @@ using namespace std;
 
 class Exception:public std::exception{
 public:
-	string Message;
-	Exception(string msg)
+	Exception(const string & msg)
 	{
 		Message = msg;
 	}
+	string Message;
 };
 
 class DuplicatedTableName :public Exception {
 public:
-	DuplicatedTableName(string msg) :Exception(msg) {}
+	DuplicatedTableName(const string & table_name) 
+		:Exception("Table `" + table_name + "` already exist.") {}
 };
 
 class AttrNumberUnmatch : public Exception{
 public:
-	AttrNumberUnmatch(string msg) : Exception(msg){}
+	AttrNumberUnmatch() : Exception("Attributs number didn't much with table schema."){}
 };
 
 class AttrTypeUnmatch : public Exception{
 public:
-	AttrTypeUnmatch(string msg) : Exception(msg){}
+	AttrTypeUnmatch(const string & value) 
+		: Exception("Attribute with value`" + value + "` has the wrong type."){}
 };
 
 class TableNotFound : public Exception {
@@ -35,15 +37,13 @@ public:
 
 class IndexNotFound: public Exception{
 public:
-	IndexNotFound(std::string table_name = "", int key_index = -1) 
-		:Exception("index not found " + table_name), table_name(table_name), key_index(key_index){}
-	std::string table_name;
-	int key_index;
+	IndexNotFound(std::string index_name) 
+		:Exception("Secondary index named `" + index_name + "` not found."){}
 };
 
 class DuplicatedPrimaryKey : public Exception {
 public:
-	DuplicatedPrimaryKey(string msg):Exception(msg) {}
+	DuplicatedPrimaryKey():Exception("Didn't satisfy primary key." ) {}
 };
 
 class DuplicatedIndexName : public Exception{

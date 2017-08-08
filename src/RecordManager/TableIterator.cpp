@@ -14,13 +14,6 @@ bool CheckEqual(const MaterializedTable_Iterator & left_v, const MaterializedTab
     return (left_v.block_addr == right_v.block_addr) && (left_v.tuple_index == right_v.tuple_index);
 }
 
-MaterializedTable_Iterator::
-~MaterializedTable_Iterator(){
-    if(this->block_ptr){
-        buffer_manager.ReleaseBlock(this->block_ptr);
-        this->block_ptr = NULL;
-    }
-}
 
 MaterializedTable_Iterator::
 MaterializedTable_Iterator(uint32_t block_addr, 
@@ -34,8 +27,10 @@ MaterializedTable_Iterator(uint32_t block_addr,
                         key_index(key_index),
 						attr_num(attr_num),
                         attr_type(attr_type){
-    this->block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(block_addr));
-    this->block_ptr->Format(this->attr_type, this->attr_num, this->key_index); 
+	if (this->block_addr != 0) {
+		this->block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(block_addr));
+		this->block_ptr->Format(this->attr_type, this->attr_num, this->key_index);
+	}
 }
 
 const MaterializedTable_Iterator & 
@@ -46,11 +41,21 @@ MaterializedTable_Iterator::operator=(const MaterializedTable_Iterator & right_v
         this->key_index = right_v.key_index;
         this->tuple_index = right_v.tuple_index;
 		this->block_addr = right_v.block_addr;
-        this->block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->block_addr));
-        this->block_ptr->Format(this->attr_type, this->attr_num, this->key_index);         
+		if (this->block_addr != 0) {
+			this->block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->block_addr));
+			this->block_ptr->Format(this->attr_type, this->attr_num, this->key_index);
+		}
     }
     return *this;
 }  
+
+MaterializedTable_Iterator::
+~MaterializedTable_Iterator() {
+	if (this->block_ptr) {
+		buffer_manager.ReleaseBlock(this->block_ptr);
+		this->block_ptr = NULL;
+	}
+}
 
 void MaterializedTable_Iterator::next(){
     // if the index reach the end of current block, open the next one

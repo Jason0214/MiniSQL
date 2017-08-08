@@ -12,6 +12,7 @@ static BufferManager & buffer_manager = BufferManager::Instance();
 static IndexManager & index_manager = IndexManager::Instance();
 
 Catalog::Catalog(){
+	BufferManager & buffer_manager = BufferManager::Instance();
 	SchemaBlock* schema_ptr = dynamic_cast<SchemaBlock*>(buffer_manager.GetBlock(0));
 	if(schema_ptr->DBMetaAddr() == 0){
 		Block* db_block = buffer_manager.CreateBlock(DB_DATABASE_BLOCK);
@@ -51,6 +52,7 @@ Catalog::Catalog(){
 }
 
 void Catalog::CreateDatabase(const string & db_name){
+	BufferManager & buffer_manager = BufferManager::Instance();
 	RecordBlock* database_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->database_block_addr));
 
 	DBenum type_list[5];
@@ -96,6 +98,7 @@ void Catalog::CreateDatabase(const string & db_name){
 }
 
 RecordBlock* Catalog::FindDatabaseBlock(const string & db_name){
+	BufferManager & buffer_manager = BufferManager::Instance();
 	DBenum type_list[5];
 	type_list[0] = (DBenum)(DB_TYPE_CHAR + 31);
 	type_list[1] = DB_TYPE_INT;
@@ -118,6 +121,7 @@ RecordBlock* Catalog::FindDatabaseBlock(const string & db_name){
 }
 
 void Catalog::UseDatabase(const string & db_name){
+	BufferManager & buffer_manager = BufferManager::Instance();
 	RecordBlock* block_ptr = this->FindDatabaseBlock(db_name);
 	this->current_database_name = db_name;
 	uint32_t* database_info = (uint32_t*)(block_ptr->GetDataPtr(block_ptr->FindTupleIndex(db_name.c_str()), 1));
@@ -137,7 +141,7 @@ void Catalog::UpdateDatabaseInfo(const string & db_name, unsigned int info_type,
 	buffer_manager.ReleaseBlock(block_ptr);
 }
 
-void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBenum* attr_type_list, int attr_num, int & key_index){
+void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBenum* attr_type_list, int attr_num, int key_index){
 	if(!this->database_selected) throw DatabaseNotSelected("data base not selected!");
 
 /* find the block where `table_name` should insert in */
@@ -176,7 +180,8 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 	uint32_t index_addr = 0;
 	buffer_manager.ReleaseBlock(new_table_block);
 
-	// create the first index block for primary key
+	// if no primary key given(aka key_index == -1)
+	// use attribute number 0 as primary index(not unique)
 	int real_key = key_index < 0 ? 0 : key_index;
 	Block* new_index_block = buffer_manager.CreateBlock(DB_BPNODE_BLOCK);
 	buffer_manager.ReleaseBlock(new_index_block);
@@ -252,7 +257,7 @@ void Catalog::DropTable(const string & table_name){
 		}
 		else{
 			if(result_ptr->index == 0){
-				throw TableNotFound("table not found :" + table_name);
+				throw TableNotFound(table_name);
 			}
 			else{
 				table_block_addr = result_ptr->node->addrs()[result_ptr->index];
@@ -498,7 +503,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	uint32_t index_block_addr;
 	if(result_ptr.raw_ptr){
 		if(compare(table_name_mix_key.c_str(), result_ptr->node->getKey(result_ptr->index), type_list[0]) == 0){
-			throw DuplicatedIndex(table_name.c_str(), secondary_key_index);			
+			throw DuplicatedIndex(table_name, secondary_key_index);			
 		}
 		else{
 			if(result_ptr->index == 0){
@@ -584,7 +589,7 @@ RecordBlock* Catalog::FindIndexByName(const string & index_name){
 		next_block_addr = index_data_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock(index_data_ptr);
 	}
-	throw IndexNotFound();
+	throw IndexNotFound(index_name);
 }
 
 void Catalog::DropIndex(const string & index_name){
@@ -629,7 +634,7 @@ void Catalog::DropIndex(const string & index_name){
 		buffer_manager.ReleaseBlock(index_data_ptr);
 	}
 	if(next_block_addr == 0){
-		throw IndexNotFound();
+		throw IndexNotFound(index_name);
 	}
 
 	// drop the whole BP tree;
@@ -707,7 +712,7 @@ uint32_t Catalog::FindIndexBlock(const std::string & table_name_mix_key){
 	uint32_t index_tree_root = this->index_index_addr;
 	AutoPtr<SearchResult> result_ptr(index_manager.searchEntry(DB_BPTREE_INDEX, index_tree_root, char_32, table_name_mix_key.c_str()));
 	if(!result_ptr.raw_ptr){
-		throw IndexNotFound();
+		throw IndexNotFound("");
 	}
 	uint32_t record_block_addr;
 	if(compare(result_ptr->node->getKey(result_ptr->index) ,table_name_mix_key.c_str(), char_32) == 0){
@@ -717,7 +722,7 @@ uint32_t Catalog::FindIndexBlock(const std::string & table_name_mix_key){
 		record_block_addr = result_ptr->node->addrs()[result_ptr->index];
 	}
 	else{
-		throw IndexNotFound();		
+		throw IndexNotFound("");		
 	}
 	return record_block_addr;
 }
@@ -742,7 +747,7 @@ void Catalog::UpdateTableSecondaryIndex(const std::string & table_name, int8_t k
 	int i = record_block_ptr->FindTupleIndex(table_name_mix_key.c_str());
 	if(i < 0 || strcmp(table_name_mix_key.c_str(), (char*)record_block_ptr->GetDataPtr(i, 0)) != 0){
 		buffer_manager.ReleaseBlock(record_block_ptr);
-		throw IndexNotFound();
+		throw IndexNotFound("");
 	}
 
 	*(uint32_t*)record_block_ptr->GetDataPtr(i, 2) = new_addr;
@@ -773,7 +778,7 @@ uint32_t Catalog::GetIndex(const string & table_name, int8_t secondary_key_index
 	int i = record_block_ptr->FindTupleIndex(table_name_mix_key.c_str());
 	if(i < 0 || strcmp(table_name_mix_key.c_str(), (char*)record_block_ptr->GetDataPtr(i, 0)) != 0){
 		buffer_manager.ReleaseBlock(record_block_ptr);
-		throw IndexNotFound();
+		throw IndexNotFound("");
 	}
 	ret = *(uint32_t*)record_block_ptr->GetDataPtr(i, 2);
 	buffer_manager.ReleaseBlock(record_block_ptr);

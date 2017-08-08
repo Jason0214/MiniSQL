@@ -6,7 +6,7 @@
 static BufferManager & buffer_manager = BufferManager::Instance();
 
 void BPlusTree::initBlock(uint32_t block_addr){
-	BPlusNode* theNode = BlockToBPNode(buffer_manager.GetBlock(block_addr));
+	BPlusNode* theNode = BlockToBPNode(BufferManager::Instance().GetBlock(block_addr));
 	theNode->isLeaf() = true;
 	theNode->dataCnt() = 0;
 	theNode->parent() = 0;

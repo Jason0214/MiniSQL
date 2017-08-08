@@ -24,9 +24,10 @@ public:
 class BufferManager{
 public:
 	static BufferManager & Instance(){
-		//TODO: add a exclusive lock to support multi-thread
-		static BufferManager theBufferManager;
-		return theBufferManager;
+		//TODO: add a exclusive lock to support multi-thread 
+		// in construction period
+		static BufferManager theBufferManagerInstance;	
+		return theBufferManagerInstance;
 	}
 	~BufferManager() {
 		this->RemoveAllBlock();

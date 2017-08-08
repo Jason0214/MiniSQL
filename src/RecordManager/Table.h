@@ -61,9 +61,8 @@ public:
     void insertTuple(const void** tuple_data_ptr){
         if(this->table_flag == DB_TEMPORAL_TABLE){
             this->temporal_InsertTuple(tuple_data_ptr);
-            //check table size, 
-            size_t total_size = (tupleLen(this->attr_type, this->attr_num) 
-                        + typeLen(this->attr_type[this->key_index])) * this->table_data.size();
+            //check table size, approximately
+            size_t total_size = this->tuple_size * this->table_data.size();
             if(total_size >= MAX_TABLE_SIZE){
                 this->materialize();
             }
@@ -148,6 +147,7 @@ private:
 
     std::string table_name;
     DBenum* attr_type;
+	size_t tuple_size;
     std::string* attr_name;
     int attr_num;
     int key_index;

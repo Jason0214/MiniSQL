@@ -15,7 +15,7 @@ size_t typeLen(DBenum type) {
 	}
 }
 
-size_t tupleLen(DBenum* attr_type_list, int attr_num){
+size_t tupleLen(const DBenum* attr_type_list, int attr_num){
 	size_t ret = 0;
 	for(int i = 0; i < attr_num; i++){
 		ret += typeLen(attr_type_list[i]);
@@ -44,7 +44,7 @@ void string2Bytes(const std::string& value, DBenum type, void* raw_value){
 		break;
 	default:
 		if (type - DB_TYPE_CHAR < (int)value.length()) {
-			throw AttrTypeUnmatch("");
+			throw AttrTypeUnmatch(value);
 		}
 		memcpy(raw_value, ss.str().c_str(), typeLen(type));
 		break;

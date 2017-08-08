@@ -18,6 +18,7 @@ Table::Table(const std::string & table_name):
     this->attr_num = table_meta->attr_num;
     this->attr_type = new DBenum[this->attr_num];
     memcpy(this->attr_type, table_meta->attr_type_list, sizeof(DBenum) * this->attr_num);
+	this->tuple_size = tupleLen(this->attr_type, this->attr_num);
     this->attr_name = new string[this->attr_num];
     for(int i = 0; i < this->attr_num; i++){
         this->attr_name[i] = table_meta->attr_name_list[i];
@@ -38,7 +39,8 @@ Table::Table(const std::string & table_name,
     this->attr_num = based_table->attr_num;
     this->attr_type = new DBenum[this->attr_num];
     memcpy(this->attr_type, based_table->attr_type, sizeof(DBenum) * this->attr_num);
-    this->attr_name = new string[this->attr_num];
+	this->tuple_size = tupleLen(this->attr_type, this->attr_num);
+	this->attr_name = new string[this->attr_num];
     for(int i = 0; i < this->attr_num; i++){
         this->attr_name[i] = based_table->attr_name[i];
     }
@@ -67,6 +69,7 @@ Table::Table(const std::string & table_name,
             this->key_index = i;
         }
     }
+	this->tuple_size = tupleLen(this->attr_type, this->attr_num);
 }
 
 // new table created from two base table, through `natural join` 
@@ -104,6 +107,7 @@ Table::Table(const std::string & table_name,
             }
         }
     }
+	this->tuple_size = tupleLen(this->attr_type, this->attr_num);
 }
 
 // new table created from two base table, through `natural join` 
@@ -214,7 +218,7 @@ void Table::materialized_InsertTuple(const void ** tuple_data_ptr){
         if (compare(result_ptr->node->getKey(result_ptr->index),
 			tuple_data_ptr[this->key_index], key_type) == 0) {
             if (this->is_primary_key) {
-				throw DuplicatedPrimaryKey("Duplicated Primary Key");
+				throw DuplicatedPrimaryKey();
             }
             else {
                 record_block_addr = result_ptr->node->addrs()[result_ptr->index + 1];
@@ -237,9 +241,10 @@ void Table::materialized_InsertTuple(const void ** tuple_data_ptr){
 
     if (this->is_primary_key) {
         int i = record_block_ptr->FindTupleIndex(tuple_data_ptr[this->key_index]);
+        // if i == -1, then this block is empty.
         if (i >= 0 && i < record_block_ptr->RecordNum() &&
             compare(tuple_data_ptr[this->key_index], record_block_ptr->GetDataPtr(i, this->key_index), key_type) == 0) {
-			throw DuplicatedPrimaryKey("Duplicated Primary Key");
+			throw DuplicatedPrimaryKey();
         }
         record_block_ptr->InsertTupleByIndex(tuple_data_ptr, i >= 0 ? i : 0);
     }

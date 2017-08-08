@@ -98,14 +98,18 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	TupleComparisonVector tuple_cmp_vec;
 	RecordManager::CmpVec2TupleCmpVec(src_table, cmpVec, tuple_cmp_vec);
 
-	Tuple tuple(dst_table->getAttrNum(), dst_table->getAttrTypeList());
+	const void** tuple_data_ptr = new const void*[dst_table->getAttrNum()];
 	for(TableIterator* iter = begin; !iter->isEqual(end); iter->next()){
-		if(RecordManager::ConditionCheck(iter->getDataList(), tuple_cmp_vec)){
-			dst_table->insertTuple(iter->getDataList());
+		for (int i = 0; i < dst_table->getAttrNum(); i++) {
+			tuple_data_ptr[i] = iter->getAttrData(i);
+		}
+		if(RecordManager::ConditionCheck(tuple_data_ptr, tuple_cmp_vec)){
+			dst_table->insertTuple(tuple_data_ptr);
 		}
 	}
 	delete begin;
 	delete end;
+	delete tuple_data_ptr;
 #ifdef __DEBUG__
 	cout << "select result:";
 	ExeOutputTable(tableAlias, resultTableName);
@@ -418,7 +422,7 @@ void ExeInsert(const string& tableName, InsertValueVector& values) {
 	AutoPtr<Table> table(new Table(tableName));
 
 	if ((unsigned int)(table->getAttrNum()) != values.size()) {
-		throw AttrNumberUnmatch("");
+		throw AttrNumberUnmatch();
 	}
 
 	Tuple tuple(table->getAttrNum(), table->getAttrTypeList());
@@ -548,7 +552,7 @@ void ExeUpdate(const string& tableName, const string& attrName,
 			int target_index = target_block_ptr->FindTupleIndex(raw_value);
 			if (target_index >= 0 && target_index < target_block_ptr->RecordNum() &&
 				compare(raw_value, target_block_ptr->GetDataPtr(target_index, table->getKeyIndex()), key_type) == 0) {
-				throw DuplicatedPrimaryKey("");
+				throw DuplicatedPrimaryKey();
 			}
 		}
 
