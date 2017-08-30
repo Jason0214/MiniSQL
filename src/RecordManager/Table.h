@@ -50,7 +50,7 @@ public:
             return (TableIterator*)new TemporalTable_Iterator(this->table_data.end());
         }
         else{
-            return (TableIterator*)new MaterializedTable_Iterator(0,0,this->attr_num,this->attr_type,this->key_index);
+            return (TableIterator*)new MaterializedTable_Iterator(0, 0, this->attr_num,this->attr_type,this->key_index);
         }
     }
 

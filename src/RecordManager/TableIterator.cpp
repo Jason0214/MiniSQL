@@ -33,7 +33,7 @@ MaterializedTable_Iterator(uint32_t block_addr,
 	}
 }
 
-const MaterializedTable_Iterator & 
+const MaterializedTable_Iterator &
 MaterializedTable_Iterator::operator=(const MaterializedTable_Iterator & right_v){
     if(this != &right_v){
         this->attr_num = right_v.attr_num;
@@ -60,7 +60,7 @@ MaterializedTable_Iterator::
 void MaterializedTable_Iterator::next(){
     // if the index reach the end of current block, open the next one
 	assert(this->block_addr != 0);
-    if(this->tuple_index == this->block_ptr->RecordNum()){
+    if(this->tuple_index == this->block_ptr->RecordNum()-1){
         this->tuple_index = 0;
         this->block_addr = this->block_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock(this->block_ptr);

@@ -3,6 +3,7 @@
 #include "CONSTANT.h"
 #include <cstring>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 using namespace std;
@@ -53,8 +54,8 @@ void string2Bytes(const std::string& value, DBenum type, void* raw_value){
 
 void printByType(const void* v, DBenum type) {
 	switch (type) {
-	case DB_TYPE_INT: cout << *(int*)v << " "; break;
-	case DB_TYPE_FLOAT: cout << *(float*)v << " "; break;
-	default: cout << (char*)v << " "; break;
+	case DB_TYPE_INT: cout << setw(INTLEN) << *(int*)v; break;
+	case DB_TYPE_FLOAT: cout << setw(FLOATLEN) << *(float*)v; break;
+	default: cout << setw(STRLEN) << (char*)v; break;
 	}	
 }

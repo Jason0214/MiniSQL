@@ -16,9 +16,6 @@
 #include "../RecordManager/RecordManager.h"
 
 //#define __DEBUG__
-#define INTLEN 10
-#define FLOATLEN 12
-#define STRLEN 15
 
 using namespace std;
 static BufferManager & buffer_manager = BufferManager::Instance();
@@ -109,7 +106,7 @@ void ExeSelect(const TableAliasMap& tableAlias, const string& sourceTableName,
 	}
 	delete begin;
 	delete end;
-	delete tuple_data_ptr;
+	delete [] tuple_data_ptr;
 #ifdef __DEBUG__
 	cout << "select result:";
 	ExeOutputTable(tableAlias, resultTableName);
@@ -374,17 +371,18 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 		table = new Table(tableName);
 		record_manager.addTable(table);
 	}
-	
+
+	cout << endl;
 	//adjust align
 	cout << left;
 	//print out attr name
-	int borderLen = table->getAttrNum() - 1;
+	unsigned int borderLen = (unsigned int)table->getAttrNum() - 1;
 	for (int i = 0; i < table->getAttrNum(); i++) {
 		switch (table->getAttrType(i)) {
 		case DB_TYPE_INT: borderLen += INTLEN;  break;
 		case DB_TYPE_FLOAT: borderLen += FLOATLEN;  break;
 		default:  borderLen += STRLEN;  break;
-		}
+        }
 	}
 	string horizontalBorder(borderLen, '-');
 	horizontalBorder = " " + horizontalBorder + " ";
@@ -403,7 +401,7 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	//print out data
 	TableIterator* begin = table->begin();
 	TableIterator* end = table->end();
-	for(TableIterator* iter = begin ;iter->isEqual(end); iter->next()){
+	for(TableIterator* iter = begin; !iter->isEqual(end); iter->next()){
 		for (int j = 0; j < table->getAttrNum(); j++) {
 			cout << "|";
 			printByType(iter->getAttrData(j), table->getAttrType(j));

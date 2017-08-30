@@ -13,7 +13,7 @@ Tuple::Tuple(int attr_num, const DBenum* attr_type_list):
     }
 }
 
-const Tuple & Tuple::operator=(const Tuple & rightv){
+Tuple & Tuple::operator=(const Tuple & rightv){
 	if(&rightv != this){
 	    this->attr_num = rightv.attr_num;
 	    this->tuple_size = rightv.tuple_size;
@@ -37,7 +37,7 @@ TupleKey::TupleKey(const void* key_data, DBenum key_type):
     memcpy(this->key_data, key_data, len);
 }
 
-const TupleKey & TupleKey::operator=(const TupleKey & t){
+TupleKey & TupleKey::operator=(const TupleKey & t){
     if(this != &t){
         this->type = t.type;
         size_t len = typeLen(t.type);
@@ -47,14 +47,9 @@ const TupleKey & TupleKey::operator=(const TupleKey & t){
 	return *this;
 }
 
-bool operator<(TupleKey const & leftv, TupleKey const & rightv)
+bool operator<(const TupleKey & leftv, const TupleKey & rightv)
 {
-	if (compare(leftv.key_data, rightv.key_data, leftv.type) < 0) {
-		return true;
-	}
-	// FIXME:
-	if (leftv.key_data < rightv.key_data) {
-		return true;
-	}
-	return false;
+	int cmp_result = compare(leftv.key_data, rightv.key_data, leftv.type) < 0;
+	return (cmp_result < 0) ||
+		(cmp_result == 0 && leftv.key_data < rightv.key_data);
 }

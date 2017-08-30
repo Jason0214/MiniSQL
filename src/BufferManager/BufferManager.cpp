@@ -1,6 +1,6 @@
 #include "BufferManager.h"
 
-#include <io.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cassert>
@@ -14,9 +14,9 @@ BufferManager::BufferManager():MAX_BLOCK_NUM(BLOCK_NUM),SRC_FILE_NAME(DB_FILE){
 	this->block_list_tail = NULL;
 	this->block_num = 0;
 	memset(this->block_table, 0, sizeof(BlockNode*)*(BLOCK_NUM << 1));
-	if(_access(this->SRC_FILE_NAME.c_str(),0) == -1){
+	if(access(this->SRC_FILE_NAME.c_str(),F_OK) == -1){
 		FILE* fp = fopen(this->SRC_FILE_NAME.c_str(), "w");
-		fclose(fp);
+        fclose(fp);
 		this->CreateSrcFile();
 	}
 }
@@ -224,14 +224,18 @@ uint32_t BufferManager::AllocNewBlock(){
 	SchemaBlock* schema_block = dynamic_cast<SchemaBlock*>(this->GetBlock(0));
 	uint32_t deleted_block_addr = schema_block->EmptyBlockAddr();
 	if(deleted_block_addr == 0){
-		// no empty block in db file, have to expand the db file
-		uint64_t size;
-		struct __stat64 st;
-		_stat64(this->SRC_FILE_NAME.c_str(), &st);
-		size = st.st_size;
-		// reference: https://stackoverflow.com/questions/2361385/how-to-get-a-files-size-which-is-greater-than-4-gb
-		this->ReleaseBlock((Block* &)schema_block);
-		return (uint32_t)(size >> 12);
+//		// no empty block in db file, have to expand the db file
+//		uint64_t size;
+//		struct __stat64 st;
+//		_stat64(this->SRC_FILE_NAME.c_str(), &st);
+//		size = st.st_size;
+//		// reference: https://stackoverflow.com/questions/2361385/how-to-get-a-files-size-which-is-greater-than-4-gb
+//		this->ReleaseBlock((Block* &)schema_block);
+//		return (uint32_t)(size >> 12);
+		struct stat st;
+		stat(this->SRC_FILE_NAME.c_str(), &st);
+		this->ReleaseBlock(schema_block);
+		return st.st_size >> 12;
 	}
 	else{
 		// empty block in db file, allocate this block

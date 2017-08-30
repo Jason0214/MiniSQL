@@ -36,7 +36,7 @@ public:
         this->value = new uint8_t[this->value_size];
         string2Bytes(value_in_str, type, this->value);
     }
-    const TupleCmpInfo & operator=(const TupleCmpInfo & tuple_cmp_info){
+    TupleCmpInfo & operator=(const TupleCmpInfo & tuple_cmp_info){
         if(this != &tuple_cmp_info){
             this->value = tuple_cmp_info.value;
             this->value_size = tuple_cmp_info.value_size;
@@ -81,7 +81,7 @@ public:
 		return (const void*)(this->entry[index]);
 	}
 
-    const Tuple & operator=(const Tuple & rightv);
+    Tuple & operator=(const Tuple & rightv);
 private:
     uint8_t* tuple_data;
     int tuple_size;
@@ -100,8 +100,8 @@ public:
     ~TupleKey(){
         delete [] this->key_data;
     }
-	friend bool operator<(TupleKey const & leftv, TupleKey const & rightv);
-    const TupleKey & operator=(const TupleKey & t);
+	friend bool operator<(const TupleKey & leftv, const TupleKey & rightv);
+    TupleKey & operator=(const TupleKey & t);
     uint8_t* key_data; 
     DBenum type;
 };
