@@ -1,0 +1,13 @@
+#include "Token.h"
+
+using namespace std;
+
+Token::Token(TokenType type, const string & raw_token):type(type){
+    if(type == STR_TOKEN || type == META_TOKEN){
+        int len = raw_token.size();
+        this->content = raw_token.substr(1, len-2);
+    }
+    else{
+        this->content = raw_token;
+    }
+}
