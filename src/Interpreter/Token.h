@@ -3,6 +3,15 @@
 
 #include <string>
 
+#define EMPTY_TOKEN 0x0
+#define STR_TOKEN  0x1
+#define INT_TOKEN  0x2
+#define FLOAT_TOKEN 0x4
+#define ID_TOKEN    0x8
+#define KEYWORD_TOKEN 0x10
+
+typedef int TokenType;
+
 typedef enum{
     STR_TOKEN,
     INT_TOKEN,

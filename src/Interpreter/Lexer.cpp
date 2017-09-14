@@ -5,13 +5,13 @@
 using namespace std;
 
 Lexer::Lexer(){
-    this->token_protos[0] = new TokenProto(NONE, TokenProto::SPACE_PATTERN);
+    this->token_protos[0] = new TokenProto(EMPTY_TOKEN, TokenProto::SPACE_PATTERN);
     this->token_protos[1] = new TokenProto(STR_TOKEN , TokenProto::DOUBLE_QUOTE_STR_PATTERN);
     this->token_protos[2] = new TokenProto(STR_TOKEN , TokenProto::SINGLE_QUOTE_STR_PATTERN);
     this->token_protos[3] = new TokenProto(FLOAT_TOKEN , TokenProto::FLOAT_PATTERN);
     this->token_protos[4] = new TokenProto(INT_TOKEN , TokenProto::INT_PATTERN);
-    this->token_protos[5] = new TokenProto(META_TOKEN, TokenProto::DB_META_PATTERN);
-    this->token_protos[6] = new TokenProto(DEFAULT, TokenProto::DEFAULT_PATTERN);
+    this->token_protos[5] = new TokenProto(ID_TOKEN, TokenProto::DB_META_PATTERN);
+    this->token_protos[6] = new TokenProto(ID_TOKEN|KEYWORD_TOKEN, TokenProto::DEFAULT_PATTERN);
 }
 
 Lexer::~Lexer(){
