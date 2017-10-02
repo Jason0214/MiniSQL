@@ -131,9 +131,9 @@ static void AcceptAttrDefinition(AttrDefinition& def)
 	def.AttrName = GetString();
 	def.TypeName = GetString();
 	def.TypeParam = GetInt();
-	def.bePrimaryKey = GetInt() == 1 ? true : false;
-	def.beUnique = GetInt() == 1 ? true : false;
-	def.beNotNull = GetInt() == 1 ? true : false;
+	def.bePrimaryKey = GetInt() == 1;
+	def.beUnique = GetInt() == 1;
+	def.beNotNull = GetInt() == 1;
 }
 
 static void AcceptAttrDefinitionVector(AttrDefinitionVector& defVec)
@@ -159,7 +159,7 @@ void AcceptQuery()
 		Command = GetString();
 
 		if (Command == "end_query") return;
-		else if (Command == "table_info") AcceptTableInfo(tableInfo);
+		if (Command == "table_info") AcceptTableInfo(tableInfo);
 		else if (Command == "select") AcceptExeSelect(tableInfo);
 		else if (Command == "project") AcceptExeProject(tableInfo);
 		else if (Command == "natural_join") AcceptExeNaturalJoin(tableInfo);

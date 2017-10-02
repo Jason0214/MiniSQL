@@ -8,6 +8,7 @@ class Token{
 public:
     typedef enum{
         NONE,
+        IDENTIFIER,
         INTS,
         FLOATS,
         STR,
@@ -16,7 +17,6 @@ public:
         EQUALITY
     }TokenType;
 
-    Token();
     Token(TokenType type, const std::string & raw_token);
     Token(const Token & left_v){
         this->type = left_v.type;

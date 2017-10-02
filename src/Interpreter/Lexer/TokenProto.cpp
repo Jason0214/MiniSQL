@@ -8,12 +8,12 @@ const string TokenProto::SINGLE_QUOTE_STR_PATTERN = "^\"[^\"]*\"";
 const string TokenProto::DOUBLE_QUOTE_STR_PATTERN = "^\'[^\']*\'";
 const string TokenProto::SPACE_PATTERN = "^[ \t\r\n]+";
 const string TokenProto::SYMBOL_PATTERN = "^[,\\.\\(\\)]";
-const string TokenProto::KEYWORD_PATTERN = "^select|from|where|as|join|natrualjoin|and|or"
-const string TokenProto::EQUALITY_PATTERN = "=|<=|>=|<|>"
-const string TokenProto::IDENTIFIER_PATTERN = "^`[_a-z][_a-z0-9]*`";
+const string TokenProto::KEYWORD_PATTERN = "^select|^from|^where|^as|^join|^naturaljoin|^and|^or";
+const string TokenProto::EQUALITY_PATTERN = "^=|^<=|^>=|^<|^>|^<>";
+const string TokenProto::IDENTIFIER_PATTERN = "^`[^`]+`";
 const string TokenProto::DEFAULT_PATTERN = "^[_a-z][_a-z0-9]*";
 
-TokenProto::TokenProto(TokenType target, const string & pattern)
+TokenProto::TokenProto(Token::TokenType target, const string & pattern)
 :regex_pattern(pattern){
     this->target_token_type = target;
 }

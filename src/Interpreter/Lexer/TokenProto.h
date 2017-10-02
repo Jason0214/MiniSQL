@@ -3,11 +3,11 @@
 
 class TokenProto{
 public:
-    TokenProto(TokenType target, const std::string & pattern);
+    TokenProto(Token::TokenType target, const std::string & pattern);
     ~TokenProto(){}
     int regexMatch(const char *str);
 
-    TokenType target_token_type;
+    Token::TokenType target_token_type;
 
     static const std::string INT_PATTERN;
     static const std::string FLOAT_PATTERN;

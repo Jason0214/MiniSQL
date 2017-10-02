@@ -1,6 +1,7 @@
 #include "Lexer.h"
 #include <iostream>
 #include <string>
+#include <list>
 
 using namespace std;
 
@@ -19,7 +20,7 @@ int main(){
     }
     Lexer lexer;
     lexer.loadText(sql_sentence);
-    for(vector<Token>::iterator i = lexer.result.begin(); i != lexer.result.end(); i++){
+    for(list<Token>::iterator i = lexer.result.begin(); i != lexer.result.end(); i++){
         cout << i->type << " " << i->content << endl; 
     }
     return 0;

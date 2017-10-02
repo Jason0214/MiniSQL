@@ -1,1 +1,34 @@
-ParseTree.h
+#include <string>
+
+
+#include "ParserSymbol.h"
+
+class ASTreeNode{
+public:
+    ASTreeNode(Token token);
+    ASTreeNode(ParserSymbol::Tag, ASTreeNode* child);
+    ASTreeNode(ParserSymbol::Tag tag, ParserSymbol::Action action,
+                ASTreeNode* left_child, ASTreeNode* right_child);
+    ~ASTreeNode();
+
+    ParserSymbol::Tag getTag() const{
+        return this->tag_;
+    }
+private:
+    ParserSymbol::Tag tag_;
+    ParserSymbol::Action action_;
+    std::string content_;
+
+    ASTreeNode* left_child_;
+    ASTreeNode* right_child_;
+    int child_cnt_;
+};
+
+class ASTree{
+public:
+    ASTree():root_(NULL){};
+    ASTree(ASTreeNode* tree_root):(tree_root){}
+
+private:
+    ASTreeNode* root_
+};

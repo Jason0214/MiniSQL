@@ -2,13 +2,8 @@
 
 using namespace std;
 
-Token::Token(){
-    this->type = Token::NONE;
-    this->content = "";
-}
-
 Token::Token(TokenType type, const string & raw_token):type(type){
-    if(type == Token::STR || (type == Token::IDENTIFIER && raw_token[0]='`')){
+    if(type == Token::STR || (type == Token::IDENTIFIER && raw_token[0] == '`')){
         int len = raw_token.size();
         this->content = raw_token.substr(1, len-2);
     }
