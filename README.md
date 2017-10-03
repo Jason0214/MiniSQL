@@ -1,3 +1,7 @@
 # MiniSQL
 
-作业完成的比较仓促，将继续改进
+- block wise read/write
+- single file storage
+- ordered data
+- Bplus tree index
+- sql SLR parser(working on)
