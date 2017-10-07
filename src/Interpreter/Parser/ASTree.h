@@ -5,8 +5,8 @@
 
 class ASTreeNode{
 public:
-    ASTreeNode(Token token);
-    ASTreeNode(ParserSymbol::Tag, ASTreeNode* child);
+    ASTreeNode(const Token & token);
+    ASTreeNode(ParserSymbol::Tag tag, ParserSymbol::Action action, ASTreeNode* child);
     ASTreeNode(ParserSymbol::Tag tag, ParserSymbol::Action action,
                 ASTreeNode* left_child, ASTreeNode* right_child);
     ~ASTreeNode();
@@ -21,7 +21,6 @@ private:
 
     ASTreeNode* left_child_;
     ASTreeNode* right_child_;
-    int child_cnt_;
 };
 
 class ASTree{

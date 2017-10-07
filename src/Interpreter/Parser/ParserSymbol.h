@@ -24,6 +24,7 @@ namespace ParserSymbol{
         naturaljoin,
         comma,
         dot,
+        single,
         as
     }Action;
 
