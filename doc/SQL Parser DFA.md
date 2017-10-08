@@ -11,13 +11,14 @@
 8. valid_tables -> table_set "where" condition_set
 9. table_set -> table
 10. table_set -> table "join"/"naturaljoin"/"," table_set
-11. table -> ID
-12. table -> "(" query ")" 
-13. table -> "(" query ")" "as" ID
-13. condition_set -> condition "and"/"or" condition_set
-14. condition_set -> condition
-15. condition -> attrID "="/"<="/">="/"<"/">"/"<>" attrID
-16. condition -> attrID "="/"<="/">="/"<"/">"/"<>" str/int/float
+11. tableID -> ID
+12. tableID -> "(" query ")" 
+13. table -> tableID "as" ID
+14. table -> tableID
+15. condition_set -> condition "and"/"or" condition_set
+16. condition_set -> condition
+17. condition -> attrID "="/"<="/">="/"<"/">"/"<>" attrID
+18. condition -> attrID "="/"<="/">="/"<"/">"/"<>" str/int/float
 
 
 ### DFA
