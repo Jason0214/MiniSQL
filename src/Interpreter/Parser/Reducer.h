@@ -1,34 +1,31 @@
 #ifndef __REDUCER_H__
 #define __REDUCER_H__
 
-#include <stack>
-
 #include "ASTree.h"
 
-ASTreeNode* reduceAttrId(std::stack<ASTreeNode*> & s);
-ASTreeNode* reduceAttrIdWithTableId(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceAttrId(ASTNodeStack & s);
 
+ASTreeNode* reduceAttrIdWithTableId(ASTNodeStack & s);
 
-ASTreeNode* reduceAttr(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceAttr(ASTNodeStack & s);
 
+ASTreeNode* reduceAttrWithAlias(ASTNodeStack & s);
 
-ASTreeNode* reduceAttrWithAlias(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceAttrSet(ASTNodeStack & s);
 
-ASTreeNode* reduceAttrSet(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceTableID(ASTNodeStack & s);
 
-ASTreeNode* reduceTableID(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceTableWithoutAlias(ASTNodeStack & s);
 
-ASTreeNode* reduceTableWithoutAlias(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceTableWithAlias(ASTNodeStack & s);
 
-ASTreeNode* reduceTableWithAlias(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceTableSet(ASTNodeStack & s);
 
-ASTreeNode* reduceTableSet(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceCondition(ASTNodeStack & s);
 
-ASTreeNode* reduceCondition(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceConditionSet(ASTNodeStack & s);
 
-ASTreeNode* reduceConditionSet(std::stack<ASTreeNode*> & s);
-
-ASTreeNode* reduceQuery(std::stack<ASTreeNode*> & s);
+ASTreeNode* reduceQuery(ASTNodeStack & s);
 
 
 

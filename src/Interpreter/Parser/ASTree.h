@@ -2,6 +2,7 @@
 #define __ASTREE_H__
 
 #include <string>
+#include <stack>
 #include <vector>
 
 #include "../Lexer/Token.h"
@@ -38,6 +39,32 @@ public:
 private:
     ASTreeNode* root_;
 };
+
+class ASTNodeStack{
+public:
+    ASTNodeStack(){}
+    ~ASTNodeStack(){}
+    void push(ASTreeNode* n){
+        this->stack_.push(n);
+    }
+    ASTreeNode* pop(){
+        ASTreeNode* ret = this->stack_.top();
+        this->stack_.pop();
+        return ret;
+    }
+    ASTreeNode* top() const{
+        return this->stack_.top();
+    }
+    bool empty() const{
+        return this->stack_.empty();
+    }
+    int size() const{
+        return (int)(this->stack_.size());
+    }
+private:
+    std::stack<ASTreeNode*> stack_;
+};
+
 
 
 #endif

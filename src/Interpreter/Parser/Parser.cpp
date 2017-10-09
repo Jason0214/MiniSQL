@@ -32,7 +32,7 @@ void Parser::parseSentence(TokenStream & token_stream){
 }
 
 void Parser::parseSelectSentence(TokenStream & token_stream){
-    stack<ASTreeNode*> s; 
+    ASTNodeStack s; 
     SLRstate state = WAIT_SELECT;
     try{
         while(state != FINISH){
@@ -43,6 +43,5 @@ void Parser::parseSelectSentence(TokenStream & token_stream){
     catch(const ParseError & e){
 
     }
-
 
 }

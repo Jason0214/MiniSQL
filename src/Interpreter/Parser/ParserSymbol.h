@@ -32,7 +32,8 @@ namespace ParserSymbol{
     }Action;
 
     typedef enum{
-        WAIT_SELECT = 1,
+        END,
+        WAIT_SELECT,
         WAIT_ATTR_ID,
         REDUCE_ATTR_ID,
         WAIT_ATTR_DOT_RIGHT,

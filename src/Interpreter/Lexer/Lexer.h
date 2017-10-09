@@ -13,13 +13,13 @@ public:
         this->token_list_.pop_front();
         return ret;
     }
-    const Token & front(){
+    const Token & front() const{
         return this->token_list_.front();
     }
     void push_back(const Token & t){
         this->token_list_.push_back(t);
     }
-    int size(){
+    int size() const{
         return (int)(this->token_list_.size());
     }
 private:
