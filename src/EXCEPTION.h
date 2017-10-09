@@ -1,21 +1,20 @@
 #pragma once
+#include <cstring>
 #include <string>
-#include <iostream>
-
-using namespace std;
 
 class Exception:public std::exception{
 public:
-	Exception(const string & msg)
+	Exception(const std::string & msg)
 	{
-		Message = msg;
+		memcpy(err, msg.c_str(), 255*sizeof(char));
+		err[255] = 0;
 	}
-	string Message;
+	char err[256];
 };
 
 class DuplicatedTableName :public Exception {
 public:
-	DuplicatedTableName(const string & table_name) 
+	DuplicatedTableName(const std::string & table_name) 
 		:Exception("Table `" + table_name + "` already exist.") {}
 };
 
@@ -26,18 +25,18 @@ public:
 
 class AttrTypeUnmatch : public Exception{
 public:
-	AttrTypeUnmatch(const string & value) 
+	AttrTypeUnmatch(const std::string & value) 
 		: Exception("Attribute with value`" + value + "` has the wrong type."){}
 };
 
 class TableNotFound : public Exception {
 public:
-	TableNotFound(string msg) :Exception(msg){}
+	TableNotFound(const std::string & msg) :Exception(msg){}
 };
 
 class IndexNotFound: public Exception{
 public:
-	IndexNotFound(std::string index_name) 
+	IndexNotFound(const std::string & index_name) 
 		:Exception("Secondary index named `" + index_name + "` not found."){}
 };
 
@@ -48,40 +47,45 @@ public:
 
 class DuplicatedIndexName : public Exception{
 public:
-	DuplicatedIndexName(string msg) :Exception(msg){}
+	DuplicatedIndexName(const std::string & msg) :Exception(msg){}
 };
 
 class DuplicatedIndex: public Exception{
 public:
-	DuplicatedIndex(string msg, int key) :Exception(msg){}
+	DuplicatedIndex(const std::string & msg, int key) :Exception(msg){}
 };
 
 class AttributeNotFound : public Exception {
 public:
-	AttributeNotFound(string msg) :Exception(msg){}
+	AttributeNotFound(const std::string & msg) :Exception(msg){}
 };
 
 class DiscFailure : public Exception {
 public:
-	DiscFailure(string msg) :Exception(msg){}
+	DiscFailure(const std::string & msg) :Exception(msg){}
 };
 
 class DatabaseNotFound : public Exception {
 public:
-	DatabaseNotFound(string msg) :Exception(msg){}
+	DatabaseNotFound(const std::string & msg) :Exception(msg){}
 };
 
 class DatabaseNotSelected : public Exception {
 public:
-	DatabaseNotSelected(string msg) :Exception(msg){}
+	DatabaseNotSelected(const std::string & msg) :Exception(msg){}
 };
 
 class TableAliasNotFound : public Exception {
 public:
-	TableAliasNotFound(string msg) :Exception(msg) {}
+	TableAliasNotFound(const std::string & msg) :Exception(msg) {}
 };
 
 class SameAttrNameWithDifferType : public Exception{
 public:
-	SameAttrNameWithDifferType(string msg) : Exception(msg){}
+	SameAttrNameWithDifferType(const std::string & msg) : Exception(msg){}
+};
+
+class ParseError: public Exception{
+public:
+	ParseError(const std::string & content, const std::string & info):Exception(content + ";" + info){}
 };

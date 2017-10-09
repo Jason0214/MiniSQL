@@ -33,13 +33,12 @@ void Parser::parseSentence(TokenStream & token_stream){
 
 void Parser::parseSelectSentence(TokenStream & token_stream){
     stack<ASTreeNode*> s; 
-    ASTreeNode* result;
     SLRstate state = WAIT_SELECT;
     try{
         while(state != FINISH){
             state = this->getGenerator(state)->Accept(token_stream, s);
         }
-        result = s.pop();
+        this->astree_ =  ASTree(s.pop());
     }
     catch(const ParseError & e){
 

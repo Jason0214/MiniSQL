@@ -4,7 +4,27 @@
 
 #define PROTO_NUM 10
 
-typedef std::list<Token> TokenStream;
+class TokenStream{
+public:
+    TokenStream(){}
+    ~TokenStream(){}
+    Token pop_front(){
+        Token ret = this->token_list_.front();
+        this->token_list_.pop_front();
+        return ret;
+    }
+    const Token & front(){
+        return this->token_list_.front();
+    }
+    void push_back(const Token & t){
+        this->token_list_.push_back(t);
+    }
+    int size(){
+        return (int)(this->token_list_.size());
+    }
+private:
+    std::list<Token> token_list_;
+};
 
 class LexingError{};
 

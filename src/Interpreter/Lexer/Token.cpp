@@ -2,6 +2,10 @@
 
 using namespace std;
 
+Token::Token(TokenType type):type(type),content(""){
+
+}
+
 Token::Token(TokenType type, const string & raw_token):type(type){
     if(type == Token::STR || (type == Token::IDENTIFIER && raw_token[0] == '`')){
         int len = raw_token.size();

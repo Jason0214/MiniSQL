@@ -17,6 +17,7 @@ public:
         EQUALITY
     }TokenType;
 
+    Token(TokenType type = NONE);
     Token(TokenType type, const std::string & raw_token);
     Token(const Token & left_v){
         this->type = left_v.type;

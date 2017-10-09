@@ -51,6 +51,7 @@ void Lexer::loadText(const string & raw_text){
             throw LexingError();
         }
     }
+    this->result.push_back(Token());
 }
 
 void Lexer::setErrInfo(int beg_index, const string & raw_text){
