@@ -87,5 +87,5 @@ public:
 
 class ParseError: public Exception{
 public:
-	ParseError(const std::string & content, const std::string & info):Exception(content + ";" + info){}
+	ParseError(const std::string & content, const std::string & info):Exception("at '" + content + "'' " + info){}
 };

@@ -7,6 +7,8 @@
 #include "ASTree.h"
 #include "ParserSymbol.h"
 
+#define GENERATOR_CNT 25
+
 namespace Generator{
     class ASTgenerator{
     public:

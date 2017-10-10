@@ -17,11 +17,10 @@ namespace ParserSymbol{
         condition,
         table,
         tableID
-
     }Tag;
 
     typedef enum{
-        join,
+        join = 1,
         naturaljoin,
         parallel,
         dot,
@@ -32,7 +31,7 @@ namespace ParserSymbol{
     }Action;
 
     typedef enum{
-        END,
+        FINISH,
         WAIT_SELECT,
         WAIT_ATTR_ID,
         REDUCE_ATTR_ID,

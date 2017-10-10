@@ -308,7 +308,7 @@ SLRstate Generator::reduce_query::Accept(TokenStream & token_stream, ASTNodeStac
         return REDUCE_TABLE_ID;
     }   
     else if(tkn_to_eat.type == Token::NONE){
-        return END;
+        return FINISH;
     }
     else{
         throw ParseError(tkn_to_eat.content, "end of query.");

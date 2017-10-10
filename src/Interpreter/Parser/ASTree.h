@@ -14,12 +14,17 @@ public:
     ASTreeNode(ParserSymbol::Tag tag, ParserSymbol::Action action);
     ASTreeNode(ParserSymbol::Tag tag, ParserSymbol::Action action, ASTreeNode* child);
     ASTreeNode(ParserSymbol::Tag tag, ParserSymbol::Action action,
-                ASTreeNode* child1, ASTreeNode* child2);
+                                ASTreeNode* child1, ASTreeNode* child2);
     ~ASTreeNode();
 
     void appendChild(ASTreeNode* new_child){
-
+        this->children_.push_back(new_child);
     }
+
+    int childrenCount(){
+        return (unsigned int)(this->children_.size());
+    }
+
     ParserSymbol::Tag getTag() const{
         return this->tag_;
     }
@@ -28,7 +33,7 @@ private:
     ParserSymbol::Action action_;
     std::string content_;
 
-    std::vector<ASTreeNode*> childrean_;
+    std::vector<ASTreeNode*> children_;
 };
 
 class ASTree{
@@ -36,6 +41,7 @@ public:
     ASTree():root_(NULL){};
     ASTree(ASTreeNode* tree_root):root_(tree_root){}
 
+    static void destroyTree(ASTreeNode* root);
 private:
     ASTreeNode* root_;
 };
@@ -60,7 +66,7 @@ public:
     }
     int size() const{
         return (int)(this->stack_.size());
-    }
+    } 
 private:
     std::stack<ASTreeNode*> stack_;
 };
