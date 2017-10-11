@@ -9,11 +9,11 @@ Lexer::Lexer(){
     this->token_protos[1] = new TokenProto(Token::STR, TokenProto::DOUBLE_QUOTE_STR_PATTERN);
     this->token_protos[2] = new TokenProto(Token::STR, TokenProto::SINGLE_QUOTE_STR_PATTERN);
     this->token_protos[3] = new TokenProto(Token::IDENTIFIER, TokenProto::IDENTIFIER_PATTERN);
-    this->token_protos[4] = new TokenProto(Token::KEYWORD, TokenProto::KEYWORD_PATTERN);
-    this->token_protos[5] = new TokenProto(Token::FLOATS , TokenProto::FLOAT_PATTERN);
-    this->token_protos[6] = new TokenProto(Token::INTS , TokenProto::INT_PATTERN);
-    this->token_protos[7] = new TokenProto(Token::SYMBOL, TokenProto::SYMBOL_PATTERN);
-    this->token_protos[8] = new TokenProto(Token::EQUALITY, TokenProto::EQUALITY_PATTERN);
+    this->token_protos[4] = new TokenProto(Token::FLOATS , TokenProto::FLOAT_PATTERN);
+    this->token_protos[5] = new TokenProto(Token::INTS , TokenProto::INT_PATTERN);
+    this->token_protos[6] = new TokenProto(Token::SYMBOL, TokenProto::SYMBOL_PATTERN);
+    this->token_protos[7] = new TokenProto(Token::EQUALITY, TokenProto::EQUALITY_PATTERN);
+    this->token_protos[8] = new TokenProto(Token::KEYWORD, TokenProto::KEYWORD_PATTERN);
     this->token_protos[9] = new TokenProto(Token::IDENTIFIER, TokenProto::DEFAULT_PATTERN);
 }
 
