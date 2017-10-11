@@ -28,6 +28,12 @@ public:
     ParserSymbol::Tag getTag() const{
         return this->tag_;
     }
+    ParserSymbol::Tag getAction() const{
+        return this->action_;
+    }
+    const std::string & getContent() const{
+        return this->content_;
+    }
 private:
     ParserSymbol::Tag tag_;
     ParserSymbol::Action action_;
@@ -40,6 +46,8 @@ class ASTree{
 public:
     ASTree():root_(NULL){};
     ASTree(ASTreeNode* tree_root):root_(tree_root){}
+
+    void printTree() const;
 
     static void destroyTree(ASTreeNode* root);
 private:

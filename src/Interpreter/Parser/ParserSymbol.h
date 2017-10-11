@@ -3,7 +3,9 @@
 
 namespace ParserSymbol{
     typedef enum{
-        identifier = 1,
+        none,
+        
+        identifier,
         str,
         float_,
         int_,
