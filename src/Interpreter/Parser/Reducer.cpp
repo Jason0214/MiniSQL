@@ -37,7 +37,7 @@ ASTreeNode* reduceAttrWithAlias(ASTNodeStack & s){
 
 ASTreeNode* reduceAttrSet(ASTNodeStack & s){
     ASTreeNode* node_with_attr_set = new ASTreeNode(attr_set, parallel);
-    while(!s.empty()){
+    while(!s.empty() && s.top()->getTag() == attr){
         node_with_attr_set->appendChild(s.pop());
     }
     return  node_with_attr_set;
@@ -75,6 +75,10 @@ ASTreeNode* reduceTableSet(ASTNodeStack & s){
         table_set_node->appendChild(right_child);
         right_child = table_set_node;
     }
+    if(right_child->getTag() == table){
+    // only one table in table_set
+        right_child = new ASTreeNode(table_set, join, right_child);
+    }
     return right_child;
 }
 
@@ -105,7 +109,7 @@ ASTreeNode* reduceConditionSet(ASTNodeStack & s){
     return right_child;
 }
 
-ASTreeNode* reduceQuery(ASTNodeStack & s){
+ASTreeNode* reduceQueryWithCondition(ASTNodeStack & s){
     ASTreeNode* condition_set_node = s.pop();
     ASTreeNode* table_set_node = s.pop();
     ASTreeNode* attr_set_node = s.pop();
@@ -113,5 +117,14 @@ ASTreeNode* reduceQuery(ASTNodeStack & s){
     query_node->appendChild(attr_set_node);
     query_node->appendChild(table_set_node);
     query_node->appendChild(condition_set_node);
+    return query_node;
+}
+
+ASTreeNode* reduceQueryWithoutCondition(ASTNodeStack & s){
+    ASTreeNode* table_set_node = s.pop();
+    ASTreeNode* attr_set_node = s.pop();
+    ASTreeNode* query_node = new ASTreeNode(query, parallel);
+    query_node->appendChild(attr_set_node);
+    query_node->appendChild(table_set_node);
     return query_node;
 }

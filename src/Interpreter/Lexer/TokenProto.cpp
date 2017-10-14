@@ -7,7 +7,7 @@ const string TokenProto::FLOAT_PATTERN = "^[0-9]*\\.[0-9]+";
 const string TokenProto::SINGLE_QUOTE_STR_PATTERN = "^\"[^\"]*\"";
 const string TokenProto::DOUBLE_QUOTE_STR_PATTERN = "^\'[^\']*\'";
 const string TokenProto::SPACE_PATTERN = "^[ \t\r\n]+";
-const string TokenProto::SYMBOL_PATTERN = "^[,\\.\\(\\)]";
+const string TokenProto::SYMBOL_PATTERN = "^[,\\.\\(\\)\\*]";
 const string TokenProto::KEYWORD_PATTERN = "^select|^from|^where|^as|^join|^naturaljoin|^and|^or";
 const string TokenProto::EQUALITY_PATTERN = "^=|^<=|^>=|^<|^>|^<>";
 const string TokenProto::IDENTIFIER_PATTERN = "^`[^`]+`";

@@ -72,6 +72,7 @@ void ASTree::print()const{
             queue.push_back(tmp->getChild(i));
         }
         switch(tmp->getTag()){
+            case none: cout << "none "; break;
             case identifier: cout << "identifier "; break;
             case str: cout << "str "; break;
             case float_: cout << "float "; break;

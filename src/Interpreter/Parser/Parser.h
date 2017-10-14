@@ -19,17 +19,21 @@ public:
     const ASTree & getASTree() const{
         return this->astree_;
     }
+    void clear(){
+        this->astree_.destroy();
+    }
 private:
     Parser(const Parser &);
     const Parser & operator=(const Parser &);
 
     void loadGenerator();
     void deleteGenerator();
-    Generator::ASTgenerator* getGenerator(ParserSymbol::SLRstate state);
     
     void parseSelectSentence(TokenStream & token_stream);
 
+    Generator::ASTgenerator* getGenerator(ParserSymbol::SLRstate state);
     Generator::ASTgenerator* generators_[GENERATOR_CNT];
+
     ASTree astree_;
 };
 

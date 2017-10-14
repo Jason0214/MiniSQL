@@ -33,12 +33,13 @@ void Parser::loadGenerator(){
     this->generators_[15] = new Generator::reduce_table_with_alias();
     this->generators_[16] = new Generator::reduce_table_set();
     this->generators_[17] = new Generator::wait_where();
-    this->generators_[18] = new Generator::wait_condition();
-    this->generators_[19] = new Generator::wait_num_or_str();
-    this->generators_[20] = new Generator::wait_equality();
-    this->generators_[21] = new Generator::reduce_condition();
-    this->generators_[22] = new Generator::reduce_condition_set();
-    this->generators_[23] = new Generator::reduce_query();
+    this->generators_[18] = new Generator::reduce_query_without_condition();
+    this->generators_[19] = new Generator::wait_condition();
+    this->generators_[20] = new Generator::wait_num_or_str();
+    this->generators_[21] = new Generator::wait_equality();
+    this->generators_[22] = new Generator::reduce_condition();
+    this->generators_[23] = new Generator::reduce_condition_set();
+    this->generators_[24] = new Generator::reduce_query_with_condition();
 }
 
 void Parser::deleteGenerator(){

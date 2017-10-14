@@ -25,8 +25,9 @@ ASTreeNode* reduceCondition(ASTNodeStack & s);
 
 ASTreeNode* reduceConditionSet(ASTNodeStack & s);
 
-ASTreeNode* reduceQuery(ASTNodeStack & s);
+ASTreeNode* reduceQueryWithCondition(ASTNodeStack & s);
 
+ASTreeNode* reduceQueryWithoutCondition(ASTNodeStack & s);
 
 
 #endif

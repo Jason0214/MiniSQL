@@ -34,7 +34,8 @@ namespace ParserSymbol{
         not_equal,
         and_,
         or_,
-        as
+        as,
+        star
     }Action;
 
     typedef enum{
@@ -51,17 +52,18 @@ namespace ParserSymbol{
         WAIT_FROM,
         WAIT_TABLE_ID,
         REDUCE_TABLE_ID,
-        RECUDE_TABLE,
+        REDUCE_TABLE,
         WAIT_TABLE_ALIAS,
         REDUCE_TABLE_WITH_ALIAS,
         REDUCE_TABLE_SET,
         WAIT_WHERE,
+        REDUCE_QUERY_WITHOUT_CONDOTION,
         WAIT_CONDITION,
         WAIT_NUM_OR_STR,
-        WAIT_EUQALITY,
+        WAIT_EQUALITY,
         REDUCE_CONDITION,
         REDUCE_CONDITION_SET,
-        REDUCE_QUERY
+        REDUCE_QUERY_WITH_CONDITION
     }SLRstate;
 }
 

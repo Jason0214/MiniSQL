@@ -11,9 +11,7 @@ SLRstate Generator::wait_select::Accept(TokenStream & token_stream, ASTNodeStack
     if(tkn_to_eat.type == Token::KEYWORD && tkn_to_eat.content == "select"){
         return WAIT_ATTR_ID;
     }
-    else{
-        throw ParseError(tkn_to_eat.content, "expect select");
-    }
+    throw ParseError(tkn_to_eat.content, "expect select");
 }
 
 
@@ -23,6 +21,10 @@ SLRstate Generator::wait_attr_id::Accept(TokenStream & token_stream, ASTNodeStac
     if(tkn_to_eat.type == Token::IDENTIFIER){
         s.push(new ASTreeNode(tkn_to_eat));
         next_state = REDUCE_ATTR_ID;
+    }
+    else if(tkn_to_eat.type == Token::SYMBOL && tkn_to_eat.content == "*"){
+        s.push(new ASTreeNode(attr_set, star));
+        next_state = WAIT_FROM;
     }
     else{
         throw ParseError(tkn_to_eat.content, "expect attr id");
@@ -49,7 +51,7 @@ SLRstate Generator::reduce_attr_id::Accept(TokenStream & token_stream, ASTNodeSt
             next_state = REDUCE_CONDITION;                
         }
         else{
-            next_state = WAIT_EUQALITY;
+            next_state = WAIT_EQUALITY;
         }
         s.push(attrIdNode);
     }
@@ -80,7 +82,7 @@ SLRstate Generator::reduce_attr_id_with_table_id::Accept(TokenStream & token_str
         next_state = REDUCE_CONDITION;                
     }
     else{
-        next_state = WAIT_EUQALITY;
+        next_state = WAIT_EQUALITY;
     }
     s.push(attrIdWithTableID);
     return next_state;
@@ -142,9 +144,7 @@ SLRstate Generator::wait_from::Accept(TokenStream & token_stream, ASTNodeStack &
     if(tkn_to_eat.type == Token::KEYWORD && tkn_to_eat.content == "from"){
         return WAIT_TABLE_ID;
     }
-    else{
-        throw ParseError("", "expect from");
-    }
+    throw ParseError("", "expect from");
 }
 
 
@@ -166,7 +166,7 @@ SLRstate Generator::wait_table_id::Accept(TokenStream & token_stream, ASTNodeSta
 
 SLRstate Generator::reduce_table_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
     s.push(reduceTableID(s));
-    return RECUDE_TABLE;
+    return REDUCE_TABLE;
 }
 
 SLRstate Generator::reduce_table::Accept(TokenStream & token_stream, ASTNodeStack & s){
@@ -229,13 +229,27 @@ SLRstate Generator::reduce_table_set::Accept(TokenStream & token_stream, ASTNode
 }
 
 SLRstate Generator::wait_where::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    Token tkn_to_eat = token_stream.pop_front();
-    if(tkn_to_eat.type == Token::KEYWORD && tkn_to_eat.content == "where"){
+    const Token & lookahead = token_stream.front();
+    if(lookahead.type == Token::KEYWORD && lookahead.content == "where"){
+        token_stream.pop_front();
         return WAIT_CONDITION;
     }
     else{
-        throw ParseError(tkn_to_eat.content, "expect where");
+        return  REDUCE_QUERY_WITHOUT_CONDOTION;
     }
+}
+
+SLRstate Generator::reduce_query_without_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    s.push(reduceQueryWithoutCondition(s));
+    const Token tkn_to_eat = token_stream.pop_front();
+    if(tkn_to_eat.type == Token::SYMBOL && tkn_to_eat.content == ")"){
+        return REDUCE_TABLE_ID;
+    }
+    if(tkn_to_eat.type == Token::NONE){
+        return FINISH;
+    }
+
+    throw ParseError(tkn_to_eat.content, "end of query.");
 }
 
 SLRstate Generator::wait_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
@@ -250,6 +264,7 @@ SLRstate Generator::wait_condition::Accept(TokenStream & token_stream, ASTNodeSt
     return next_state;
 }
 
+
 SLRstate Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & tkn_to_eat = token_stream.pop_front();
     SLRstate next_state;
@@ -258,15 +273,12 @@ SLRstate Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNodeS
             next_state = REDUCE_CONDITION;
         }
         else{
-            next_state = WAIT_EUQALITY;            
+            next_state = WAIT_EQUALITY;
         }
         s.push(new ASTreeNode(tkn_to_eat));
         return next_state;
     }
-    else{
-        throw ParseError(tkn_to_eat.content, "expect int or float or string");
-    }
-    return next_state;
+    throw ParseError(tkn_to_eat.content, "expect int or float or string");
 }
 
 SLRstate Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeStack & s){
@@ -292,9 +304,8 @@ SLRstate Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeSta
         }
         return WAIT_CONDITION;
     }
-    else{
-        throw ParseError(tkn_to_eat.content, "expect = or <> or < or > or <= or >=");
-    }    
+
+    throw ParseError(tkn_to_eat.content, "expect = or <> or < or > or <= or >=");
 }
 
 SLRstate Generator::reduce_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
@@ -308,30 +319,31 @@ SLRstate Generator::reduce_condition_set::Accept(TokenStream & token_stream, AST
     SLRstate next_state;
     if(lookahead.type == Token::KEYWORD && lookahead.content == "and"){
         next_state = WAIT_CONDITION;
+        token_stream.pop_front();
         s.push(new ASTreeNode(condition_set, and_));
     }
     else if(lookahead.type == Token::KEYWORD && lookahead.content == "or"){
         next_state = WAIT_CONDITION;
+        token_stream.pop_front();
         s.push(new ASTreeNode(condition_set, or_));        
     }
     else{
         ASTreeNode* node_with_condition_set = reduceConditionSet(s);
         s.push(node_with_condition_set);
-        next_state = REDUCE_QUERY;
+        next_state = REDUCE_QUERY_WITH_CONDITION;
     }
     return next_state;
 }
 
-SLRstate Generator::reduce_query::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    s.push(reduceQuery(s));
+SLRstate Generator::reduce_query_with_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    s.push(reduceQueryWithCondition(s));
     const Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::SYMBOL && tkn_to_eat.content == ")"){
         return REDUCE_TABLE_ID;
     }   
-    else if(tkn_to_eat.type == Token::NONE){
+    if(tkn_to_eat.type == Token::NONE){
         return FINISH;
     }
-    else{
-        throw ParseError(tkn_to_eat.content, "end of query.");
-    }
+
+    throw ParseError(tkn_to_eat.content, "end of query.");
 }

@@ -7,7 +7,7 @@
 #include "ASTree.h"
 #include "ParserSymbol.h"
 
-#define GENERATOR_CNT 24
+#define GENERATOR_CNT 25
 
 namespace Generator{
     class ASTgenerator{
@@ -121,40 +121,46 @@ namespace Generator{
         static const int bind_state = 17;
     };
 
-    class wait_condition:public ASTgenerator{
+    class reduce_query_without_condition:public ASTgenerator{
     public:
         ParserSymbol::SLRstate Accept(TokenStream & token_stream, ASTNodeStack & s);
         static const int bind_state = 18;
     };
 
-    class wait_num_or_str:public ASTgenerator{
+    class wait_condition:public ASTgenerator{
     public:
         ParserSymbol::SLRstate Accept(TokenStream & token_stream, ASTNodeStack & s);
         static const int bind_state = 19;
     };
 
-    class wait_equality:public ASTgenerator{
+    class wait_num_or_str:public ASTgenerator{
     public:
         ParserSymbol::SLRstate Accept(TokenStream & token_stream, ASTNodeStack & s);
         static const int bind_state = 20;
     };
 
-    class reduce_condition:public ASTgenerator{
+    class wait_equality:public ASTgenerator{
     public:
         ParserSymbol::SLRstate Accept(TokenStream & token_stream, ASTNodeStack & s);
         static const int bind_state = 21;
     };
 
-    class reduce_condition_set:public ASTgenerator{
+    class reduce_condition:public ASTgenerator{
     public:
         ParserSymbol::SLRstate Accept(TokenStream & token_stream, ASTNodeStack & s);
         static const int bind_state = 22;
     };
 
-    class reduce_query:public ASTgenerator{
+    class reduce_condition_set:public ASTgenerator{
     public:
         ParserSymbol::SLRstate Accept(TokenStream & token_stream, ASTNodeStack & s);
         static const int bind_state = 23;
+    };
+
+    class reduce_query_with_condition:public ASTgenerator{
+    public:
+        ParserSymbol::SLRstate Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 24;
     };
 };
 

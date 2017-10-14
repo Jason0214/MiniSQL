@@ -37,6 +37,9 @@ public:
     ~Lexer();
 
     void loadText(const std::string & raw_text);
+    void clear(){
+      this->result.token_list_.clear();
+    }
     
     TokenStream result;
     std::string error_info;
