@@ -7,8 +7,9 @@ using namespace std;
 using namespace ParserSymbol;
 
 ASTreeNode* reduceAttrId(ASTNodeStack & s){
-    ASTreeNode* node_with_addrid = new ASTreeNode(attrID, parallel, s.pop());
-    return node_with_addrid;
+    ASTreeNode* node_with_attr = s.pop();
+    ASTreeNode* node_with_attrid = new ASTreeNode(attrID, parallel, node_with_attr) ;
+    return node_with_attrid;
 }
 
 ASTreeNode* reduceAttrIdWithTableId(ASTNodeStack & s){
@@ -55,7 +56,7 @@ ASTreeNode* reduceTableWithoutAlias(ASTNodeStack & s){
 ASTreeNode* reduceTableWithAlias(ASTNodeStack & s){
     ASTreeNode* node_with_alias = s.pop();
     ASTreeNode* node_with_tableid = s.pop();
-    ASTreeNode* node_with_table = new ASTreeNode(table, as, s.pop(), s.pop());
+    ASTreeNode* node_with_table = new ASTreeNode(table, as, node_with_alias, node_with_tableid);
     return node_with_table;
 }
 
@@ -89,7 +90,7 @@ ASTreeNode* reduceCondition(ASTNodeStack & s){
 ASTreeNode* reduceConditionSet(ASTNodeStack & s){
     ASTNodeStack tmp_stack;
     tmp_stack.push(s.pop());
-    while(s.top()->getTag() == table_set){
+    while(s.top()->getTag() == condition_set){
         tmp_stack.push(s.pop());
         tmp_stack.push(s.pop());
     }

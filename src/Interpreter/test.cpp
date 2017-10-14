@@ -1,7 +1,10 @@
-#include "Lexer.h"
 #include <iostream>
 #include <string>
 #include <list>
+
+#include "Lexer/Lexer.h"
+#include "Parser/Parser.h"
+
 
 using namespace std;
 
@@ -20,8 +23,13 @@ int main(){
     }
     Lexer lexer;
     lexer.loadText(sql_sentence);
-    for(list<Token>::iterator i = lexer.result.begin(); i != lexer.result.end(); i++){
-        cout << i->type << " " << i->content << endl; 
-    }
+     for(list<Token>::iterator i = lexer.result.token_list_.begin(); i != lexer.result.token_list_.end(); i++){
+         cout << i->type << " " << i->content <<"|" << endl;
+     }
+
+    Parser parse;
+    parse.parseSentence(lexer.result);
+    parse.getASTree().print();
+
     return 0;
 }

@@ -1,3 +1,6 @@
+#ifndef __LEXER_H__
+#define __LEXER_H__
+
 #include "Token.h"
 #include "TokenProto.h"
 #include <list>
@@ -22,7 +25,7 @@ public:
     int size() const{
         return (int)(this->token_list_.size());
     }
-private:
+
     std::list<Token> token_list_;
 };
 
@@ -41,3 +44,5 @@ private:
     void setErrInfo(int beg_index, const std::string & raw_text);
     TokenProto* token_protos[PROTO_NUM];
 };
+
+#endif

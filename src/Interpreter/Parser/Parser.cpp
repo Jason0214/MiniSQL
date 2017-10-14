@@ -3,6 +3,9 @@
 #include <string>
 #include <stack>
 
+#include <cassert>
+#include <iostream>
+
 #include "../../EXCEPTION.h"
 
 using namespace std;
@@ -22,21 +25,20 @@ void Parser::loadGenerator(){
     this->generators_[7] = new Generator::wait_attr_alias();
     this->generators_[8] = new Generator::reduce_attr_with_alias();
     this->generators_[9] = new Generator::reduce_attr_set();
-    this->generators_[10] = new Generator::wait_attr_set_again();
-    this->generators_[11] = new Generator::wait_from();
-    this->generators_[12] = new Generator::wait_table_id();
-    this->generators_[13] = new Generator::reduce_table_id();
-    this->generators_[14] = new Generator::reduce_table();
-    this->generators_[15] = new Generator::wait_table_alias();
-    this->generators_[16] = new Generator::reduce_table_with_alias();
-    this->generators_[17] = new Generator::reduce_table_set();
-    this->generators_[18] = new Generator::wait_where();
-    this->generators_[19] = new Generator::wait_condition();
-    this->generators_[20] = new Generator::wait_num_or_str();
-    this->generators_[21] = new Generator::wait_equality();
-    this->generators_[22] = new Generator::reduce_condition();
-    this->generators_[23] = new Generator::reduce_condition_set();
-    this->generators_[24] = new Generator::reduce_query();
+    this->generators_[10] = new Generator::wait_from();
+    this->generators_[11] = new Generator::wait_table_id();
+    this->generators_[12] = new Generator::reduce_table_id();
+    this->generators_[13] = new Generator::reduce_table();
+    this->generators_[14] = new Generator::wait_table_alias();
+    this->generators_[15] = new Generator::reduce_table_with_alias();
+    this->generators_[16] = new Generator::reduce_table_set();
+    this->generators_[17] = new Generator::wait_where();
+    this->generators_[18] = new Generator::wait_condition();
+    this->generators_[19] = new Generator::wait_num_or_str();
+    this->generators_[20] = new Generator::wait_equality();
+    this->generators_[21] = new Generator::reduce_condition();
+    this->generators_[22] = new Generator::reduce_condition_set();
+    this->generators_[23] = new Generator::reduce_query();
 }
 
 void Parser::deleteGenerator(){
@@ -73,16 +75,19 @@ void Parser::parseSelectSentence(TokenStream & token_stream){
     ParserSymbol::SLRstate state = ParserSymbol::WAIT_SELECT;
     try{
         while(state != ParserSymbol::FINISH){
+            cout << state << endl;
             state = this->getGenerator(state)->Accept(token_stream, s);
         }
         this->astree_ = ASTree(s.pop());
+        assert(s.size() == 0);
     }
     catch(const Exception & e){
         while(!s.empty()){
-            ASTree::destroyTree(s.top());
+            s.top()->free();
             delete s.top();
             s.pop();
         }
-        throw e;
+        cout << e.err;
+        this->astree_ = NULL;
     }
 }

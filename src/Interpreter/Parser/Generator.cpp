@@ -40,7 +40,8 @@ SLRstate Generator::reduce_attr_id::Accept(TokenStream & token_stream, ASTNodeSt
     }
     else{
         ASTreeNode* attrIdNode = reduceAttrId(s);
-        if(s.empty() || s.top()->getTag() == ParserSymbol::attr){
+        if(s.empty() || s.top()->getTag() == ParserSymbol::attr
+                      || s.top()->getTag() == ParserSymbol::attr_set){
             // select attrID
             next_state = REDUCE_ATTR; //6
         }
@@ -88,7 +89,7 @@ SLRstate Generator::reduce_attr_id_with_table_id::Accept(TokenStream & token_str
 SLRstate Generator::reduce_attr::Accept(TokenStream & token_stream, ASTNodeStack & s){
     SLRstate next_state;
     const Token & lookahead = token_stream.front();
-    if(lookahead.type == Token::SYMBOL && lookahead.content == "as"){
+    if(lookahead.type == Token::KEYWORD && lookahead.content == "as"){
         token_stream.pop_front();
         next_state = WAIT_ATTR_ALIAS; //7
     }
@@ -222,6 +223,7 @@ SLRstate Generator::reduce_table_set::Accept(TokenStream & token_stream, ASTNode
     else{
         ASTreeNode* table_set_node = reduceTableSet(s);
         next_state = WAIT_WHERE;
+        s.push(table_set_node);
     }
     return next_state;
 }
@@ -252,7 +254,7 @@ SLRstate Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNodeS
     const Token & tkn_to_eat = token_stream.pop_front();
     SLRstate next_state;
     if(tkn_to_eat.type == Token::INTS || tkn_to_eat.type == Token::FLOATS || tkn_to_eat.type == Token::STR){
-        if(s.top()->getTag() == equality){
+        if(s.top()->getTag() == condition){
             next_state = REDUCE_CONDITION;
         }
         else{
@@ -270,7 +272,24 @@ SLRstate Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNodeS
 SLRstate Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::EQUALITY){
-        s.push(new ASTreeNode(tkn_to_eat));
+        if(tkn_to_eat.content == "="){
+            s.push(new ASTreeNode(condition, equal_));
+        }
+        else if(tkn_to_eat.content == "<="){
+            s.push(new ASTreeNode(condition, less_equal));
+        }
+        else if(tkn_to_eat.content == ">="){
+            s.push(new ASTreeNode(condition, larger_equal));
+        }
+        else if(tkn_to_eat.content == "<"){
+            s.push(new ASTreeNode(condition, less_));
+        }
+        else if(tkn_to_eat.content == ">"){
+            s.push(new ASTreeNode(condition, larger_));
+        }
+        else if(tkn_to_eat.content == "<>"){
+            s.push(new ASTreeNode(condition, not_equal));
+        }
         return WAIT_CONDITION;
     }
     else{
@@ -280,6 +299,7 @@ SLRstate Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeSta
 
 SLRstate Generator::reduce_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
     ASTreeNode* node_with_condition = reduceCondition(s);
+    s.push(node_with_condition);
     return REDUCE_CONDITION_SET;
 }
 
@@ -297,8 +317,9 @@ SLRstate Generator::reduce_condition_set::Accept(TokenStream & token_stream, AST
     else{
         ASTreeNode* node_with_condition_set = reduceConditionSet(s);
         s.push(node_with_condition_set);
-        return REDUCE_QUERY;
+        next_state = REDUCE_QUERY;
     }
+    return next_state;
 }
 
 SLRstate Generator::reduce_query::Accept(TokenStream & token_stream, ASTNodeStack & s){

@@ -15,6 +15,10 @@ public:
         this->deleteGenerator();
     };
     void parseSentence(TokenStream & token_stream);
+
+    const ASTree & getASTree() const{
+        return this->astree_;
+    }
 private:
     Parser(const Parser &);
     const Parser & operator=(const Parser &);

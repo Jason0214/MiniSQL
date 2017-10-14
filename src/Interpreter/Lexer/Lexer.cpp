@@ -26,29 +26,27 @@ Lexer::~Lexer(){
 void Lexer::loadText(const string & raw_text){
     int scan_index = 0;
     while(scan_index < raw_text.size()){
-        // denote the match length
-        int match_offset = 0;
 
-        // tmp pointer to token prototype
-        TokenProto* tmp_ptr = NULL;
-
-        // try to match token with token prototype by pirority
+        // try to find the longest match
+        int max_match_len = 0;
+        int match_proto_index = 0;
         for(int i = 0; i < PROTO_NUM; i++){
-            tmp_ptr = this->token_protos[i];
-            match_offset = tmp_ptr->regexMatch(&(raw_text.c_str()[scan_index]));
-            if(match_offset != 0){
-                // if matched and prototype is not space, add to result
-                if(tmp_ptr->target_token_type != Token::NONE){
-                    this->result.push_back(Token(tmp_ptr->target_token_type, 
-                                raw_text.substr(scan_index, match_offset)));
-                }
-                scan_index += match_offset;
-                break;
+            int tmp_match_len = this->token_protos[i]->regexMatch(&(raw_text.c_str()[scan_index]));
+            if(max_match_len < tmp_match_len){
+                max_match_len = tmp_match_len;
+                match_proto_index = i;
             }
         }
-        if(match_offset == 0){
+        if(max_match_len == 0){
             this->setErrInfo(scan_index, raw_text);
             throw LexingError();
+        }
+        else{
+            Token::TokenType match_type = this->token_protos[match_proto_index]->target_token_type;
+            if(match_type != Token::NONE){
+                this->result.push_back(Token(match_type, raw_text.substr(scan_index, max_match_len)));
+            }
+            scan_index += max_match_len;    
         }
     }
     this->result.push_back(Token());
