@@ -3,9 +3,6 @@
 #include <string>
 #include <stack>
 
-#include <cassert>
-#include <iostream>
-
 #include "../../EXCEPTION.h"
 
 using namespace std;
@@ -54,7 +51,6 @@ void Parser::parseSentence(TokenStream & token_stream){
     if(t.type == Token::KEYWORD){
         if(t.content == "select"){
             parseSelectSentence(token_stream);
- 
         }
         else if(t.content == "insert"){
 
@@ -76,11 +72,9 @@ void Parser::parseSelectSentence(TokenStream & token_stream){
     ParserSymbol::SLRstate state = ParserSymbol::WAIT_SELECT;
     try{
         while(state != ParserSymbol::FINISH){
-            cout << state << endl;
             state = this->getGenerator(state)->Accept(token_stream, s);
         }
-        this->astree_ = ASTree(s.pop());
-        assert(s.size() == 0);
+        this->astree_ = ASTree(s.pop(), "select");
     }
     catch(const Exception & e){
         while(!s.empty()){
@@ -88,7 +82,6 @@ void Parser::parseSelectSentence(TokenStream & token_stream){
             delete s.top();
             s.pop();
         }
-        cout << e.err;
         this->astree_ = NULL;
     }
 }

@@ -55,11 +55,15 @@ private:
 class ASTree{
 public:
     ASTree():root_(NULL){};
-    ASTree(ASTreeNode* tree_root):root_(tree_root){}
+    ASTree(ASTreeNode* tree_root, const std::string & type)
+            :root_(tree_root),type_(type){}
     ~ASTree(){
  //       this->destroy();
     }
 
+    std::string & getType(){
+        return this->type_;
+    }
     void print() const;
 
     void destroy(){
@@ -68,6 +72,7 @@ public:
     }
 private:
     ASTreeNode* root_;
+    std::string type_;
 };
 
 

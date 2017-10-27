@@ -39,6 +39,7 @@ namespace ParserSymbol{
     }Action;
 
     typedef enum{
+        //select
         FINISH,
         WAIT_SELECT,
         WAIT_ATTR_ID,
@@ -57,7 +58,7 @@ namespace ParserSymbol{
         REDUCE_TABLE_WITH_ALIAS,
         REDUCE_TABLE_SET,
         WAIT_WHERE,
-        REDUCE_QUERY_WITHOUT_CONDOTION,
+        REDUCE_QUERY_WITHOUT_CONDITION,
         WAIT_CONDITION,
         WAIT_NUM_OR_STR,
         WAIT_EQUALITY,

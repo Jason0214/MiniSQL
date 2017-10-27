@@ -235,7 +235,7 @@ SLRstate Generator::wait_where::Accept(TokenStream & token_stream, ASTNodeStack 
         return WAIT_CONDITION;
     }
     else{
-        return  REDUCE_QUERY_WITHOUT_CONDOTION;
+        return  REDUCE_QUERY_WITHOUT_CONDITION;
     }
 }
 
