@@ -114,9 +114,9 @@ void TableBlock::GetAttrMeta(char* attr_name, DBenum & attr_type, uint16_t attr_
 }
 
 // use a attributes type list to format block data
-// make access element convient
+// make access element convenient
 void RecordBlock::Format(const DBenum* attr_type, uint16_t attr_num, unsigned short key){
-	if(this->is_formated) return;
+	if(this->is_formatted) return;
 	this->tuple_size = 0;
 	this->key_index = key;
 	this->attr_num = attr_num;
@@ -127,13 +127,13 @@ void RecordBlock::Format(const DBenum* attr_type, uint16_t attr_num, unsigned sh
 		this->type[i] = attr_type[i];
 		this->tuple_size += size[i];
 	}
-	this->is_formated = true;
+	this->is_formatted = true;
 	// if(this->tuple_size > BLOCK_SIZE - DATA_BEG){
 	// 	throw TooLargeTuple();
 	// }
 }
 
-// given a data's row and colomn (row,colomn counts from 0)
+// given a data's row and column (row,column counts from 0)
 // return its pointer
 uint8_t* RecordBlock::GetDataPtr(unsigned short row, unsigned short colomn){
 	unsigned short target_row_size = 0;

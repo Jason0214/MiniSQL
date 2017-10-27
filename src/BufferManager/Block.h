@@ -146,7 +146,7 @@ public:
 	unsigned short tuple_size;
 private:
 	static const size_t DATA_BEG = BLOCK_HEAD_SIZE + 2;
-	bool is_formated;
+	bool is_formatted;
 	unsigned short* size;
 	DBenum* type;
 	unsigned short key_index;
