@@ -3,6 +3,9 @@
 #include <string>
 #include <stack>
 
+
+#include <iostream>
+
 #include "../../EXCEPTION.h"
 
 using namespace std;
@@ -82,6 +85,14 @@ void Parser::parseSelectSentence(TokenStream & token_stream){
             delete s.top();
             s.pop();
         }
-        this->astree_ = NULL;
+        this->astree_.destroy();
+        throw e;
+    }
+
+    // free
+    while(!s.empty()){
+        s.top()->free();
+        delete s.top();
+        s.pop();
     }
 }

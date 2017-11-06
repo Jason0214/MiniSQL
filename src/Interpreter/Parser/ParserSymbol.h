@@ -6,7 +6,7 @@ namespace ParserSymbol{
         none,
         
         identifier,
-        str,
+        str_,
         float_,
         int_,
         
@@ -29,9 +29,9 @@ namespace ParserSymbol{
         equal_,
         less_,
         larger_,
-        larger_equal,
-        less_equal,
-        not_equal,
+        larger_equal_,
+        less_equal_,
+        not_equal_,
         and_,
         or_,
         as,

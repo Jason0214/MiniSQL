@@ -5,6 +5,8 @@
 
 #include "Lexer/Lexer.h"
 #include "Parser/Parser.h"
+#include "Executor/QueryExecutor.h"
+#include "../EXCEPTION.h"
 
 
 using namespace std;
@@ -20,11 +22,12 @@ void generateCase(vector<string> & cases){
     cases.push_back("select * from a where b=c or b = c");
     cases.push_back("select * from a where 1=3.2");
     cases.push_back("select * from a where \"aaa\"=c");
-    cases.push_back("select * from a where 1=2.2 and c = 1");
+    cases.push_back("select * from a  1=2.2 and c = 1");
     cases.push_back("select a from b");
     cases.push_back("select a from b where c = d");
     cases.push_back("select * from (select a from b) where b=c");
     cases.push_back("select * from (select a from b where b = c) where b=c");
+    cases.push_back("select asdf form asf");
 }
 
 void printToken(TokenStream& ss){
@@ -36,13 +39,21 @@ void printToken(TokenStream& ss){
 int main(){
     Lexer lexer;
     Parser parser;
+    QueryExecutor executor;
 
     vector<string> test_cases;
     generateCase(test_cases);
     for(unsigned int i = 0; i < test_cases.size(); i++){
-        lexer.loadText(test_cases[i]);
-        parser.parseSentence(lexer.result);
-        parser.getASTree().print();
+        try{
+            lexer.loadText(test_cases[i]);
+            parser.parseSentence(lexer.result);
+            //       parser.getASTree().print();
+            executor.run(parser.getASTree().getRoot());
+        }
+        catch (Exception & e){
+            cout << e.err << endl;
+        }
+        executor.clear();
         parser.clear();
         lexer.clear();
     }

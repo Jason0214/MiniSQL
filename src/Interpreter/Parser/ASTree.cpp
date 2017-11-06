@@ -28,7 +28,7 @@ ASTreeNode::ASTreeNode(const Token & token):content_(token.content){
             this->tag_ = float_;
             break;
         case Token::STR:
-            this->tag_ = str;
+            this->tag_ = str_;
             break;
         default:
             assert(0 == 1);
@@ -74,7 +74,7 @@ void ASTree::print()const{
         switch(tmp->getTag()){
             case none: cout << "none "; break;
             case identifier: cout << "identifier "; break;
-            case str: cout << "str "; break;
+            case str_: cout << "str "; break;
             case float_: cout << "float "; break;
             case int_: cout << "int "; break;
             case query: cout << "query ";break;

@@ -21,8 +21,8 @@ public:
         this->children_.push_back(new_child);
     }
 
-    int childrenCount(){
-        return (unsigned int)(this->children_.size());
+    int childrenCount() const{
+        return (int)(this->children_.size());
     }
 
     ParserSymbol::Tag getTag() const{
@@ -61,14 +61,20 @@ public:
  //       this->destroy();
     }
 
-    std::string & getType(){
+    const std::string & getType() const{
         return this->type_;
+    }
+    const ASTreeNode * getRoot() const{
+        return this->root_;
     }
     void print() const;
 
     void destroy(){
-        this->root_->free();
-        delete this->root_;
+        if(this->root_ != NULL){
+            this->root_->free();
+            delete this->root_;
+            this->root_ = NULL;
+        }
     }
 private:
     ASTreeNode* root_;

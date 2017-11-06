@@ -2,6 +2,8 @@
 #include <regex.h>
 #include <string>
 
+#include "../../EXCEPTION.h"
+
 using namespace std;
 
 Lexer::Lexer(){
@@ -38,8 +40,7 @@ void Lexer::loadText(const string & raw_text){
             }
         }
         if(max_match_len == 0){
-            this->setErrInfo(scan_index, raw_text);
-            throw LexingError();
+            throw LexingError(getErrInfo(scan_index, raw_text));
         }
         else{
             Token::TokenType match_type = this->token_protos[match_proto_index]->target_token_type;
@@ -52,12 +53,13 @@ void Lexer::loadText(const string & raw_text){
     this->result.push_back(Token());
 }
 
-void Lexer::setErrInfo(int beg_index, const string & raw_text){
+string Lexer::getErrInfo(int beg_index, const string & raw_text){
     regex_t p_err_reg;
     size_t nmatch = 1;
     regmatch_t pmatch[1];
     regcomp(&p_err_reg, "^\\s*([^\\s]+)", REG_EXTENDED);
     regexec(&p_err_reg, &(raw_text.c_str()[beg_index]), nmatch, pmatch, 0);
-    this->error_info = raw_text.substr(beg_index+pmatch[0].rm_so, pmatch[0].rm_eo - pmatch[0].rm_so);
+    string error_info = raw_text.substr(beg_index+pmatch[0].rm_so, pmatch[0].rm_eo - pmatch[0].rm_so);
     regfree(&p_err_reg);
+    return error_info;
 }

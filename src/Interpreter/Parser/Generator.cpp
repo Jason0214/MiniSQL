@@ -96,7 +96,7 @@ SLRstate Generator::reduce_attr::Accept(TokenStream & token_stream, ASTNodeStack
         next_state = WAIT_ATTR_ALIAS; //7
     }
     else{
-        ASTreeNode* attr_node = reduceAttr(s);
+        ASTreeNode* attr_node = reduceAttrWithoutAlias(s);
         s.push(attr_node);
         next_state = REDUCE_ATTR_SET;
     }
@@ -288,10 +288,10 @@ SLRstate Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeSta
             s.push(new ASTreeNode(condition, equal_));
         }
         else if(tkn_to_eat.content == "<="){
-            s.push(new ASTreeNode(condition, less_equal));
+            s.push(new ASTreeNode(condition, less_equal_));
         }
         else if(tkn_to_eat.content == ">="){
-            s.push(new ASTreeNode(condition, larger_equal));
+            s.push(new ASTreeNode(condition, larger_equal_));
         }
         else if(tkn_to_eat.content == "<"){
             s.push(new ASTreeNode(condition, less_));
@@ -300,7 +300,7 @@ SLRstate Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeSta
             s.push(new ASTreeNode(condition, larger_));
         }
         else if(tkn_to_eat.content == "<>"){
-            s.push(new ASTreeNode(condition, not_equal));
+            s.push(new ASTreeNode(condition, not_equal_));
         }
         return WAIT_CONDITION;
     }

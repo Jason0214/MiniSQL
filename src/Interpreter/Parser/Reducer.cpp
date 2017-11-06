@@ -22,7 +22,7 @@ ASTreeNode* reduceAttrIdWithTableId(ASTNodeStack & s){
 }
 
 
-ASTreeNode* reduceAttr(ASTNodeStack & s){
+ASTreeNode* reduceAttrWithoutAlias(ASTNodeStack & s){
     ASTreeNode* node_with_attr = new ASTreeNode(attr, parallel, s.pop());
     return node_with_attr;
 }
@@ -56,7 +56,7 @@ ASTreeNode* reduceTableWithoutAlias(ASTNodeStack & s){
 ASTreeNode* reduceTableWithAlias(ASTNodeStack & s){
     ASTreeNode* node_with_alias = s.pop();
     ASTreeNode* node_with_tableid = s.pop();
-    ASTreeNode* node_with_table = new ASTreeNode(table, as, node_with_alias, node_with_tableid);
+    ASTreeNode* node_with_table = new ASTreeNode(table, as, node_with_tableid, node_with_alias);
     return node_with_table;
 }
 

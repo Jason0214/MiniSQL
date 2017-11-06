@@ -7,7 +7,7 @@ ASTreeNode* reduceAttrId(ASTNodeStack & s);
 
 ASTreeNode* reduceAttrIdWithTableId(ASTNodeStack & s);
 
-ASTreeNode* reduceAttr(ASTNodeStack & s);
+ASTreeNode* reduceAttrWithoutAlias(ASTNodeStack & s);
 
 ASTreeNode* reduceAttrWithAlias(ASTNodeStack & s);
 
