@@ -7,10 +7,43 @@ public:
 	Exception(const std::string & msg)
 	{
 		memcpy(err, msg.c_str(), 255*sizeof(char));
-		err[255] = 0;
+		err[511] = 0;
 	}
-	char err[256];
+	char err[512];
 };
+
+class ParseError: public Exception{
+public:
+    ParseError(const std::string & content, const std::string & info)
+            :Exception(std::string("Parser Error: ")+"at '" + content + "' " + info){}
+};
+
+class ExecuteError: public Exception{
+public:
+    ExecuteError(const std::string & content, const std::string & info)
+            :Exception("Execute Error: '"+content + "' " + info){}
+};
+
+class LexingError: public Exception{
+public:
+    LexingError(const std::string & info)
+            :Exception("Lexer Error: "+info){}
+};
+
+class TODO: public Exception{
+public:
+    TODO(const std::string & info)
+            :Exception("TODO: "+info){}
+};
+
+class FalseCondition: public Exception{
+public:
+    FalseCondition():Exception(""){}
+};
+
+
+
+
 
 class DuplicatedTableName :public Exception {
 public:
@@ -83,9 +116,4 @@ public:
 class SameAttrNameWithDifferType : public Exception{
 public:
 	SameAttrNameWithDifferType(const std::string & msg) : Exception(msg){}
-};
-
-class ParseError: public Exception{
-public:
-	ParseError(const std::string & content, const std::string & info):Exception("at '" + content + "'' " + info){}
 };

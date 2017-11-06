@@ -2,6 +2,8 @@
 #include "../BufferManager/BufferManager.h"
 #include "../CatalogManager/Catalog.h"
 
+using namespace std;
+
 static BufferManager & buffer_manager = BufferManager::Instance();
 static Catalog & catalog = Catalog::Instance();
 

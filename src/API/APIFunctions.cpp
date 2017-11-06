@@ -5,7 +5,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include "IO.h"
 #include "APIStructures.h"
 
 #include "../BufferManager/Block.h"
@@ -411,7 +410,6 @@ void ExeOutputTable(const TableAliasMap& tableAlias, const string& sourceTableNa
 	}
 	cout << horizontalBorder << endl;
 	cout << "end_result" << endl;
-	Flush();
 	delete begin;
 	delete end;
 }
@@ -431,7 +429,6 @@ void ExeInsert(const string& tableName, InsertValueVector& values) {
 	table->insertTuple(tuple.entry_ptr());
 	cout << "1 Row Affected" << endl;
 	cout << "end_result" << endl;
-	Flush();
 }
 
 static void DeleteTableBlock(Table* table_ptr, RecordBlock* data_block_ptr){
@@ -613,7 +610,6 @@ void ExeUpdate(const string& tableName, const string& attrName,
 	delete [] raw_value;
 	cout << updated_tuple_count << " Row Affected" << endl;
 	cout << "end_result" << endl;
-	Flush();
 }
 
 //
@@ -688,7 +684,6 @@ void ExeDelete(const string& tableName, const ComparisonVector& cmpVec)
 	}
 	cout << deleted_tuple_count << " Rows Affected" << endl;
 	cout << "end_result" << endl;
-	Flush();
 	delete [] tuple_data_ptr;
 }
 
@@ -700,12 +695,10 @@ void ExeDropIndex(const string& indexName)
 	catch (const IndexNotFound &) {
 		cout << "Index `" << indexName << "` Not Found" << endl;
 		cout << "end_result" << endl;
-		Flush();
 		return;
 	}
 	cout << "Drop Index Named `" << indexName << "` Successfully" << endl;
 	cout << "end_result" << endl;
-	Flush();
 	return;
 }
 
@@ -717,12 +710,10 @@ void ExeDropTable(const string& tableName, bool echo)
 	catch (const TableNotFound) {
 		if (echo) cout << "Table `" << tableName << "` Not Found" << endl;
 		if (echo) cout << "end_result" << endl;
-		Flush();
 		return;
 	}
 	if (echo) cout << "Drop Table `" << tableName << "` Successfully" << endl;
 	if (echo) cout << "end_result" << endl;
-	Flush();
 	return;
 }
 
@@ -735,23 +726,19 @@ void ExeCreateIndex(const string& tableName, const string& attrName, const strin
 	catch (const DuplicatedIndex &) {
 		cout << "Duplicated Index `" << indexName << "`" << endl;
 		cout << "end_result" << endl;
-		Flush();
 		return;
 	}
 	catch (const TableNotFound & ) {
 		cout << "Table `" << tableName << "` Not Found" << endl;
 		cout << "end_result" << endl;
-		Flush();
 		return;
 	}
 	catch (const AttributeNotFound &) {
 		cout << "Attribute `" << attrName << "` Not Found" << endl;
 		cout << "end_result" << endl;
-		Flush();
 	}
 	cout << "Create Index on `" << tableName << "` Successfully" << endl;
 	cout << "end_result" << endl;
-	Flush();
 }
 
 void ExeCreateTable(const string& tableName, const AttrDefinitionVector& defVec)
@@ -802,7 +789,6 @@ void ExeCreateTable(const string& tableName, const AttrDefinitionVector& defVec)
 	}
 	cout << "Create Table `" << tableName << "` Successfully" << endl;
 	cout << "end_result" << endl;
-	Flush();
 	delete[] attr_name_list;
 	delete[] attr_type_list;
 	return;

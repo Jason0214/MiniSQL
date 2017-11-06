@@ -36,7 +36,7 @@ public:
 	static std::string Alias4IndirectAttr(const std::string & table_name, 
 										const std::string & attr_name, 
 										unsigned int seed){
-		stringstream ss;
+		std::stringstream ss;
 		ss << "_" << table_name << "_" << seed;
 		return ss.str();
 	}
@@ -67,7 +67,7 @@ public:
 	}
 
 	static void naturalJoin(DBenum join_type, Table* src_table1, Table* src_table2, Table* dst_table,
-							const AttributesAliasVector & attr_alias,  const vector<pair<int,int> > & commonAttrIndex){
+							const AttributesAliasVector & attr_alias,  const std::vector<std::pair<int,int> > & commonAttrIndex){
 		switch(join_type){
 			case DB_DOUBLE_BLOCK_NESTED_JOIN: 
 				doubleBlockNestedNaturalJoin(src_table1, src_table2, dst_table, attr_alias, commonAttrIndex); 
@@ -110,13 +110,13 @@ private:
 	const RecordManager & operator=(const RecordManager &);
 
 	static void doubleBlockNestedNaturalJoin(Table* src_table1, Table* src_table2, Table* dst_table,
-							const AttributesAliasVector & attr_alias,  const vector<pair<int,int> > & commonAttrIndex);
+							const AttributesAliasVector & attr_alias,  const std::vector<std::pair<int,int> > & commonAttrIndex);
 
 	static void singleBlockNestedNaturalJoin(Table* src_table1, Table* src_table2, Table* dst_table,
-							const AttributesAliasVector & attr_alias,  const vector<pair<int,int> > & commonAttrIndex);
+							const AttributesAliasVector & attr_alias,  const std::vector<std::pair<int,int> > & commonAttrIndex);
 
 	static void tupleNestedLoopNaturalJoin(Table* src_table1, Table* src_table2, Table* dst_table,
-							const AttributesAliasVector & attr_alias,  const vector<pair<int,int> > & commonAttrIndex);
+							const AttributesAliasVector & attr_alias,  const std::vector<std::pair<int,int> > & commonAttrIndex);
 
 	static void doubleBlockNestedJoin(Table* src_table1, Table* src_table2, Table* dst_table,
 							const AttributesAliasVector & attr_alias);

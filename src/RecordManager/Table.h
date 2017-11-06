@@ -56,7 +56,7 @@ public:
 
     // use primary index to reduce the search area
     // when doing tuple comparision 
-    pair<TableIterator*, TableIterator*> PrimaryIndexFilter(const std::string & op, const string & value);
+    std::pair<TableIterator*, TableIterator*> PrimaryIndexFilter(const std::string & op, const std::string & value);
 
     void insertTuple(const void** tuple_data_ptr){
         if(this->table_flag == DB_TEMPORAL_TABLE){

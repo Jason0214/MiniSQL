@@ -115,7 +115,7 @@ public:
 		this->RecordNum() = 0;
 		this->size = NULL;
 		this->type = NULL;
-		this->is_formated = false;
+		this->is_formatted = false;
 	}
 	RecordBlock(uint8_t* buf):Block(buf){
 		this->size = NULL;
