@@ -26,6 +26,10 @@ string QueryExecutor::run(const ASTreeNode* node){
         freeExeTree(exe_tree);
         return ret;
     }
+    catch(FalseCondition & e){
+        freeExeTree(exe_tree);
+        throw e;
+    }
     catch (Exception & e){
         freeExeTree(exe_tree);
         throw e;
@@ -93,6 +97,10 @@ ExeTree* QueryExecutor::parseTableSet(ASTreeNode* node){
 }
 
 void QueryExecutor::parseConditionSet(ExeTree* t, ASTreeNode* condition_set_node){
+    if(condition_set_node->childrenCount() == 1){
+        parseCondition(t, condition_set_node->getChild(0));
+        return;
+    }
     if(condition_set_node->getAction() == and_){
         if(condition_set_node->getChild(0)->getTag() == condition_set
            && condition_set_node->getChild(1)->getTag() == condition_set){
@@ -118,7 +126,7 @@ void QueryExecutor::parseConditionSet(ExeTree* t, ASTreeNode* condition_set_node
 }
 
 void QueryExecutor::parseCondition(ExeTree* t, ASTreeNode* condition_node){
-    if(condition_node->getChild(0)->getTag() == attrID && condition_node->getChild(0)->getTag() == attrID){
+    if(condition_node->getChild(0)->getTag() == attrID && condition_node->getChild(1)->getTag() == attrID){
         throw TODO("conditionally join currently not supported");
     }
     else if(condition_node->getChild(0)->getTag() == attrID){
@@ -249,6 +257,9 @@ bool QueryExecutor::descendSelection(ExeTree* t, Action equality, ASTreeNode* at
 }
 
 void QueryExecutor::parseProjection(ExeTree* root, ASTreeNode* attr_set_node){
+    if(attr_set_node->getTag() == star){
+        return;
+    }
     for(int i = 0; i < attr_set_node->childrenCount(); i++){
         AttrNameAlias args;
         ASTreeNode* attr_node = attr_set_node->getChild(i);
@@ -290,15 +301,7 @@ void QueryExecutor::joinTable(ExeTree* t){
     }
     if(t->select_args.size() != 0){
         string dst_table_name = this->getTmpTableName();
-        if(t->join_type == join){
-            cout << "do selection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
-        }
-        else if(t->join_type == naturaljoin){
-            cout << "do selection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
-        }
-        else{
-            cout << "join error" << endl;
-        }
+        cout << "do selection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
         t->table_name = dst_table_name;
     }
     if(t->project_args.size() != 0){

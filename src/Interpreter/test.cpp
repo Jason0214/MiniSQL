@@ -13,8 +13,8 @@ using namespace std;
 
 void generateCase(vector<string> & cases){
     cases.push_back("select * from a   ");
-    cases.push_back("select * from a where b=c");
-    cases.push_back("select * from a, b where b=c");
+    cases.push_back("select * from a where 1=c");
+    cases.push_back("select * from a, b where b=2");
     cases.push_back("select * from a join b where b=c");
     cases.push_back("select * from a naturaljoin b where b=c");
     cases.push_back("select * from a, b, c where b=c");
@@ -48,7 +48,12 @@ int main(){
             lexer.loadText(test_cases[i]);
             parser.parseSentence(lexer.result);
             //       parser.getASTree().print();
-            executor.run(parser.getASTree().getRoot());
+            string final_table = executor.run(parser.getASTree().getRoot());
+            cout << "output: " << final_table << endl << endl;
+
+        }
+        catch (FalseCondition & ){
+            cout << "empty" << endl;
         }
         catch (Exception & e){
             cout << e.err << endl;

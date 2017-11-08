@@ -106,6 +106,10 @@ ASTreeNode* reduceConditionSet(ASTNodeStack & s){
         table_set_node->appendChild(right_child);
         right_child = table_set_node;
     }
+    if(right_child->getTag() == condition){
+        // only one table in table_set
+        right_child = new ASTreeNode(condition_set, and_, right_child);
+    }
     return right_child;
 }
 
