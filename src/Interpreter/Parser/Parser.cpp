@@ -10,42 +10,42 @@
 
 using namespace std;
 
-Generator::ASTgenerator* Parser::getGenerator(ParserSymbol::SLRstate state){
-    return this->generators_[(unsigned int)state];
+Generator::QueryGenerator* Parser::getGenerator(ParserSymbol::QueryState state){
+    return this->query_generators_[(unsigned int)state];
 }
 
 void Parser::loadGenerator(){
-    this->generators_[0] = NULL;
-    this->generators_[1] = new Generator::wait_select();
-    this->generators_[2] = new Generator::wait_attr_id();
-    this->generators_[3] = new Generator::reduce_attr_id();
-    this->generators_[4] = new Generator::wait_addr_dot_right();
-    this->generators_[5] = new Generator::reduce_attr_id_with_table_id();
-    this->generators_[6] = new Generator::reduce_attr();
-    this->generators_[7] = new Generator::wait_attr_alias();
-    this->generators_[8] = new Generator::reduce_attr_with_alias();
-    this->generators_[9] = new Generator::reduce_attr_set();
-    this->generators_[10] = new Generator::wait_from();
-    this->generators_[11] = new Generator::wait_table_id();
-    this->generators_[12] = new Generator::reduce_table_id();
-    this->generators_[13] = new Generator::reduce_table();
-    this->generators_[14] = new Generator::wait_table_alias();
-    this->generators_[15] = new Generator::reduce_table_with_alias();
-    this->generators_[16] = new Generator::reduce_table_set();
-    this->generators_[17] = new Generator::wait_where();
-    this->generators_[18] = new Generator::reduce_query_without_condition();
-    this->generators_[19] = new Generator::wait_condition();
-    this->generators_[20] = new Generator::wait_num_or_str();
-    this->generators_[21] = new Generator::wait_equality();
-    this->generators_[22] = new Generator::reduce_condition();
-    this->generators_[23] = new Generator::reduce_condition_set();
-    this->generators_[24] = new Generator::reduce_query_with_condition();
+    this->query_generators_[0] = NULL;
+    this->query_generators_[1] = new Generator::wait_select();
+    this->query_generators_[2] = new Generator::wait_attr_id();
+    this->query_generators_[3] = new Generator::reduce_attr_id();
+    this->query_generators_[4] = new Generator::wait_addr_dot_right();
+    this->query_generators_[5] = new Generator::reduce_attr_id_with_table_id();
+    this->query_generators_[6] = new Generator::reduce_attr();
+    this->query_generators_[7] = new Generator::wait_attr_alias();
+    this->query_generators_[8] = new Generator::reduce_attr_with_alias();
+    this->query_generators_[9] = new Generator::reduce_attr_set();
+    this->query_generators_[10] = new Generator::wait_from();
+    this->query_generators_[11] = new Generator::wait_table_id();
+    this->query_generators_[12] = new Generator::reduce_table_id();
+    this->query_generators_[13] = new Generator::reduce_table();
+    this->query_generators_[14] = new Generator::wait_table_alias();
+    this->query_generators_[15] = new Generator::reduce_table_with_alias();
+    this->query_generators_[16] = new Generator::reduce_table_set();
+    this->query_generators_[17] = new Generator::wait_where();
+    this->query_generators_[18] = new Generator::reduce_query_without_condition();
+    this->query_generators_[19] = new Generator::wait_condition();
+    this->query_generators_[20] = new Generator::wait_num_or_str();
+    this->query_generators_[21] = new Generator::wait_equality();
+    this->query_generators_[22] = new Generator::reduce_condition();
+    this->query_generators_[23] = new Generator::reduce_condition_set();
+    this->query_generators_[24] = new Generator::reduce_query_with_condition();
 }
 
 void Parser::deleteGenerator(){
-    for(int i = 0; i < GENERATOR_CNT; i++){
-        delete this->generators_[i];
-        this->generators_[i] = NULL;
+    for(int i = 0; i < QUERY_STATE_CNT; i++){
+        delete this->query_generators_[i];
+        this->query_generators_[i] = NULL;
     }
 }
 
@@ -59,10 +59,13 @@ void Parser::parseSentence(TokenStream & token_stream){
 
         }
         else if(t.content == "delete"){
-
+            parseDeleteSentence(token_stream);
         }
         else if(t.content == "drop"){
             
+        }
+        else if(t.content == "update"){
+
         }
     }
     else{
@@ -72,7 +75,7 @@ void Parser::parseSentence(TokenStream & token_stream){
 
 void Parser::parseSelectSentence(TokenStream & token_stream){
     ASTNodeStack s; 
-    ParserSymbol::SLRstate state = ParserSymbol::WAIT_SELECT;
+    ParserSymbol::QueryState state = ParserSymbol::WAIT_SELECT;
     try{
         while(state != ParserSymbol::FINISH){
             state = this->getGenerator(state)->Accept(token_stream, s);
@@ -95,4 +98,8 @@ void Parser::parseSelectSentence(TokenStream & token_stream){
         delete s.top();
         s.pop();
     }
+}
+
+void Parser::parseDeleteSentence(TokenStream& token_stream){
+
 }

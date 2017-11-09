@@ -6,7 +6,7 @@
 using namespace std;
 using namespace ParserSymbol;
 
-SLRstate Generator::wait_select::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::wait_select::Accept(TokenStream & token_stream, ASTNodeStack & s){
     Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::KEYWORD && tkn_to_eat.content == "select"){
         return WAIT_ATTR_ID;
@@ -15,9 +15,9 @@ SLRstate Generator::wait_select::Accept(TokenStream & token_stream, ASTNodeStack
 }
 
 
-SLRstate Generator::wait_attr_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::wait_attr_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
     Token tkn_to_eat = token_stream.pop_front();
-    SLRstate next_state;
+    QueryState next_state;
     if(tkn_to_eat.type == Token::IDENTIFIER){
         s.push(new ASTreeNode(tkn_to_eat));
         next_state = REDUCE_ATTR_ID;
@@ -32,8 +32,8 @@ SLRstate Generator::wait_attr_id::Accept(TokenStream & token_stream, ASTNodeStac
     return next_state;
 }
 
-SLRstate Generator::reduce_attr_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    SLRstate next_state;
+QueryState Generator::reduce_attr_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    QueryState next_state;
     const Token & lookahead = token_stream.front();
     //SLR
     if(lookahead.type == Token::SYMBOL && lookahead.content == "."){
@@ -58,8 +58,8 @@ SLRstate Generator::reduce_attr_id::Accept(TokenStream & token_stream, ASTNodeSt
     return next_state;
 }
 
-SLRstate Generator::wait_addr_dot_right::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    SLRstate next_state;
+QueryState Generator::wait_addr_dot_right::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    QueryState next_state;
     Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::IDENTIFIER){
         s.push(new ASTreeNode(tkn_to_eat));
@@ -71,8 +71,8 @@ SLRstate Generator::wait_addr_dot_right::Accept(TokenStream & token_stream, ASTN
     return next_state;
 }
 
-SLRstate Generator::reduce_attr_id_with_table_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    SLRstate next_state;
+QueryState Generator::reduce_attr_id_with_table_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    QueryState next_state;
     ASTreeNode* attrIdWithTableID = reduceAttrIdWithTableId(s); 
     if(s.empty() || s.top()->getTag() == ParserSymbol::attr){
         // select attrID
@@ -88,8 +88,8 @@ SLRstate Generator::reduce_attr_id_with_table_id::Accept(TokenStream & token_str
     return next_state;
 }
 
-SLRstate Generator::reduce_attr::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    SLRstate next_state;
+QueryState Generator::reduce_attr::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    QueryState next_state;
     const Token & lookahead = token_stream.front();
     if(lookahead.type == Token::KEYWORD && lookahead.content == "as"){
         token_stream.pop_front();
@@ -103,8 +103,8 @@ SLRstate Generator::reduce_attr::Accept(TokenStream & token_stream, ASTNodeStack
     return next_state;
 }
 
-SLRstate Generator::wait_attr_alias::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    SLRstate next_state;
+QueryState Generator::wait_attr_alias::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    QueryState next_state;
     Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::IDENTIFIER){
         s.push(new ASTreeNode(tkn_to_eat));
@@ -117,14 +117,14 @@ SLRstate Generator::wait_attr_alias::Accept(TokenStream & token_stream, ASTNodeS
 }
 
 
-SLRstate Generator::reduce_attr_with_alias::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_attr_with_alias::Accept(TokenStream & token_stream, ASTNodeStack & s){
     ASTreeNode* attr_node_with_alias = reduceAttrWithAlias(s);
     s.push(attr_node_with_alias);
     return REDUCE_ATTR_SET;
 }
 
-SLRstate Generator::reduce_attr_set::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    SLRstate next_state;
+QueryState Generator::reduce_attr_set::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    QueryState next_state;
     const Token & lookahead = token_stream.front();
     if(lookahead.type == Token::SYMBOL && lookahead.content == ","){
         token_stream.pop_front();
@@ -139,7 +139,7 @@ SLRstate Generator::reduce_attr_set::Accept(TokenStream & token_stream, ASTNodeS
 }
 
 
-SLRstate Generator::wait_from::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::wait_from::Accept(TokenStream & token_stream, ASTNodeStack & s){
     Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::KEYWORD && tkn_to_eat.content == "from"){
         return WAIT_TABLE_ID;
@@ -148,8 +148,8 @@ SLRstate Generator::wait_from::Accept(TokenStream & token_stream, ASTNodeStack &
 }
 
 
-SLRstate Generator::wait_table_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    SLRstate next_state;
+QueryState Generator::wait_table_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    QueryState next_state;
     Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::SYMBOL && tkn_to_eat.content == "("){
         next_state = WAIT_SELECT;
@@ -164,14 +164,14 @@ SLRstate Generator::wait_table_id::Accept(TokenStream & token_stream, ASTNodeSta
     return next_state;
 }
 
-SLRstate Generator::reduce_table_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_table_id::Accept(TokenStream & token_stream, ASTNodeStack & s){
     s.push(reduceTableID(s));
     return REDUCE_TABLE;
 }
 
-SLRstate Generator::reduce_table::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_table::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & lookahead = token_stream.front();
-    SLRstate next_state;
+    QueryState next_state;
     if(lookahead.type == Token::KEYWORD && lookahead.content == "as"){
         next_state = WAIT_TABLE_ALIAS;
         token_stream.pop_front();
@@ -184,7 +184,7 @@ SLRstate Generator::reduce_table::Accept(TokenStream & token_stream, ASTNodeStac
     return next_state;
 }
 
-SLRstate Generator::wait_table_alias::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::wait_table_alias::Accept(TokenStream & token_stream, ASTNodeStack & s){
     Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::IDENTIFIER){
         s.push(new ASTreeNode(tkn_to_eat));
@@ -195,16 +195,16 @@ SLRstate Generator::wait_table_alias::Accept(TokenStream & token_stream, ASTNode
     return REDUCE_TABLE_WITH_ALIAS;
 }
 
-SLRstate Generator::reduce_table_with_alias::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_table_with_alias::Accept(TokenStream & token_stream, ASTNodeStack & s){
     ASTreeNode* node_with_aliased_table = reduceTableWithAlias(s);
     s.push(node_with_aliased_table);
     return REDUCE_TABLE_SET;
 }
 
 //19
-SLRstate Generator::reduce_table_set::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_table_set::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & lookahead = token_stream.front();
-    SLRstate next_state;
+    QueryState next_state;
     if(lookahead.type == Token::KEYWORD && lookahead.content == "join"){
         next_state = WAIT_TABLE_ID;
         token_stream.pop_front();
@@ -228,7 +228,7 @@ SLRstate Generator::reduce_table_set::Accept(TokenStream & token_stream, ASTNode
     return next_state;
 }
 
-SLRstate Generator::wait_where::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::wait_where::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & lookahead = token_stream.front();
     if(lookahead.type == Token::KEYWORD && lookahead.content == "where"){
         token_stream.pop_front();
@@ -239,7 +239,7 @@ SLRstate Generator::wait_where::Accept(TokenStream & token_stream, ASTNodeStack 
     }
 }
 
-SLRstate Generator::reduce_query_without_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_query_without_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
     s.push(reduceQueryWithoutCondition(s));
     const Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::SYMBOL && tkn_to_eat.content == ")"){
@@ -252,9 +252,9 @@ SLRstate Generator::reduce_query_without_condition::Accept(TokenStream & token_s
     throw ParseError(tkn_to_eat.content, "end of query.");
 }
 
-SLRstate Generator::wait_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::wait_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & lookahead = token_stream.front();
-    SLRstate next_state;
+    QueryState next_state;
     if(lookahead.type == Token::IDENTIFIER){
         next_state = WAIT_ATTR_ID;
     }
@@ -265,9 +265,9 @@ SLRstate Generator::wait_condition::Accept(TokenStream & token_stream, ASTNodeSt
 }
 
 
-SLRstate Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & tkn_to_eat = token_stream.pop_front();
-    SLRstate next_state;
+    QueryState next_state;
     if(tkn_to_eat.type == Token::INTS || tkn_to_eat.type == Token::FLOATS || tkn_to_eat.type == Token::STR){
         if(s.top()->getTag() == condition){
             next_state = REDUCE_CONDITION;
@@ -281,7 +281,7 @@ SLRstate Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNodeS
     throw ParseError(tkn_to_eat.content, "expect int or float or string");
 }
 
-SLRstate Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::EQUALITY){
         if(tkn_to_eat.content == "="){
@@ -308,15 +308,15 @@ SLRstate Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeSta
     throw ParseError(tkn_to_eat.content, "expect = or <> or < or > or <= or >=");
 }
 
-SLRstate Generator::reduce_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
     ASTreeNode* node_with_condition = reduceCondition(s);
     s.push(node_with_condition);
     return REDUCE_CONDITION_SET;
 }
 
-SLRstate Generator::reduce_condition_set::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_condition_set::Accept(TokenStream & token_stream, ASTNodeStack & s){
     const Token & lookahead = token_stream.front();
-    SLRstate next_state;
+    QueryState next_state;
     if(lookahead.type == Token::KEYWORD && lookahead.content == "and"){
         next_state = WAIT_CONDITION;
         token_stream.pop_front();
@@ -335,7 +335,7 @@ SLRstate Generator::reduce_condition_set::Accept(TokenStream & token_stream, AST
     return next_state;
 }
 
-SLRstate Generator::reduce_query_with_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
+QueryState Generator::reduce_query_with_condition::Accept(TokenStream & token_stream, ASTNodeStack & s){
     s.push(reduceQueryWithCondition(s));
     const Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::SYMBOL && tkn_to_eat.content == ")"){

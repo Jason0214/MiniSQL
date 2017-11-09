@@ -299,12 +299,12 @@ void QueryExecutor::joinTable(ExeTree* t){
         cout << "join two tables: " << t->left->table_name << ","<<t->right->table_name<<" ;dst table" << dst_table_name <<endl;
         t->table_name = dst_table_name;
     }
-    if(t->select_args.size() != 0){
+    if(!t->select_args.empty()){
         string dst_table_name = this->getTmpTableName();
         cout << "do selection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
         t->table_name = dst_table_name;
     }
-    if(t->project_args.size() != 0){
+    if(!t->project_args.empty()){
         string dst_table_name = this->getTmpTableName();
         cout << "do projection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
         t->table_name = dst_table_name;

@@ -31,8 +31,8 @@ private:
     
     void parseSelectSentence(TokenStream & token_stream);
 
-    Generator::ASTgenerator* getGenerator(ParserSymbol::SLRstate state);
-    Generator::ASTgenerator* generators_[GENERATOR_CNT];
+    Generator::QueryGenerator* getGenerator(ParserSymbol::QueryState state);
+    Generator::QueryGenerator* query_generators_[QUERY_STATE_CNT];
 
     ASTree astree_;
 };

@@ -65,7 +65,7 @@ namespace ParserSymbol{
         REDUCE_CONDITION,
         REDUCE_CONDITION_SET,
         REDUCE_QUERY_WITH_CONDITION
-    }SLRstate;
+    }QueryState;
 }
 
 #endif
