@@ -33,17 +33,8 @@
 2. delete -> "delete" "from" id "where" condition_set
 3. condition_set -> condition "and"/"or" condition_set
 4. condition_set -> condition
-
-### Drop table
-1. S` -> drop
-2. drop -> "drop" "table" id
-
-### update
-1. S` -> update
-2. update -> "update" id "set" assign_set
-3. assign_set -> assign "," assign_set 
-4. assign_set -> assign
-5. assign -> id "=" int/float/string
+5. condition -> attrID "="/"<="/">="/"<"/">"/"<>" attrID
+6. condition -> attrID "="/"<="/">="/"<"/">"/"<>" str/int/float
 
 ### create table
 1. S` -> create
@@ -54,6 +45,17 @@
 6. meta -> id type "primary" "key"
 6. type -> keyword
 7. type -> keyword "(" int ")"
+
+### update
+1. S` -> update
+2. update -> "update" id "set" assign_set
+3. assign_set -> assign "," assign_set 
+4. assign_set -> assign
+5. assign -> id "=" int/float/string
+
+### Drop table
+1. S` -> drop
+2. drop -> "drop" "table" id
 
 ### create index
 1. S` -> "create" "index" id "on" id

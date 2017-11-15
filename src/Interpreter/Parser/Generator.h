@@ -1,22 +1,16 @@
-#ifndef __GENERATOR_H__
-#define __GENERATOR_H__
+#ifndef __QUERY_GENERATOR_H__
+#define __QUERY_GENERATOR_H__
 
 #include <stack>
 
+#include "Generator.h"
 #include "../Lexer/Lexer.h"
 #include "ASTree.h"
 #include "ParserSymbol.h"
 
 #define QUERY_STATE_CNT 25
 
-namespace Generator{
-    class QueryGenerator{
-    public:
-        QueryGenerator(){};
-        virtual ~ASTgenerator(){};
-        virtual ParserSymbol::QueryState
-                Accept(TokenStream & token_stream, ASTNodeStack & s) = 0;
-    };
+namespace QueryGenerator{
 
 
     class wait_select:public QueryGenerator{
