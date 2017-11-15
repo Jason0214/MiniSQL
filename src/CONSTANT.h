@@ -1,9 +1,6 @@
 #ifndef _CONSTANT_H_
 #define _CONSTANT_H_
 
-#define INTLEN 10
-#define FLOATLEN 12
-#define STRLEN 15
 
 typedef enum {
 	DB_RECORD_BLOCK = 1,

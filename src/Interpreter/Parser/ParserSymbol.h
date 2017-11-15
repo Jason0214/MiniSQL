@@ -1,6 +1,9 @@
 #ifndef __PARSER_SYMBOL__
 #define __PARSER_SYMBOL__
 
+#define QUERY_STATE_CNT 25
+#define DELETE_STATE_CNT 11
+
 namespace ParserSymbol{
     typedef enum{
         none,
@@ -10,7 +13,12 @@ namespace ParserSymbol{
         float_,
         int_,
         
-        query,
+        query_,
+        delete_,
+        drop_table,
+        drop_index,
+        create_index,
+
         attr_set,
         attrID,
         attr,
@@ -40,7 +48,7 @@ namespace ParserSymbol{
 
     typedef enum{
         //select
-        FINISH,
+        FINISH_QUERY,
         WAIT_SELECT,
         WAIT_ATTR_ID,
         REDUCE_ATTR_ID,
@@ -66,6 +74,20 @@ namespace ParserSymbol{
         REDUCE_CONDITION_SET,
         REDUCE_QUERY_WITH_CONDITION
     }QueryState;
+
+    typedef enum{
+        FINISH_DELETE,
+        WAIT_FROM_IN_DELETE,
+        WAIT_TABLE_ID_IN_DELETE,
+        WAIT_WHERE_IN_DELETE,
+        WAIT_CONDITION_IN_DELETE,
+        WAIT_ATTR_IN_DELETE,
+        WAIT_NUM_OR_STR_IN_DELETE,
+        WAIT_EQUALITY_IN_DELETE,
+        REDUCE_CONDITION_IN_DELETE,
+        REDUCE_CONDITION_SET_IN_DELETE,
+        REDUCE_DELETE
+    }DeleteState;
 }
 
 #endif

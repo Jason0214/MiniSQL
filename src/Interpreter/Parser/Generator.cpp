@@ -6,6 +6,10 @@
 using namespace std;
 using namespace ParserSymbol;
 
+//
+// select parser generators
+//
+
 QueryState Generator::wait_select::Accept(TokenStream & token_stream, ASTNodeStack & s){
     Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::KEYWORD && tkn_to_eat.content == "select"){
@@ -246,7 +250,7 @@ QueryState Generator::reduce_query_without_condition::Accept(TokenStream & token
         return REDUCE_TABLE_ID;
     }
     if(tkn_to_eat.type == Token::NONE){
-        return FINISH;
+        return FINISH_QUERY;
     }
 
     throw ParseError(tkn_to_eat.content, "end of query.");
@@ -266,7 +270,7 @@ QueryState Generator::wait_condition::Accept(TokenStream & token_stream, ASTNode
 
 
 QueryState Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    const Token & tkn_to_eat = token_stream.pop_front();
+    Token tkn_to_eat = token_stream.pop_front();
     QueryState next_state;
     if(tkn_to_eat.type == Token::INTS || tkn_to_eat.type == Token::FLOATS || tkn_to_eat.type == Token::STR){
         if(s.top()->getTag() == condition){
@@ -282,7 +286,7 @@ QueryState Generator::wait_num_or_str::Accept(TokenStream & token_stream, ASTNod
 }
 
 QueryState Generator::wait_equality::Accept(TokenStream & token_stream, ASTNodeStack & s){
-    const Token & tkn_to_eat = token_stream.pop_front();
+    Token tkn_to_eat = token_stream.pop_front();
     if(tkn_to_eat.type == Token::EQUALITY){
         if(tkn_to_eat.content == "="){
             s.push(new ASTreeNode(condition, equal_));
@@ -342,7 +346,146 @@ QueryState Generator::reduce_query_with_condition::Accept(TokenStream & token_st
         return REDUCE_TABLE_ID;
     }   
     if(tkn_to_eat.type == Token::NONE){
-        return FINISH;
+        return FINISH_QUERY;
+    }
+
+    throw ParseError(tkn_to_eat.content, "end of query.");
+}
+
+//
+// delete parser generators
+//
+
+
+DeleteState Generator::wait_from_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    Token token_tmp_1 = token_stream.pop_front();
+    Token token_tmp_2 = token_stream.pop_front();
+    if(token_tmp_1.type == Token::KEYWORD && token_tmp_2.type == Token::KEYWORD &&
+            token_tmp_1.content == "delete" && token_tmp_2.content == "from"){
+        return WAIT_TABLE_ID_IN_DELETE;
+    }
+
+    throw ParseError(token_tmp_2.content, "expect from");
+}
+
+DeleteState Generator::wait_table_id_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    Token tkn_to_eat = token_stream.pop_front();
+    if(tkn_to_eat.type == Token::IDENTIFIER){
+        s.push(new ASTreeNode(tkn_to_eat));
+        return WAIT_WHERE_IN_DELETE;
+    }
+
+    throw ParseError(tkn_to_eat.content, "expect table ID");
+}
+
+DeleteState Generator::wait_where_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    Token tkn_to_eat = token_stream.pop_front();
+    if(tkn_to_eat.type == Token::KEYWORD && tkn_to_eat.content == "where"){
+        return WAIT_CONDITION_IN_DELETE;
+    }
+
+    throw ParseError(tkn_to_eat.content, "expect where");
+}
+
+DeleteState Generator::wait_condition_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    const Token & lookahead = token_stream.front();
+    DeleteState next_state;
+    if(lookahead.type == Token::IDENTIFIER){
+        next_state = WAIT_ATTR_IN_DELETE;
+    }
+    else{
+        next_state = WAIT_NUM_OR_STR_IN_DELETE;
+    }
+    return next_state;
+}
+
+DeleteState Generator::wait_attr_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    Token tkn_to_eat = token_stream.pop_front();
+    s.push(new ASTreeNode(tkn_to_eat));
+    const Token & lookahead = token_stream.front();
+    if(lookahead.type == Token::EQUALITY){
+        return WAIT_EQUALITY_IN_DELETE;
+    }
+    else{
+        return REDUCE_CONDITION_IN_DELETE;
+    }
+}
+
+DeleteState Generator::wait_num_or_str_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    Token tkn_to_eat = token_stream.pop_front();
+    DeleteState next_state;
+    if(tkn_to_eat.type == Token::INTS || tkn_to_eat.type == Token::FLOATS || tkn_to_eat.type == Token::STR){
+        if(s.top()->getTag() == condition){
+            next_state = REDUCE_CONDITION_IN_DELETE;
+        }
+        else{
+            next_state = WAIT_EQUALITY_IN_DELETE;
+        }
+        s.push(new ASTreeNode(tkn_to_eat));
+        return next_state;
+    }
+    throw ParseError(tkn_to_eat.content, "expect int or float or string");
+}
+
+DeleteState Generator::wait_equality_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    Token tkn_to_eat = token_stream.pop_front();
+    if(tkn_to_eat.type == Token::EQUALITY){
+        if(tkn_to_eat.content == "="){
+            s.push(new ASTreeNode(condition, equal_));
+        }
+        else if(tkn_to_eat.content == "<="){
+            s.push(new ASTreeNode(condition, less_equal_));
+        }
+        else if(tkn_to_eat.content == ">="){
+            s.push(new ASTreeNode(condition, larger_equal_));
+        }
+        else if(tkn_to_eat.content == "<"){
+            s.push(new ASTreeNode(condition, less_));
+        }
+        else if(tkn_to_eat.content == ">"){
+            s.push(new ASTreeNode(condition, larger_));
+        }
+        else if(tkn_to_eat.content == "<>"){
+            s.push(new ASTreeNode(condition, not_equal_));
+        }
+        return WAIT_CONDITION_IN_DELETE;
+    }
+
+    throw ParseError(tkn_to_eat.content, "expect = or <> or < or > or <= or >=");
+}
+
+DeleteState Generator::reduce_condition_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    ASTreeNode* node_with_condition = reduceCondition(s);
+    s.push(node_with_condition);
+    return REDUCE_CONDITION_SET_IN_DELETE;
+}
+
+DeleteState Generator::reduce_condition_set_in_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    const Token & lookahead = token_stream.front();
+    DeleteState next_state;
+    if(lookahead.type == Token::KEYWORD && lookahead.content == "and"){
+        next_state = WAIT_CONDITION_IN_DELETE;
+        token_stream.pop_front();
+        s.push(new ASTreeNode(condition_set, and_));
+    }
+    else if(lookahead.type == Token::KEYWORD && lookahead.content == "or"){
+        next_state = WAIT_CONDITION_IN_DELETE;
+        token_stream.pop_front();
+        s.push(new ASTreeNode(condition_set, or_));
+    }
+    else{
+        ASTreeNode* node_with_condition_set = reduceConditionSet(s);
+        s.push(node_with_condition_set);
+        next_state = REDUCE_DELETE;
+    }
+    return next_state;
+}
+
+DeleteState Generator::reduce_delete::Accept(TokenStream & token_stream, ASTNodeStack & s){
+    s.push(reduceDelete(s));
+    const Token tkn_to_eat = token_stream.pop_front();
+    if(tkn_to_eat.type == Token::NONE){
+        return FINISH_DELETE;
     }
 
     throw ParseError(tkn_to_eat.content, "end of query.");

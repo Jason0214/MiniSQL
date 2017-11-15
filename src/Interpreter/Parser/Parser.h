@@ -28,11 +28,24 @@ private:
 
     void loadGenerator();
     void deleteGenerator();
-    
-    void parseSelectSentence(TokenStream & token_stream);
 
-    Generator::QueryGenerator* getGenerator(ParserSymbol::QueryState state);
+    void parseCreateSentence(TokenStream & token_stream);
+    void parseDropSentence(TokenStream & token_stream);
+    void parseSelectSentence(TokenStream & token_stream);
+    void parseDeleteSentence(TokenStream & token_stream);
+    void parseDropIndexSentence(TokenStream & token_stream);
+    void parseCreateIndexSentence(TokenStream & token_stream);
+    void parseInsertSentence(TokenStream & token_stream);
+    void parseUpdateSentence(TokenStream & token_stream);
+    void parseCreateTableSentence(TokenStream & token_stream);
+    void parseDropTableSentence(TokenStream & token_stream);
+
+
+    Generator::QueryGenerator* getQueryGenerator(ParserSymbol::QueryState state);
+    Generator::DeleteGenerator* getDeleteGenerator(ParserSymbol::DeleteState state);
+
     Generator::QueryGenerator* query_generators_[QUERY_STATE_CNT];
+    Generator::DeleteGenerator* delete_generators_[DELETE_STATE_CNT];
 
     ASTree astree_;
 };

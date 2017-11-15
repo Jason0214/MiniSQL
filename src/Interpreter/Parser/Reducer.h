@@ -2,6 +2,7 @@
 #define __REDUCER_H__
 
 #include "ASTree.h"
+#include "ASTreeNodeStack.h"
 
 ASTreeNode* reduceAttrId(ASTNodeStack & s);
 
@@ -29,5 +30,6 @@ ASTreeNode* reduceQueryWithCondition(ASTNodeStack & s);
 
 ASTreeNode* reduceQueryWithoutCondition(ASTNodeStack & s);
 
+ASTreeNode* reduceDelete(ASTNodeStack & s);
 
 #endif

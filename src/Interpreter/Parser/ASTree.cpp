@@ -77,7 +77,7 @@ void ASTree::print()const{
             case str_: cout << "str "; break;
             case float_: cout << "float "; break;
             case int_: cout << "int "; break;
-            case query: cout << "query ";break;
+            case query_: cout << "query ";break;
             case attr_set: cout << "attr_set "; break;
             case attrID: cout << "attrID "; break;
             case attr: cout << "attr "; break;

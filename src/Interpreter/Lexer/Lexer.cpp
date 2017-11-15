@@ -50,6 +50,7 @@ void Lexer::loadText(const string & raw_text){
             scan_index += max_match_len;    
         }
     }
+    // add an empty token at end specify the end of token stream
     this->result.push_back(Token());
 }
 

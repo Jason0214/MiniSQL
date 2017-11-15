@@ -55,14 +55,18 @@ private:
 class ASTree{
 public:
     ASTree():root_(NULL){};
-    ASTree(ASTreeNode* tree_root, const std::string & type)
-            :root_(tree_root),type_(type){}
+    ASTree(ASTreeNode* tree_root):root_(tree_root){}
     ~ASTree(){
  //       this->destroy();
     }
 
-    const std::string & getType() const{
-        return this->type_;
+    ParserSymbol::Tag getType() const{
+        if(this->root_){
+            return this->root_->getTag();
+        }
+        else{
+            return ParserSymbol::none;
+        }
     }
     const ASTreeNode * getRoot() const{
         return this->root_;
@@ -78,34 +82,6 @@ public:
     }
 private:
     ASTreeNode* root_;
-    std::string type_;
-};
-
-
-
-class ASTNodeStack{
-public:
-    ASTNodeStack(){}
-    ~ASTNodeStack(){}
-    void push(ASTreeNode* n){
-        this->stack_.push(n);
-    }
-    ASTreeNode* pop(){
-        ASTreeNode* ret = this->stack_.top();
-        this->stack_.pop();
-        return ret;
-    }
-    ASTreeNode* top() const{
-        return this->stack_.top();
-    }
-    bool empty() const{
-        return this->stack_.empty();
-    }
-    int size() const{
-        return (int)(this->stack_.size());
-    } 
-private:
-    std::stack<ASTreeNode*> stack_;
 };
 
 #endif

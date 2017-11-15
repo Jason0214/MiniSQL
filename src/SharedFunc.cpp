@@ -6,6 +6,10 @@
 #include <iomanip>
 #include <sstream>
 
+#define INTLEN 10
+#define FLOATLEN 12
+#define STRLEN 15
+
 using namespace std;
 
 size_t typeLen(DBenum type) {

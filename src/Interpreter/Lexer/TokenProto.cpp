@@ -30,7 +30,7 @@ int TokenProto::regexMatch(const char *str){
     int error = regexec(&preg, str, nmatch, pmatch, 0);
 
     regfree(&preg);
-g
+
     if(!error){  
         return pmatch[0].rm_eo - pmatch[0].rm_so;        
     }

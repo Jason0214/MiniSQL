@@ -1,17 +1,20 @@
-#ifndef __QUERY_GENERATOR_H__
-#define __QUERY_GENERATOR_H__
+#ifndef __GENERATOR_H__
+#define __GENERATOR_H__
 
 #include <stack>
 
-#include "Generator.h"
 #include "../Lexer/Lexer.h"
 #include "ASTree.h"
+#include "ASTreeNodeStack.h"
 #include "ParserSymbol.h"
 
-#define QUERY_STATE_CNT 25
-
-namespace QueryGenerator{
-
+namespace Generator{
+    class QueryGenerator{
+    public:
+        QueryGenerator(){}
+        virtual  ~QueryGenerator(){}
+        virtual ParserSymbol::QueryState Accept(TokenStream & token_stream, ASTNodeStack & s);
+    };
 
     class wait_select:public QueryGenerator{
     public:
@@ -155,6 +158,66 @@ namespace QueryGenerator{
     public:
         ParserSymbol::QueryState Accept(TokenStream & token_stream, ASTNodeStack & s);
         static const int bind_state = 24;
+    };
+
+
+
+
+    class DeleteGenerator{
+    public:
+        DeleteGenerator(){}
+        virtual ~DeleteGenerator(){}
+        virtual ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+    };
+
+    class wait_from_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 1;
+    };
+
+    class wait_table_id_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 2;
+    };
+
+    class wait_where_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 3;
+    };
+
+    class wait_condition_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 4;
+    };
+
+    class wait_attr_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 5;
+    };
+
+    class wait_num_or_str_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 6;
+    };
+
+    class wait_equality_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 7;
+    };
+
+    class reduce_condition_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 8;
+    };
+
+    class reduce_condition_set_in_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 9;
+    };
+
+    class reduce_delete:public DeleteGenerator{
+        ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 10;
     };
 };
 
