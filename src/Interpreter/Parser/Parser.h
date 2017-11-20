@@ -41,11 +41,19 @@ private:
     void parseDropTableSentence(TokenStream & token_stream);
 
 
-    Generator::QueryGenerator* getQueryGenerator(ParserSymbol::QueryState state);
-    Generator::DeleteGenerator* getDeleteGenerator(ParserSymbol::DeleteState state);
+    Generator::QueryGenerator* getQueryGenerator(ParserSymbol::QueryState state){
+        return this->query_generators_[(unsigned int)state];
+    }
+    Generator::DeleteGenerator* getDeleteGenerator(ParserSymbol::DeleteState state){
+        return this->delete_generators_[(unsigned int)state];
+    }
+    Generator::InsertGenerator* getInsertGenerator(ParserSymbol::InsertState state){
+        return this->insert_generators_[(unsigned int)state];
+    }
 
     Generator::QueryGenerator* query_generators_[QUERY_STATE_CNT];
     Generator::DeleteGenerator* delete_generators_[DELETE_STATE_CNT];
+    Generator::InsertGenerator* insert_generators_[INSERT_STATE_CNT];
 
     ASTree astree_;
 };

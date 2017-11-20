@@ -13,7 +13,7 @@ namespace Generator{
     public:
         QueryGenerator(){}
         virtual  ~QueryGenerator(){}
-        virtual ParserSymbol::QueryState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        virtual ParserSymbol::QueryState Accept(TokenStream & token_stream, ASTNodeStack & s) = 0;
     };
 
     class wait_select:public QueryGenerator{
@@ -167,7 +167,7 @@ namespace Generator{
     public:
         DeleteGenerator(){}
         virtual ~DeleteGenerator(){}
-        virtual ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        virtual ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s) = 0;
     };
 
     class wait_from_in_delete:public DeleteGenerator{
@@ -219,6 +219,51 @@ namespace Generator{
         ParserSymbol::DeleteState Accept(TokenStream & token_stream, ASTNodeStack & s);
         static const int bind_state = 10;
     };
+
+
+    class InsertGenerator{
+    public:
+        InsertGeneraotr(){}
+        virtual ~InsertGeneraotr(){}
+        virtual ParserSymbol::InsertState Accept(TokenStream & token_stream, ASTNodeStack & s) = 0;
+    };
+
+    class wait_insert:public InsertGenerator{
+        ParserSymbol::InsertState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 1;
+    };
+
+    class wait_into:public InsertGenerator{
+        ParserSymbol::InsertState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 2;
+    };
+
+    class wait_table_in_insert:public InsertGenerator{
+        ParserSymbol::InsertState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 3;
+    };
+
+    class wait_value_set:public InsertGenerator{
+        ParserSymbol::InsertState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 4;
+    };
+
+    class wait_single_value:public InsertGenerator{
+        ParserSymbol::InsertState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 5;
+    };
+
+    class begin_of_value_set:public InsertGenerator{
+        ParserSymbol::InsertState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 6;
+    };
+
+    class reduce_value_set:public InsertGenerator{
+        ParserSymbol::InsertState Accept(TokenStream & token_stream, ASTNodeStack & s);
+        static const int bind_state = 7;
+    };
+
+
 };
 
 

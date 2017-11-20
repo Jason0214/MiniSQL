@@ -10,7 +10,8 @@ const string TokenProto::SPACE_PATTERN = "^[ \t\r\n]+";
 const string TokenProto::SYMBOL_PATTERN = "^[,\\.\\(\\)\\*]";
 const string TokenProto::KEYWORD_PATTERN = "^select|^from|^where|^as|^join|^naturaljoin"
         "|^and|^or|^update|^delete|^insert|^drop|^table|^set"
-        "|^into|^values|^index|^create|^primary|^key|^index|^on";
+        "|^into|^values|^index|^create|^primary|^key|^index|"
+        "^on|^int|^flot|^char|^not|^null";
 const string TokenProto::EQUALITY_PATTERN = "^=|^<=|^>=|^<|^>|^<>";
 const string TokenProto::IDENTIFIER_PATTERN = "^`[^`]+`";
 const string TokenProto::DEFAULT_PATTERN = "^[_a-z][_a-z0-9]*";

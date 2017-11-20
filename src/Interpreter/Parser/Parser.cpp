@@ -11,14 +11,6 @@
 
 using namespace std;
 
-Generator::QueryGenerator* Parser::getQueryGenerator(ParserSymbol::QueryState state){
-    return this->query_generators_[(unsigned int)state];
-}
-
-Generator::DeleteGenerator* Parser::getDeleteGenerator(ParserSymbol::DeleteState state){
-    return this->delete_generators_[(unsigned int)state];
-}
-
 void Parser::loadGenerator(){
     this->query_generators_[0] = NULL;
     this->query_generators_[1] = new Generator::wait_select();
@@ -57,6 +49,15 @@ void Parser::loadGenerator(){
     this->delete_generators_[8] = new Generator::reduce_condition_in_delete();
     this->delete_generators_[9] = new Generator::reduce_condition_set_in_delete();
     this->delete_generators_[10] = new Generator::reduce_delete();
+
+    this->insert_generators_[0] = NULL;
+    this->insert_generators_[1] = new Generator::wait_insert();
+    this->insert_generators_[2] = new Generator::wait_into();
+    this->insert_generators_[3] = new Generator::wait_table_in_insert();
+    this->insert_generators_[5] = new Generator::wait_value_set();
+    this->insert_generators_[5] = new Generator::begin_of_value_set();
+    this->insert_generators_[6] = new Generator::wait_single_value();
+    this->insert_generators_[7] = new Generator::reduce_value_set();
 }
 
 void Parser::deleteGenerator(){
@@ -145,6 +146,24 @@ void Parser::parseDeleteSentence(TokenStream& token_stream){
     try{
         while(state != ParserSymbol::FINISH_DELETE){
             state = this->getDeleteGenerator(state)->Accept(token_stream, s);
+        }
+        this->astree_ = ASTree(s.pop());
+    }
+    catch(const Exception & e){
+        s.clear();
+        this->astree_.destroy();
+        throw e;
+    }
+
+    s.clear();
+}
+
+void Parser::parseInsertSentence(TokenStream & token_stream) {
+    ASTNodeStack s;
+    ParserSymbol::InsertState state = ParserSymbol::WAIT_INSERT;
+    try{
+        while(state != ParserSymbol::FINISH_INSERT){
+            state = this->getInsertGenerator(state)->Accept(token_stream, s);
         }
         this->astree_ = ASTree(s.pop());
     }

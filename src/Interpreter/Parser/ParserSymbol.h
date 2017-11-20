@@ -3,6 +3,7 @@
 
 #define QUERY_STATE_CNT 25
 #define DELETE_STATE_CNT 11
+#define INSERT_STATE_CNT 8
 
 namespace ParserSymbol{
     typedef enum{
@@ -15,6 +16,9 @@ namespace ParserSymbol{
         
         query_,
         delete_,
+        insert_,
+        update_,
+        create_table_,
         drop_table,
         drop_index,
         create_index,
@@ -26,7 +30,10 @@ namespace ParserSymbol{
         condition_set,
         condition,
         table,
-        tableID
+        tableID,
+
+        primary_key,
+        not_null,
     }Tag;
 
     typedef enum{
@@ -88,6 +95,30 @@ namespace ParserSymbol{
         REDUCE_CONDITION_SET_IN_DELETE,
         REDUCE_DELETE
     }DeleteState;
+
+    typedef enum{
+        FINISH_INSERT,
+        WAIT_INSERT,
+        WAIT_INTO,
+        WAIT_TABLE_IN_INSERT,
+        WAIT_VALUE_SET,
+        BEGIN_OF_VALUE_SET,
+        WAIT_SINGLE_VALUE,
+        REDUCE_VALUE_SET,
+    }InsertState;
+
+    typedef enum{
+        FINISH_CREATE_TABLE,
+        WAIT_TABLE_IN_CREATE_TABLE,
+        BEGIN_OF_META_SET,
+        WAIT_META,
+        WAIT_TYPE,
+        WAIT_TYPE_PARAM,
+        WAIT_CONSTRAIN,
+        REDUCE_TYPE,
+        REDUCE_META,
+        REDUCE_META_SET,
+    }CreateTableState;
 }
 
 #endif

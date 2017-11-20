@@ -422,6 +422,7 @@ void ExeInsert(const string& tableName, InsertValueVector& values) {
 	}
 
 	Tuple tuple(table->getAttrNum(), table->getAttrTypeList());
+    // FIXME: add exception
 	for(int i = 0; i < table->getAttrNum(); i++){
 		DBenum type = table->getAttrType(i);
 		string2Bytes(values[i], type, tuple[i]);
@@ -699,7 +700,6 @@ void ExeDropIndex(const string& indexName)
 	}
 	cout << "Drop Index Named `" << indexName << "` Successfully" << endl;
 	cout << "end_result" << endl;
-	return;
 }
 
 void ExeDropTable(const string& tableName, bool echo)
@@ -791,5 +791,4 @@ void ExeCreateTable(const string& tableName, const AttrDefinitionVector& defVec)
 	cout << "end_result" << endl;
 	delete[] attr_name_list;
 	delete[] attr_type_list;
-	return;
 }

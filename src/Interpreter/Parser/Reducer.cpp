@@ -141,3 +141,11 @@ ASTreeNode* reduceDelete(ASTNodeStack & s){
     delete_node->appendChild(condition_set_node);
     return delete_node;
 }
+
+ASTreeNode* reduceValueSet(ASTNodeStack & s){
+    ASTreeNode* value_set_node = new ASTreeNode(insert_, parallel);
+    while(!s.empty()){
+        value_set_node->appendChild(s.pop());
+    }
+    return value_set_node;
+}

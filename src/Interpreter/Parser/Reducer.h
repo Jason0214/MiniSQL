@@ -32,4 +32,6 @@ ASTreeNode* reduceQueryWithoutCondition(ASTNodeStack & s);
 
 ASTreeNode* reduceDelete(ASTNodeStack & s);
 
+ASTreeNode* reduceValueSet(ASTNodeStack & s);
+
 #endif
