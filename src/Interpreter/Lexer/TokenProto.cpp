@@ -11,7 +11,7 @@ const string TokenProto::SYMBOL_PATTERN = "^[,\\.\\(\\)\\*]";
 const string TokenProto::KEYWORD_PATTERN = "^select|^from|^where|^as|^join|^naturaljoin"
         "|^and|^or|^update|^delete|^insert|^drop|^table|^set"
         "|^into|^values|^index|^create|^primary|^key|^index|"
-        "^on|^int|^flot|^char|^not|^null";
+        "^on|^int|^float|^char|^varchar|^not|^null|^unique";
 const string TokenProto::EQUALITY_PATTERN = "^=|^<=|^>=|^<|^>|^<>";
 const string TokenProto::IDENTIFIER_PATTERN = "^`[^`]+`";
 const string TokenProto::DEFAULT_PATTERN = "^[_a-z][_a-z0-9]*";

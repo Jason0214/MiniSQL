@@ -11,62 +11,7 @@
 
 using namespace std;
 
-void Parser::loadGenerator(){
-    this->query_generators_[0] = NULL;
-    this->query_generators_[1] = new Generator::wait_select();
-    this->query_generators_[2] = new Generator::wait_attr_id();
-    this->query_generators_[3] = new Generator::reduce_attr_id();
-    this->query_generators_[4] = new Generator::wait_addr_dot_right();
-    this->query_generators_[5] = new Generator::reduce_attr_id_with_table_id();
-    this->query_generators_[6] = new Generator::reduce_attr();
-    this->query_generators_[7] = new Generator::wait_attr_alias();
-    this->query_generators_[8] = new Generator::reduce_attr_with_alias();
-    this->query_generators_[9] = new Generator::reduce_attr_set();
-    this->query_generators_[10] = new Generator::wait_from();
-    this->query_generators_[11] = new Generator::wait_table_id();
-    this->query_generators_[12] = new Generator::reduce_table_id();
-    this->query_generators_[13] = new Generator::reduce_table();
-    this->query_generators_[14] = new Generator::wait_table_alias();
-    this->query_generators_[15] = new Generator::reduce_table_with_alias();
-    this->query_generators_[16] = new Generator::reduce_table_set();
-    this->query_generators_[17] = new Generator::wait_where();
-    this->query_generators_[18] = new Generator::reduce_query_without_condition();
-    this->query_generators_[19] = new Generator::wait_condition();
-    this->query_generators_[20] = new Generator::wait_num_or_str();
-    this->query_generators_[21] = new Generator::wait_equality();
-    this->query_generators_[22] = new Generator::reduce_condition();
-    this->query_generators_[23] = new Generator::reduce_condition_set();
-    this->query_generators_[24] = new Generator::reduce_query_with_condition();
-
-    this->delete_generators_[0] = NULL;
-    this->delete_generators_[1] = new Generator::wait_from_in_delete();
-    this->delete_generators_[2] = new Generator::wait_table_id_in_delete();
-    this->delete_generators_[3] = new Generator::wait_where_in_delete();
-    this->delete_generators_[4] = new Generator::wait_condition_in_delete();
-    this->delete_generators_[5] = new Generator::wait_attr_in_delete();
-    this->delete_generators_[6] = new Generator::wait_num_or_str_in_delete();
-    this->delete_generators_[7] = new Generator::wait_equality_in_delete();
-    this->delete_generators_[8] = new Generator::reduce_condition_in_delete();
-    this->delete_generators_[9] = new Generator::reduce_condition_set_in_delete();
-    this->delete_generators_[10] = new Generator::reduce_delete();
-
-    this->insert_generators_[0] = NULL;
-    this->insert_generators_[1] = new Generator::wait_insert();
-    this->insert_generators_[2] = new Generator::wait_into();
-    this->insert_generators_[3] = new Generator::wait_table_in_insert();
-    this->insert_generators_[5] = new Generator::wait_value_set();
-    this->insert_generators_[5] = new Generator::begin_of_value_set();
-    this->insert_generators_[6] = new Generator::wait_single_value();
-    this->insert_generators_[7] = new Generator::reduce_value_set();
-}
-
-void Parser::deleteGenerator(){
-    for(int i = 0; i < QUERY_STATE_CNT; i++){
-        delete this->query_generators_[i];
-        this->query_generators_[i] = NULL;
-    }
-}
-
+// branch decision
 void Parser::parseSentence(TokenStream & token_stream){
     const Token & t = token_stream.front();
     if(t.type == Token::KEYWORD){
@@ -122,13 +67,12 @@ void Parser::parseDropSentence(TokenStream & token_stream) {
     }
 }
 
+
+// LR(1) parsing
 void Parser::parseSelectSentence(TokenStream & token_stream){
     ASTNodeStack s; 
-    ParserSymbol::QueryState state = ParserSymbol::WAIT_SELECT;
     try{
-        while(state != ParserSymbol::FINISH_QUERY){
-            state = this->getQueryGenerator(state)->Accept(token_stream, s);
-        }
+        this->query_generator_.Accept(token_stream, s);
         this->astree_ = ASTree(s.pop());
     }
     catch(const Exception & e){
@@ -142,11 +86,8 @@ void Parser::parseSelectSentence(TokenStream & token_stream){
 
 void Parser::parseDeleteSentence(TokenStream& token_stream){
     ASTNodeStack s;
-    ParserSymbol::DeleteState state = ParserSymbol::WAIT_FROM_IN_DELETE;
     try{
-        while(state != ParserSymbol::FINISH_DELETE){
-            state = this->getDeleteGenerator(state)->Accept(token_stream, s);
-        }
+        this->delete_generator_.Accept(token_stream, s);
         this->astree_ = ASTree(s.pop());
     }
     catch(const Exception & e){
@@ -160,11 +101,8 @@ void Parser::parseDeleteSentence(TokenStream& token_stream){
 
 void Parser::parseInsertSentence(TokenStream & token_stream) {
     ASTNodeStack s;
-    ParserSymbol::InsertState state = ParserSymbol::WAIT_INSERT;
     try{
-        while(state != ParserSymbol::FINISH_INSERT){
-            state = this->getInsertGenerator(state)->Accept(token_stream, s);
-        }
+        this->insert_generator_.Accept(token_stream, s);
         this->astree_ = ASTree(s.pop());
     }
     catch(const Exception & e){
@@ -176,6 +114,37 @@ void Parser::parseInsertSentence(TokenStream & token_stream) {
     s.clear();
 }
 
+void Parser::parseCreateTableSentence(TokenStream &token_stream) {
+    ASTNodeStack s;
+    try{
+        this->create_table_generator_.Accept(token_stream, s);
+        this->astree_ = ASTree(s.pop());
+    }
+    catch(const Exception & e){
+        s.clear();
+        this->astree_.destroy();
+        throw e;
+    }
+
+    s.clear();
+}
+
+void Parser::parseUpdateSentence(TokenStream &token_stream) {
+    ASTNodeStack s;
+    try{
+        this->update_generator_.Accept(token_stream, s);
+        this->astree_ = ASTree(s.pop());
+    }
+    catch(const Exception & e){
+        s.clear();
+        this->astree_.destroy();
+        throw e;
+    }
+
+    s.clear();
+}
+
+// simple parsing
 void Parser::parseDropTableSentence(TokenStream & token_stream){
     Token tkn = token_stream.pop_front();
     const Token & lookahead = token_stream.front();

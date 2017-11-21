@@ -34,4 +34,13 @@ ASTreeNode* reduceDelete(ASTNodeStack & s);
 
 ASTreeNode* reduceValueSet(ASTNodeStack & s);
 
+ASTreeNode* reduceType(ASTNodeStack & s);
+
+ASTreeNode* reduceMeta(ASTNodeStack & s);
+
+ASTreeNode* reduceMetaSet(ASTNodeStack & s);
+
+ASTreeNode* reduceAssign(ASTNodeStack & s);
+
+ASTreeNode* reduceAssignSet(ASTNodeStack & s);
 #endif

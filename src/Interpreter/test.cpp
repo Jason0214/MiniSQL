@@ -28,6 +28,12 @@ void generateCase(vector<string> & cases){
     cases.push_back("select * from (select a from b) where b=c");
     cases.push_back("select * from (select a from b where b = c) where b=c");
     cases.push_back("select asdf form asf");
+    cases.push_back("drop index a");
+    cases.push_back("create index a on b");
+    cases.push_back("drop table b");
+    cases.push_back("update a set b = 3, c = '1'");
+    cases.push_back("delete from b where c = 1");
+    cases.push_back("create table c(a int primary key, b char(32))");
 }
 
 void printToken(TokenStream& ss){
@@ -47,9 +53,9 @@ int main(){
         try{
             lexer.loadText(test_cases[i]);
             parser.parseSentence(lexer.result);
-            //       parser.getASTree().print();
-            string final_table = executor.run(parser.getASTree().getRoot());
-            cout << "output: " << final_table << endl << endl;
+            parser.getASTree().print();
+            // string final_table = executor.run(parser.getASTree().getRoot());
+            // cout << "output: " << final_table << endl << endl;
 
         }
         catch (FalseCondition & ){

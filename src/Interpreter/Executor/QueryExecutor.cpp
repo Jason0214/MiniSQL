@@ -55,7 +55,7 @@ string QueryExecutor::parseTable(ASTreeNode* table_node){
     string table_name;
     ASTreeNode* table_id_node = table_node->getChild(0);
     // check if nested query
-    if(table_id_node->getChild(0)->getTag() == query){
+    if(table_id_node->getChild(0)->getTag() == query_){
         table_name = this->run(table_id_node->getChild(0));
     }
     else{

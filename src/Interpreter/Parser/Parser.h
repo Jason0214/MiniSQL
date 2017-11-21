@@ -8,12 +8,8 @@
 
 class Parser{
 public:
-    Parser(){
-        this->loadGenerator();
-    }
-    ~Parser(){
-        this->deleteGenerator();
-    };
+    Parser(){}
+    ~Parser(){};
     void parseSentence(TokenStream & token_stream);
 
     const ASTree & getASTree() const{
@@ -26,9 +22,6 @@ private:
     Parser(const Parser &);
     const Parser & operator=(const Parser &);
 
-    void loadGenerator();
-    void deleteGenerator();
-
     void parseCreateSentence(TokenStream & token_stream);
     void parseDropSentence(TokenStream & token_stream);
     void parseSelectSentence(TokenStream & token_stream);
@@ -40,20 +33,11 @@ private:
     void parseCreateTableSentence(TokenStream & token_stream);
     void parseDropTableSentence(TokenStream & token_stream);
 
-
-    Generator::QueryGenerator* getQueryGenerator(ParserSymbol::QueryState state){
-        return this->query_generators_[(unsigned int)state];
-    }
-    Generator::DeleteGenerator* getDeleteGenerator(ParserSymbol::DeleteState state){
-        return this->delete_generators_[(unsigned int)state];
-    }
-    Generator::InsertGenerator* getInsertGenerator(ParserSymbol::InsertState state){
-        return this->insert_generators_[(unsigned int)state];
-    }
-
-    Generator::QueryGenerator* query_generators_[QUERY_STATE_CNT];
-    Generator::DeleteGenerator* delete_generators_[DELETE_STATE_CNT];
-    Generator::InsertGenerator* insert_generators_[INSERT_STATE_CNT];
+    Generator::QueryGenerator query_generator_;
+    Generator::DeleteGenerator delete_generator_;
+    Generator::InsertGenerator insert_generator_;
+    Generator::CreateTableGenerator create_table_generator_;
+    Generator::UpdateGenerator update_generator_;
 
     ASTree astree_;
 };

@@ -86,6 +86,17 @@ void ASTree::print()const{
             case condition: cout << "condition "; break;
             case table: cout << "table "; break;
             case tableID: cout << "tableID "; break;
+            case delete_:cout << "delete "; break;
+            case insert_:cout << "insert "; break;
+            case update_:cout << "update "; break;
+            case create_table_:cout << "create_table "; break;
+            case drop_table:cout << "drop_table "; break;
+            case drop_index:cout << "drop_index "; break;
+            case create_index:cout << "create_index "; break;
+            case type: cout << "type "; break;
+            case constrain: cout << "constrain "; break;
+            case meta: cout << "meta "; break;
+            case assign: cout << "assign "; break;
         }
     }
     cout << endl;
