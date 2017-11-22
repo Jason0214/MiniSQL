@@ -24,8 +24,6 @@ private:
     ExeTree* parseTableSet(ASTreeNode* node);
     void parseConditionSet(ExeTree* t, ASTreeNode* condition_set_node);
     void parseCondition(ExeTree* t, ASTreeNode* condition_node);
-    bool checkEquality(ParserSymbol::Action equality, ASTreeNode* left_node, ASTreeNode* right_node);
-    void appendSelectArgs(ExeTree* root, ParserSymbol::Action equality, ASTreeNode* attr, ASTreeNode* constant);
     bool descendSelection(ExeTree* t, ParserSymbol::Action equality, ASTreeNode* attr, ASTreeNode* constant);
     void parseProjection(ExeTree* root, ASTreeNode* attr_set_node);
     void joinTable(ExeTree* t);

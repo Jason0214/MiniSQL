@@ -151,11 +151,15 @@ ASTreeNode* reduceValueSet(ASTNodeStack & s){
 }
 
 ASTreeNode* reduceType(ASTNodeStack & s){
-    ASTreeNode* type_node = new ASTreeNode(type, parallel);
-    while(s.top()->getTag() != type){
-        type_node->appendChild(s.pop());
+    ASTreeNode* type_node = NULL;
+    if(s.top()->getTag() != type){
+        ASTreeNode* param_node = s.pop();
+        type_node = s.pop();
+        type_node->appendChild(param_node);
     }
-    type_node->appendChild(s.pop());
+    else{
+        type_node = s.pop();
+    }
     return type_node;
 }
 

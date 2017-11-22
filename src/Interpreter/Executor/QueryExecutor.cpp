@@ -5,6 +5,7 @@
 
 #include <iostream>
 
+#include "Executor.h"
 #include "../../EXCEPTION.h"
 #include "../Parser/ParserSymbol.h"
 
@@ -130,7 +131,9 @@ void QueryExecutor::parseCondition(ExeTree* t, ASTreeNode* condition_node){
         throw TODO("conditionally join currently not supported");
     }
     else if(condition_node->getChild(0)->getTag() == attrID){
-        if(condition_node->getChild(0)->getAction() == dot){
+        // attrID => ID . ID  (table.attr)
+        // or attrID => ID  (attr)
+        if(condition_node->getChild(0)->childrenCount() == 2){
             bool result = descendSelection(t, condition_node->getAction(),
                              condition_node->getChild(0), condition_node->getChild(1));
             if(!result){
@@ -138,12 +141,15 @@ void QueryExecutor::parseCondition(ExeTree* t, ASTreeNode* condition_node){
             }
         }
         else{
-            appendSelectArgs(t, condition_node->getAction(),
-                             condition_node->getChild(0), condition_node->getChild(1));
+            // attrID = constant
+            t->select_args.emplace_back(
+                    Executor::syntax2CmpSingleAttr(condition_node->getAction(),
+                            condition_node->getChild(0)->getChild(0), condition_node->getChild(1))
+            );
         }
     }
     else if(condition_node->getChild(1)->getTag() == attrID){
-        if(condition_node->getChild(1)->getAction() == dot){
+        if(condition_node->getChild(1)->childrenCount() == 2){
             bool result = descendSelection(t, condition_node->getAction(),
                              condition_node->getChild(1), condition_node->getChild(0));
             if(!result){
@@ -151,91 +157,19 @@ void QueryExecutor::parseCondition(ExeTree* t, ASTreeNode* condition_node){
             }
         }
         else{
-            appendSelectArgs(t, condition_node->getAction(),
-                            condition_node->getChild(1), condition_node->getChild(0));
+            // constant = attrID
+            t->select_args.emplace_back(
+                    Executor::syntax2CmpSingleAttr(condition_node->getAction(),
+                             condition_node->getChild(1)->getChild(0), condition_node->getChild(0))
+            );
         }
     }
     else{
-        if(!checkEquality(condition_node->getAction(),
+        if(!Executor::checkEquality(condition_node->getAction(),
                          condition_node->getChild(0), condition_node->getChild(1))){
             throw FalseCondition();
         }
     }
-}
-
-bool QueryExecutor::checkEquality(Action equality, ASTreeNode* left_node, ASTreeNode* right_node){
-    if(left_node->getTag() != right_node->getTag()){
-        return false;
-    }
-    if(left_node->getTag() == float_){
-        stringstream ltmp(left_node->getContent());
-        stringstream rtmp(right_node->getContent());
-        float lv,rv;
-        ltmp >> lv;
-        rtmp >> rv;
-        switch(equality){
-            case less_: return lv < rv;
-            case less_equal_: return lv <= rv;
-            case larger_: return lv > rv;
-            case larger_equal_: return lv >= rv;
-            case equal_: return lv == rv;
-            case not_equal_: return lv != rv;
-        }
-    }
-    else if(left_node->getTag() == int_){
-        stringstream ltmp(left_node->getContent());
-        stringstream rtmp(right_node->getContent());
-        int lv,rv;
-        ltmp >> lv;
-        rtmp >> rv;
-        switch(equality){
-            case less_: return lv < rv;
-            case less_equal_: return lv <= rv;
-            case larger_: return lv > rv;
-            case larger_equal_: return lv >= rv;
-            case equal_: return lv == rv;
-            case not_equal_: return lv != rv;
-        }
-    }
-    else{
-        switch(equality){
-            case less_: return false;
-            case less_equal_: return false;
-            case larger_: return false;
-            case larger_equal_: return false;
-            case equal_: return left_node->getContent() == right_node->getContent();
-            case not_equal_: return left_node->getContent() != right_node->getContent();
-        }
-    }
-}
-
-void QueryExecutor::appendSelectArgs(ExeTree* root, Action equality, ASTreeNode* attr, ASTreeNode* constant){
-    Comparison comp;
-    switch(equality){
-        case less_: comp.Operation = "<"; break;
-        case less_equal_: comp.Operation = "<="; break;
-        case larger_: comp.Operation = ">"; break;
-        case larger_equal_: comp.Operation = ">="; break;
-        case equal_: comp.Operation = "="; break;
-        case not_equal_: comp.Operation = "<>"; break;
-    }
-    comp.Comparand1.TypeName = "Attribute";
-    comp.Comparand1.Content = attr->getChild(0)->getContent();
-
-    switch(constant->getTag()){
-        case int_:
-            comp.Comparand2.TypeName = "int";
-            break;
-        case float_:
-            comp.Comparand2.TypeName = "float";
-            break;
-        case str_:
-            comp.Comparand2.TypeName = "string";
-            break;
-    }
-    comp.Comparand2.Content = constant->getContent();
-
-    root->select_args.push_back(comp);
 }
 
 bool QueryExecutor::descendSelection(ExeTree* t, Action equality, ASTreeNode* attr, ASTreeNode* constant){
@@ -243,11 +177,11 @@ bool QueryExecutor::descendSelection(ExeTree* t, Action equality, ASTreeNode* at
         return false;
     }
     else{
-        string id = attr->getChild(0)->getContent();
+        string table_alias = attr->getChild(0)->getContent();
         bool res1 = descendSelection(t->right, equality, attr, constant);
         bool res2 = descendSelection(t->left, equality, attr, constant);
-        if(this->table_alias_map_[t->table_name] == id){
-            appendSelectArgs(t, equality, attr, constant);
+        if(this->table_alias_map_[t->table_name] == table_alias){
+            t->select_args.emplace_back(Executor::syntax2CmpSingleAttr(equality, attr->getChild(1), constant));
             return true;
         }
         else{

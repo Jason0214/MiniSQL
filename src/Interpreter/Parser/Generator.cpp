@@ -608,11 +608,11 @@ CreateTableState Generator::CreateTableGenerator::wait_type(TokenStream & token_
     Token token_to_eat = token_stream.pop_front();
     if(token_to_eat.type == Token::KEYWORD && token_to_eat.content == "int"){
         s.push(new ASTreeNode(type, type_int));
-        return REDUCE_TYPE;
+        return WAIT_CONSTRAIN;
     }
     if(token_to_eat.type == Token::KEYWORD && token_to_eat.content == "float"){
         s.push(new ASTreeNode(type, type_float));
-        return REDUCE_TYPE;
+        return WAIT_CONSTRAIN;
     }
     if(token_to_eat.type == Token::KEYWORD && token_to_eat.content == "char"){
         s.push(new ASTreeNode(type, type_char));
@@ -645,18 +645,13 @@ CreateTableState Generator::CreateTableGenerator::wait_type_param(TokenStream & 
 
 CreateTableState Generator::CreateTableGenerator::reduce_type(TokenStream & token_stream, ASTNodeStack & s){
     s.push(reduceType(s));
-    const Token & lookahead = token_stream.front();
-    if(lookahead.type == Token::SYMBOL && (lookahead.content == "," || lookahead.content == ")")){
-        return REDUCE_META;
-    }
-    else{
-        return WAIT_CONSTRAIN; 
-    }
+    return WAIT_CONSTRAIN;
 }
 
 CreateTableState Generator::CreateTableGenerator::wait_constrain(TokenStream & token_stream, ASTNodeStack & s){
-    Token token_to_eat = token_stream.pop_front();
-    if(token_to_eat.type == Token::KEYWORD && token_to_eat.content == "primary"){
+    const Token & lookahead = token_stream.front();
+    if(lookahead.type == Token::KEYWORD && lookahead.content == "primary"){
+        token_stream.pop_front();
         Token token_to_eat = token_stream.pop_front();
         if(token_to_eat.type == Token::KEYWORD && token_to_eat.content == "key"){
             s.push(new ASTreeNode(constrain, primary_key));
@@ -664,7 +659,8 @@ CreateTableState Generator::CreateTableGenerator::wait_constrain(TokenStream & t
         }
         throw ParseError(token_to_eat.content, "expect 'key'");
     }
-    if(token_to_eat.type == Token::KEYWORD && token_to_eat.content == "not"){
+    if(lookahead.type == Token::KEYWORD && lookahead.content == "not"){
+        token_stream.pop_front();
         Token token_to_eat = token_stream.pop_front();
         if(token_to_eat.type == Token::KEYWORD && token_to_eat.content == "null"){
             s.push(new ASTreeNode(constrain, not_null));
@@ -672,11 +668,12 @@ CreateTableState Generator::CreateTableGenerator::wait_constrain(TokenStream & t
         }
         throw ParseError(token_to_eat.content, "expect 'null'");
     }
-    if(token_to_eat.type == Token::KEYWORD && token_to_eat.content == "unique"){
+    if(lookahead.type == Token::KEYWORD && lookahead.content == "unique"){
+        token_stream.pop_front();
         s.push(new ASTreeNode(constrain, unique_));
         return WAIT_CONSTRAIN;
     }
-    throw ParseError(token_to_eat.content,"expect ',' or ')'");
+    return REDUCE_META;
 }
 
 CreateTableState Generator::CreateTableGenerator::reduce_meta(TokenStream & token_stream, ASTNodeStack & s){

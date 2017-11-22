@@ -25,8 +25,17 @@ Lexer::~Lexer(){
     }
 }
 
-void Lexer::loadText(const string & raw_text){
+void Lexer::toLower(std::string & text){
+    for(int i = 0; i < text.size(); i++){
+        if(text[i] <= 'Z' && text[i] >= 'A'){
+            text[i] = text[i] - 'A' + 'a';
+        }
+    }
+}
+
+void Lexer::loadText(string & raw_text){
     int scan_index = 0;
+    toLower(raw_text);
     while(scan_index < raw_text.size()){
 
         // try to find the longest match

@@ -34,7 +34,7 @@ public:
     Lexer();
     ~Lexer();
 
-    void loadText(const std::string & raw_text);
+    void loadText(std::string & raw_text);
     void clear(){
       this->result.token_list_.clear();
     }
@@ -43,6 +43,8 @@ public:
 private:
     Lexer(const Lexer &);
     const Lexer & operator =(const Lexer &);
+
+    void toLower(std::string & text);
 
     std::string getErrInfo(int beg_index, const std::string & raw_text);
     TokenProto* token_protos[PROTO_NUM];

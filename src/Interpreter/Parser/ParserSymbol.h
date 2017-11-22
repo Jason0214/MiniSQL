@@ -133,8 +133,8 @@ namespace ParserSymbol{
         WAIT_META,
         WAIT_TYPE,
         WAIT_TYPE_PARAM,
-        WAIT_CONSTRAIN,
         REDUCE_TYPE,
+        WAIT_CONSTRAIN,
         REDUCE_META,
         REDUCE_META_SET,
     }CreateTableState;
