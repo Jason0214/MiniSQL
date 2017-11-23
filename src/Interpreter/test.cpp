@@ -5,7 +5,7 @@
 
 #include "Lexer/Lexer.h"
 #include "Parser/Parser.h"
-#include "Executor/QueryExecutor.h"
+#include "Executor/Executor.h"
 #include "../EXCEPTION.h"
 
 
@@ -45,7 +45,7 @@ void printToken(TokenStream& ss){
 int main(){
     Lexer lexer;
     Parser parser;
-    QueryExecutor executor;
+    Executor executor;
 
     vector<string> test_cases;
     generateCase(test_cases);
@@ -53,9 +53,8 @@ int main(){
         try{
             lexer.loadText(test_cases[i]);
             parser.parseSentence(lexer.result);
-            parser.getASTree().print();
-            // string final_table = executor.run(parser.getASTree().getRoot());
-            // cout << "output: " << final_table << endl << endl;
+            //parser.getASTree().print();
+            executor.run(parser.getASTree().getRoot());
 
         }
         catch (FalseCondition & ){
@@ -64,7 +63,6 @@ int main(){
         catch (Exception & e){
             cout << e.err << endl;
         }
-        executor.clear();
         parser.clear();
         lexer.clear();
     }

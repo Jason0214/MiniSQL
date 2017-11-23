@@ -7,6 +7,8 @@
 #include "../../API/APIFunctions.h"
 #include "../../EXCEPTION.h"
 
+#include <iostream>
+
 using namespace std;
 using namespace ParserSymbol;
 
@@ -68,5 +70,6 @@ void DeleteExecutor::run(const ASTreeNode* node){
     catch(FalseCondition &){
         return ;
     }
-    ExeDelete(table_name, cmpVec);
+    cout << "delete table " << table_name << endl;
+    //ExeDelete(table_name, cmpVec);
 }

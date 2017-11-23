@@ -17,8 +17,9 @@ public:
         this->table_alias_map_.clear();
         this->tmp_table_cnt_ = 0;
     }
-    std::string run(const ASTreeNode* node);
-    void outputTable(std::string & table_name){};
+    void run(const ASTreeNode* node);
+
+    std::string query(const ASTreeNode* node);
 private:
     std::string parseTable(ASTreeNode* table_node);
     ExeTree* parseTableSet(ASTreeNode* node);

@@ -8,11 +8,31 @@
 #include "Executor.h"
 #include "../../EXCEPTION.h"
 #include "../Parser/ParserSymbol.h"
+#include "../../API/APIStructures.h"
+#include "../../API/APIFunctions.h"
 
 using namespace std;
 using namespace ParserSymbol;
 
-string QueryExecutor::run(const ASTreeNode* node){
+void QueryExecutor::run(const ASTreeNode* node){
+    BeginQuery();
+    string final_table;
+    try{
+        final_table = this->query(node);
+    }
+    catch(FalseCondition & ){
+        EndQuery();
+        this->clear();
+        return ;
+    }
+
+    // ExeOutputTable(this->table_alias_map_, final_table);
+    cout << "output table " << final_table << endl;
+    EndQuery();
+    this->clear();
+}
+
+std::string QueryExecutor::query(const ASTreeNode* node){
     // TODO: get estimate table size, single rotate AST to increase join efficiency
     ExeTree* exe_tree = NULL;
     try{
@@ -24,11 +44,11 @@ string QueryExecutor::run(const ASTreeNode* node){
         }
         this->joinTable(exe_tree);
         string ret = exe_tree->table_name;
-        freeExeTree(exe_tree);
         return ret;
     }
     catch(FalseCondition & e){
         freeExeTree(exe_tree);
+        EndQuery();
         throw e;
     }
     catch (Exception & e){
@@ -57,7 +77,7 @@ string QueryExecutor::parseTable(ASTreeNode* table_node){
     ASTreeNode* table_id_node = table_node->getChild(0);
     // check if nested query
     if(table_id_node->getChild(0)->getTag() == query_){
-        table_name = this->run(table_id_node->getChild(0));
+        table_name = this->query(table_id_node->getChild(0));
     }
     else{
         table_name = table_id_node->getChild(0)->getContent();
@@ -236,11 +256,21 @@ void QueryExecutor::joinTable(ExeTree* t){
     if(!t->select_args.empty()){
         string dst_table_name = this->getTmpTableName();
         cout << "do selection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
+        for(int i = 0; i < t->select_args.size(); i++){
+            cout << "left: " <<  t->select_args[i].Comparand1.TypeName;
+            cout << "right: " << t->select_args[i].Comparand2.TypeName;
+            cout << endl;
+        }
         t->table_name = dst_table_name;
     }
     if(!t->project_args.empty()){
         string dst_table_name = this->getTmpTableName();
         cout << "do projection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
+        cout << "attributes: ";
+        for(int i = 0; i < t->project_args.size(); i++){
+            cout << t->project_args[i].AttrName;
+        }
+        cout << endl;
         t->table_name = dst_table_name;
     }
 }

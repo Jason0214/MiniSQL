@@ -1,5 +1,9 @@
 #include "Executor.h"
 #include <sstream>
+#include "../../API/APIFunctions.h"
+#include "../../API/APIStructures.h"
+
+#include <iostream>
 
 using namespace std;
 using namespace ParserSymbol;
@@ -76,4 +80,65 @@ bool Executor::checkEquality(Action equality, ASTreeNode* left_node, ASTreeNode*
             case not_equal_: return left_node->getContent() != right_node->getContent();
         }
     }
+}
+
+void Executor::run(const ASTreeNode *root) {
+    switch(root->getTag()){
+        case query_:
+            this->query_executor_.run(root);
+            break;
+        case delete_:
+            this->delete_executor_.run(root);
+            break;
+        case insert_:
+            runInsertExecutor(root);
+            break;
+        case create_index:
+            runCreateIndexExecutor(root);
+            break;
+        case create_table_:
+            runCreateTableExecutor(root);
+            break;
+        case drop_table:
+            runDropTableExecutor(root);
+            break;
+        case drop_index:
+            runDropIndexExecutor(root);
+            break;
+        case update_:
+            runUpdateExecutor(root);
+            break;
+    }
+}
+
+void Executor::runInsertExecutor(const ASTreeNode* root){
+    InsertValueVector valueVec;
+    const string & table_name = root->getChild(root->childrenCount()-1)->getContent();
+    for(int i = root->childrenCount()-1; i >= 0; i--){
+        valueVec.emplace_back(root->getChild(i)->getContent());
+    }
+    // ExeInsert(table_name, valueVec);
+    cout << "Insert into " << table_name <<endl;
+    for(int i = 0; i < valueVec.size(); i++){
+        cout << valueVec[i] << endl;
+    }
+}
+
+void Executor::runUpdateExecutor(const ASTreeNode* root){
+
+}
+
+void Executor::runCreateTableExecutor(const ASTreeNode* root){
+
+}
+void Executor::runCreateIndexExecutor(const ASTreeNode* root){
+
+}
+void Executor::runDropTableExecutor(const ASTreeNode* root){
+    const string & table_name = root->getChild(0)->getContent();
+    ExeDropIndex(table_name);
+}
+void Executor::runDropIndexExecutor(const ASTreeNode* root){
+    const string & index_name = root->getChild(0)->getContent();
+    ExeDropIndex(index_name);
 }
