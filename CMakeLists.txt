@@ -50,6 +50,6 @@ set(SOURCE_FILES
         src/EXCEPTION.h
         src/SharedFunc.cpp
         src/SharedFunc.h
-        src/Interpreter/Parser/ASTreeNodeStack.h)
+        src/Interpreter/Parser/ASTreeNodeStack.h src/Interpreter/Executor/Executor.h src/Interpreter/Executor/Executor.cpp src/Interpreter/Executor/ExecuteFunc.h src/Interpreter/Executor/ExecuteFunc.cpp src/main.cpp src/Interpreter/Interpreter.h)
 
 add_executable(miniSQL ${SOURCE_FILES})

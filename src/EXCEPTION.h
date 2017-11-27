@@ -15,7 +15,7 @@ public:
 class ParseError: public Exception{
 public:
     ParseError(const std::string & content, const std::string & info)
-            :Exception(std::string("Parser Error: ")+"at '" + content + "' " + info){}
+            :Exception(std::string("Parser Error: ")+"at '" + content + "', " + info){}
 };
 
 class ExecuteError: public Exception{

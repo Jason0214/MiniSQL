@@ -56,6 +56,7 @@ Table::Table(const std::string & table_name,
     is_primary_key(false){
     this->attr_num = (int)attr_name_alias.size();
     this->attr_type = new DBenum[this->attr_num];
+    this->attr_name = new string[this->attr_num];
     for(unsigned int i = 0; i < attr_name_alias.size(); i++){
         this->attr_name[i] = attr_name_alias[i].AttrName;
         this->attr_type[i] = based_table->attr_type[attr_name_alias[i].OriginIndex];
@@ -81,6 +82,7 @@ Table::Table(const std::string & table_name,
     table_name(table_name){
     this->attr_num = attr_name_alias.size();
     this->attr_type = new DBenum[this->attr_num];
+    this->attr_name = new string[this->attr_num];
     for(unsigned int i = 0; i < attr_name_alias.size(); i++){
         this->attr_name[i] = attr_name_alias[i].AttrName;            
         
@@ -121,6 +123,7 @@ Table::Table(const std::string & table_name,
     indirect_attr_map(indirect_attr_map){
     this->attr_num = attr_name_alias.size();
     this->attr_type = new DBenum[this->attr_num];
+    this->attr_name = new string[this->attr_num];
 	for (unsigned int i = 0; i < attr_name_alias.size(); i++) {
 		this->attr_name[i] = attr_name_alias[i].AttrName;
 

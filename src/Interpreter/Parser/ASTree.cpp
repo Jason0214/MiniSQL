@@ -97,6 +97,9 @@ void ASTree::print()const{
             case constrain: cout << "constrain "; break;
             case meta: cout << "meta "; break;
             case assign: cout << "assign "; break;
+            case meta_set:cout << "meta_set "; break;
+            case assign_set:cout << "assign_set "; break;
+            case value_set: cout << "value_set "; break;
         }
     }
     cout << endl;

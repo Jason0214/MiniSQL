@@ -43,4 +43,14 @@ ASTreeNode* reduceMetaSet(ASTNodeStack & s);
 ASTreeNode* reduceAssign(ASTNodeStack & s);
 
 ASTreeNode* reduceAssignSet(ASTNodeStack & s);
+
+ASTreeNode* reduceInsert(ASTNodeStack & s);
+
+ASTreeNode* reduceCreateTable(ASTNodeStack & s);
+
+ASTreeNode* reduceUpdate(ASTNodeStack & s);
+
+ASTreeNode* reduceColumnSet(ASTNodeStack & s);
+
+ASTreeNode* reduceCreateIndex(ASTNodeStack & s);
 #endif

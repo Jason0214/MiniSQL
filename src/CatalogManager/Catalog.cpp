@@ -184,8 +184,8 @@ void Catalog::CreateTable(const string & table_name, string* attr_name_list, DBe
 	// use attribute number 0 as primary index(not unique)
 	int real_key = key_index < 0 ? 0 : key_index;
 	Block* new_index_block = buffer_manager.CreateBlock(DB_BPNODE_BLOCK);
-	buffer_manager.ReleaseBlock(new_index_block);
 	index_addr = new_index_block->BlockIndex();
+	buffer_manager.ReleaseBlock(new_index_block);
 	index_manager.initRootBlock(DB_BPTREE_INDEX, index_addr, attr_type_list[real_key]);
 
 	try {

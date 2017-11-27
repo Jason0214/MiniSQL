@@ -37,11 +37,16 @@ public:
             return (TableIterator*)new TemporalTable_Iterator(this->table_data.begin());
         }
         else{
-            return (TableIterator*)new MaterializedTable_Iterator(this->data_addr,
-                                                                    0,
-                                                                    this->attr_num,
-                                                                    this->attr_type,
-                                                                    this->key_index);
+            MaterializedTable_Iterator* ret = new MaterializedTable_Iterator(this->data_addr,
+                                                                         0,
+                                                                         this->attr_num,
+                                                                         this->attr_type,
+                                                                         this->key_index);
+            if(ret->block_ptr->RecordNum() == 0){
+                delete ret;
+                return this->end();
+            }
+            return (TableIterator*)ret;
         }
     }
 

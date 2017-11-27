@@ -3,9 +3,10 @@
 
 #define QUERY_STATE_CNT 25
 #define DELETE_STATE_CNT 12
-#define INSERT_STATE_CNT 8
-#define CREATE_TABLE_STATE_CNT 10
-#define UPDATE_STATE_CNT 9
+#define INSERT_STATE_CNT 9
+#define CREATE_TABLE_STATE_CNT 11
+#define CREATE_INDEX_STATE_CNT 8
+#define UPDATE_STATE_CNT 17
 
 namespace ParserSymbol{
     typedef enum{
@@ -37,7 +38,10 @@ namespace ParserSymbol{
         type,
         constrain,
         meta,
+        meta_set,
         assign,
+        assign_set,
+        value_set
     }Tag;
 
     typedef enum{
@@ -112,7 +116,7 @@ namespace ParserSymbol{
         WAIT_EQUALITY_IN_DELETE,
         REDUCE_CONDITION_IN_DELETE,
         REDUCE_CONDITION_SET_IN_DELETE,
-        REDUCE_DELETE
+        REDUCE_DELETE,
     }DeleteState;
 
     typedef enum{
@@ -124,6 +128,7 @@ namespace ParserSymbol{
         BEGIN_OF_VALUE_SET,
         WAIT_SINGLE_VALUE,
         REDUCE_VALUE_SET,
+        REDUCE_INSERT,
     }InsertState;
 
     typedef enum{
@@ -137,7 +142,19 @@ namespace ParserSymbol{
         WAIT_CONSTRAIN,
         REDUCE_META,
         REDUCE_META_SET,
+        REDUCE_CREATE_TABLE,
     }CreateTableState;
+
+    typedef enum{
+        FINISH_CREATE_INDEX,
+        WAIT_INDEX_NAME,
+        WAIT_ON,
+        WAIT_TABLE_IN_CREATE_INDEX,
+        BEGIN_OF_COLUMN_SET,
+        WAIT_COLUMN_SET,
+        REDUCE_COLUMN_SET,
+        REDUCE_CREATE_INDEX
+    }CreateIndexState;
 
     typedef enum{
         FINISH_UPDATE,
@@ -149,6 +166,14 @@ namespace ParserSymbol{
         WAIT_ASSIGN_VALUE,
         REDUCE_ASSIGN,
         REDUCE_ASSIGN_SET,
+        WAIT_WHERE_IN_UPDATE,
+        WAIT_CONDITION_IN_UPDATE,
+        WAIT_ATTR_IN_UPDATE,
+        WAIT_NUM_OR_STR_IN_UPDATE,
+        WAIT_EQUALITY_IN_UPDATE,
+        REDUCE_CONDITION_IN_UPDATE,
+        REDUCE_CONDITION_SET_IN_UPDATE,
+        REDUCE_UPDATE
     }UpdateState;
 
 }

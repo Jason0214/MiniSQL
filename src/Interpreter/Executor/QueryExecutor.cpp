@@ -3,9 +3,7 @@
 #include <string>
 #include <sstream>
 
-#include <iostream>
-
-#include "Executor.h"
+#include "ExecuteFunc.h"
 #include "../../EXCEPTION.h"
 #include "../Parser/ParserSymbol.h"
 #include "../../API/APIStructures.h"
@@ -26,8 +24,8 @@ void QueryExecutor::run(const ASTreeNode* node){
         return ;
     }
 
-    // ExeOutputTable(this->table_alias_map_, final_table);
-    cout << "output table " << final_table << endl;
+    ExeOutputTable(this->table_alias_map_, final_table);
+
     EndQuery();
     this->clear();
 }
@@ -163,7 +161,7 @@ void QueryExecutor::parseCondition(ExeTree* t, ASTreeNode* condition_node){
         else{
             // attrID = constant
             t->select_args.emplace_back(
-                    Executor::syntax2CmpSingleAttr(condition_node->getAction(),
+                    ExecuteFunc::syntax2CmpSingleAttr(condition_node->getAction(),
                             condition_node->getChild(0)->getChild(0), condition_node->getChild(1))
             );
         }
@@ -179,13 +177,13 @@ void QueryExecutor::parseCondition(ExeTree* t, ASTreeNode* condition_node){
         else{
             // constant = attrID
             t->select_args.emplace_back(
-                    Executor::syntax2CmpSingleAttr(condition_node->getAction(),
+                    ExecuteFunc::syntax2CmpSingleAttr(condition_node->getAction(),
                              condition_node->getChild(1)->getChild(0), condition_node->getChild(0))
             );
         }
     }
     else{
-        if(!Executor::checkEquality(condition_node->getAction(),
+        if(!ExecuteFunc::checkEquality(condition_node->getAction(),
                          condition_node->getChild(0), condition_node->getChild(1))){
             throw FalseCondition();
         }
@@ -201,7 +199,7 @@ bool QueryExecutor::descendSelection(ExeTree* t, Action equality, ASTreeNode* at
         bool res1 = descendSelection(t->right, equality, attr, constant);
         bool res2 = descendSelection(t->left, equality, attr, constant);
         if(this->table_alias_map_[t->table_name] == table_alias){
-            t->select_args.emplace_back(Executor::syntax2CmpSingleAttr(equality, attr->getChild(1), constant));
+            t->select_args.emplace_back(ExecuteFunc::syntax2CmpSingleAttr(equality, attr->getChild(1), constant));
             return true;
         }
         else{
@@ -242,6 +240,7 @@ void QueryExecutor::parseProjection(ExeTree* root, ASTreeNode* attr_set_node){
 string QueryExecutor::getTmpTableName() {
     string ret = to_string(this->tmp_table_cnt_) + "TmpTable";
     this->tmp_table_cnt_++;
+    this->table_alias_map_[ret] = ret;
     return ret;
 }
 
@@ -250,27 +249,34 @@ void QueryExecutor::joinTable(ExeTree* t){
         joinTable(t->left);
         joinTable(t->right);
         string dst_table_name = this->getTmpTableName();
-        cout << "join two tables: " << t->left->table_name << ","<<t->right->table_name<<" ;dst table" << dst_table_name <<endl;
+        if(t->join_type == naturaljoin){
+            ExeNaturalJoin(this->table_alias_map_, t->left->table_name, t->right->table_name, dst_table_name);
+        }
+        else if(t->join_type == join){
+            ExeCartesian(this->table_alias_map_, t->left->table_name, t->right->table_name, dst_table_name);
+        }
         t->table_name = dst_table_name;
     }
     if(!t->select_args.empty()){
         string dst_table_name = this->getTmpTableName();
-        cout << "do selection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
-        for(int i = 0; i < t->select_args.size(); i++){
-            cout << "left: " <<  t->select_args[i].Comparand1.TypeName;
-            cout << "right: " << t->select_args[i].Comparand2.TypeName;
-            cout << endl;
-        }
+//        cout << "do selection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
+//        for(int i = 0; i < t->select_args.size(); i++){
+//            cout << "left: " <<  t->select_args[i].Comparand1.TypeName << " ";
+//            cout << "right: " << t->select_args[i].Comparand2.TypeName;
+//            cout << endl;
+//        }
+        ExeSelect(this->table_alias_map_, t->table_name, dst_table_name, t->select_args);
         t->table_name = dst_table_name;
     }
     if(!t->project_args.empty()){
         string dst_table_name = this->getTmpTableName();
-        cout << "do projection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
-        cout << "attributes: ";
-        for(int i = 0; i < t->project_args.size(); i++){
-            cout << t->project_args[i].AttrName;
-        }
-        cout << endl;
+//        cout << "do projection on " << "source table" << t->table_name << "; dst table" << dst_table_name << endl;
+//        cout << "attributes: ";
+//        for(int i = 0; i < t->project_args.size(); i++){
+//            cout << t->project_args[i].AttrName;
+//        }
+//        cout << endl;
+        ExeProject(this->table_alias_map_, t->table_name, dst_table_name, t->project_args);
         t->table_name = dst_table_name;
     }
 }

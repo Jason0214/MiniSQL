@@ -36,4 +36,5 @@ void ExeCreateIndex(const std::string& tableName, const std::string& attrName, c
 
 void ExeCreateTable(const std::string& tableName, const AttrDefinitionVector& defVec);
 
+void ExeExit();
 #endif

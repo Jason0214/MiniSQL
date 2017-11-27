@@ -1,5 +1,6 @@
 *.o
 *.obj
 .vs
+.idea
 cmake-build-debug
 .DS_Store

@@ -42,7 +42,7 @@
 3. meta_set -> meta "," meta_set
 4. meta_set -> meta
 5. meta -> id type 
-6. meta -> id type "primary" "key"
+6. meta -> id type "primary" "key" "not" "null"
 6. type -> keyword
 7. type -> keyword "(" int ")"
 
@@ -58,7 +58,9 @@
 2. drop -> "drop" "table" id
 
 ### create index
-1. S` -> "create" "index" id "on" id
+1. S` -> "create" "index" id "on" table '('column_set')'
+2. column_set ->  id
+3. column_set ->  id, column_set
 
 ### drop index
 1. S` -> "drop" "index" id 

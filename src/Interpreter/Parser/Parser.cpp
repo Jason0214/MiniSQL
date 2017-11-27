@@ -144,6 +144,22 @@ void Parser::parseUpdateSentence(TokenStream &token_stream) {
     s.clear();
 }
 
+
+void Parser::parseCreateIndexSentence(TokenStream & token_stream){
+    ASTNodeStack s;
+    try{
+        this->create_index_generator_.Accept(token_stream, s);
+        this->astree_ = ASTree(s.pop());
+    }
+    catch(const Exception & e){
+        s.clear();
+        this->astree_.destroy();
+        throw e;
+    }
+
+    s.clear();
+}
+
 // simple parsing
 void Parser::parseDropTableSentence(TokenStream & token_stream){
     Token tkn = token_stream.pop_front();
@@ -168,34 +184,5 @@ void Parser::parseDropIndexSentence(TokenStream & token_stream){
     }
     else{
         throw ParseError(tkn.content, "expect table name");
-    }
-}
-
-void Parser::parseCreateIndexSentence(TokenStream & token_stream){
-    Token index_id_token = token_stream.pop_front();
-    if(index_id_token.type != Token::IDENTIFIER){
-        throw ParseError(index_id_token.content, "expect index name");
-    }
-
-    Token keyword_on_token = token_stream.pop_front();
-    if(keyword_on_token.type == Token::KEYWORD && keyword_on_token.content == "on");
-    else{
-        throw ParseError(keyword_on_token.content, "expect on");
-    }
-
-    Token table_id_token = token_stream.pop_front();
-    if(table_id_token.type != Token::IDENTIFIER){
-        throw ParseError(table_id_token.content, "expect table name");
-    }
-
-    const Token & lookahead = token_stream.front();
-    if(lookahead.type == Token::NONE){
-        ASTreeNode* root = new ASTreeNode(ParserSymbol::create_index,ParserSymbol::parallel);
-        root->appendChild(new ASTreeNode(index_id_token));
-        root->appendChild(new ASTreeNode(table_id_token));
-        this->astree_ = ASTree(root);
-    }
-    else{
-        throw ParseError(lookahead.content, "end of create index");
     }
 }

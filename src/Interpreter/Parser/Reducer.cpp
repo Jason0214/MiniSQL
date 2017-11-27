@@ -10,6 +10,7 @@ ASTreeNode* reduceAttrId(ASTNodeStack & s){
     ASTreeNode* node_with_attr = s.pop();
     ASTreeNode* node_with_attrid = new ASTreeNode(attrID, parallel, node_with_attr) ;
     return node_with_attrid;
+    // child 0: attribute name
 }
 
 ASTreeNode* reduceAttrIdWithTableId(ASTNodeStack & s){
@@ -19,20 +20,25 @@ ASTreeNode* reduceAttrIdWithTableId(ASTNodeStack & s){
             new ASTreeNode(attrID, dot, node_with_table_id, node_with_attr_id);
 
     return node_table_dot_attr;
+    //child 0: table name
+    //child 1: attribute name
 }
 
 
 ASTreeNode* reduceAttrWithoutAlias(ASTNodeStack & s){
     ASTreeNode* node_with_attr = new ASTreeNode(attr, parallel, s.pop());
     return node_with_attr;
+    // child 0: attribute(either T.A or A)
 }
 
 
 ASTreeNode* reduceAttrWithAlias(ASTNodeStack & s){
     ASTreeNode* node_with_alias = s.pop();
     ASTreeNode* node_with_attrid = s.pop();
-    ASTreeNode* node_with_attr = new ASTreeNode(attr, as, node_with_alias, node_with_attrid);
+    ASTreeNode* node_with_attr = new ASTreeNode(attr, as, node_with_attrid,  node_with_alias);
     return node_with_attr;
+    // child 0: attribute
+    // child 1: attribute alias
 }
 
 ASTreeNode* reduceAttrSet(ASTNodeStack & s){
@@ -41,16 +47,19 @@ ASTreeNode* reduceAttrSet(ASTNodeStack & s){
         node_with_attr_set->appendChild(s.pop());
     }
     return  node_with_attr_set;
+    // children: a vector of attributes (either 'A as A' or 'A')
 }
 
 ASTreeNode* reduceTableID(ASTNodeStack & s){
     ASTreeNode* node_with_id = s.pop();
     return new ASTreeNode(tableID, parallel, node_with_id);
+    //child 0: table name or a nested query
 }
 
 ASTreeNode* reduceTableWithoutAlias(ASTNodeStack & s){
     ASTreeNode* node_with_table = new ASTreeNode(table, parallel, s.pop());
     return node_with_table;
+    //child 0: table
 }
 
 ASTreeNode* reduceTableWithAlias(ASTNodeStack & s){
@@ -58,6 +67,8 @@ ASTreeNode* reduceTableWithAlias(ASTNodeStack & s){
     ASTreeNode* node_with_tableid = s.pop();
     ASTreeNode* node_with_table = new ASTreeNode(table, as, node_with_tableid, node_with_alias);
     return node_with_table;
+    // child 0: table
+    // child 1: table alias
 }
 
 ASTreeNode* reduceTableSet(ASTNodeStack & s){
@@ -80,6 +91,7 @@ ASTreeNode* reduceTableSet(ASTNodeStack & s){
         right_child = new ASTreeNode(table_set, join, right_child);
     }
     return right_child;
+    // children:: a tree of table
 }
 
 ASTreeNode* reduceCondition(ASTNodeStack & s){
@@ -143,11 +155,18 @@ ASTreeNode* reduceDelete(ASTNodeStack & s){
 }
 
 ASTreeNode* reduceValueSet(ASTNodeStack & s){
-    ASTreeNode* value_set_node = new ASTreeNode(insert_, parallel);
-    while(!s.empty()){
+    ASTreeNode* value_set_node = new ASTreeNode(value_set, parallel);
+    while(s.size() > 1){
         value_set_node->appendChild(s.pop());
     }
     return value_set_node;
+}
+
+ASTreeNode* reduceInsert(ASTNodeStack & s){
+    ASTreeNode* insert_node = new ASTreeNode(insert_, parallel);
+    insert_node->appendChild(s.pop());
+    insert_node->appendChild(s.pop());
+    return insert_node;
 }
 
 ASTreeNode* reduceType(ASTNodeStack & s){
@@ -173,11 +192,18 @@ ASTreeNode* reduceMeta(ASTNodeStack & s){
 }
 
 ASTreeNode* reduceMetaSet(ASTNodeStack & s){
-    ASTreeNode* meta_set_node = new ASTreeNode(create_table_, parallel);
+    ASTreeNode* meta_set_node = new ASTreeNode(meta_set, parallel);
     while(s.top()->getTag() == meta){
         meta_set_node->appendChild(s.pop());
     }
     return meta_set_node;
+}
+
+ASTreeNode* reduceCreateTable(ASTNodeStack & s){
+    ASTreeNode* create_table_node = new ASTreeNode(create_table_, parallel);
+    create_table_node->appendChild(s.pop());
+    create_table_node->appendChild(s.pop());
+    return create_table_node;
 }
 
 ASTreeNode* reduceAssign(ASTNodeStack & s){
@@ -188,9 +214,33 @@ ASTreeNode* reduceAssign(ASTNodeStack & s){
 }
 
 ASTreeNode* reduceAssignSet(ASTNodeStack & s){
-    ASTreeNode* assign_set_node = new ASTreeNode(update_, parallel);
+    ASTreeNode* assign_set_node = new ASTreeNode(assign_set, parallel);
     while(s.top()->getTag() == assign){
         assign_set_node->appendChild(s.pop());
     }
     return assign_set_node;
+}
+
+ASTreeNode* reduceUpdate(ASTNodeStack & s){
+    ASTreeNode* update_node = new ASTreeNode(update_, parallel);
+    update_node->appendChild(s.pop());
+    update_node->appendChild(s.pop());
+    update_node->appendChild(s.pop());
+    return update_node;
+}
+
+ASTreeNode* reduceColumnSet(ASTNodeStack & s){
+    ASTreeNode* column_set_node = new ASTreeNode(attr_set, parallel);
+    while(s.size() > 2){
+        column_set_node->appendChild(s.pop());
+    }
+    return column_set_node;
+}
+
+ASTreeNode* reduceCreateIndex(ASTNodeStack & s){
+    ASTreeNode* create_index_node = new ASTreeNode(create_index, parallel);
+    while(!s.empty()){
+        create_index_node->appendChild(s.pop());
+    }
+    return  create_index_node;
 }

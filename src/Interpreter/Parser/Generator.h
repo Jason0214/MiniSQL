@@ -131,9 +131,10 @@ namespace Generator{
             this->generate_funcs_[2] = &wait_into;
             this->generate_funcs_[3] = &wait_table_in_insert;
             this->generate_funcs_[4] = &wait_value_set;
-            this->generate_funcs_[5] = &wait_single_value;
-            this->generate_funcs_[6] = &begin_of_value_set;
+            this->generate_funcs_[5] = &begin_of_value_set;
+            this->generate_funcs_[6] = &wait_single_value;
             this->generate_funcs_[7] = &reduce_value_set;
+            this->generate_funcs_[8] = &reduce_insert;
         }
         ~InsertGenerator(){}
         void Accept(TokenStream & token_stream, ASTNodeStack & s){
@@ -157,6 +158,7 @@ namespace Generator{
         static ParserSymbol::InsertState wait_single_value(TokenStream & token_stream, ASTNodeStack & s);
         static ParserSymbol::InsertState begin_of_value_set(TokenStream & token_stream, ASTNodeStack & s);
         static ParserSymbol::InsertState reduce_value_set(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::InsertState reduce_insert(TokenStream & token_stream, ASTNodeStack & s);
     };
 
     class CreateTableGenerator{
@@ -172,6 +174,7 @@ namespace Generator{
             this->generate_funcs_[7] = &wait_constrain;
             this->generate_funcs_[8] = &reduce_meta;
             this->generate_funcs_[9] = &reduce_meta_set;
+            this->generate_funcs_[10] = &reduce_create_table;
         }
         ~CreateTableGenerator(){}
         void Accept(TokenStream & token_stream, ASTNodeStack & s){
@@ -197,8 +200,45 @@ namespace Generator{
         static ParserSymbol::CreateTableState wait_constrain(TokenStream & token_stream, ASTNodeStack & s);
         static ParserSymbol::CreateTableState reduce_meta(TokenStream & token_stream, ASTNodeStack & s);
         static ParserSymbol::CreateTableState reduce_meta_set(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::CreateTableState reduce_create_table(TokenStream & token_stream, ASTNodeStack & s);
     };
-    
+
+    class CreateIndexGenerator{
+    public:
+        CreateIndexGenerator(){
+            this->generate_funcs_[0] = NULL;
+            this->generate_funcs_[1] = &wait_index_name;
+            this->generate_funcs_[2] = &wait_on;
+            this->generate_funcs_[3] = &wait_table_in_create_index;
+            this->generate_funcs_[4] = begin_of_column_set;
+            this->generate_funcs_[5] = &wait_column_set;
+            this->generate_funcs_[6] = &reduce_column_set;
+            this->generate_funcs_[7] = &reduce_create_index;
+        }
+        ~CreateIndexGenerator(){}
+        void Accept(TokenStream & token_stream, ASTNodeStack & s){
+            ParserSymbol::CreateIndexState state = ParserSymbol::WAIT_INDEX_NAME;
+            while(state != ParserSymbol::FINISH_CREATE_INDEX){
+                int index = state2index(state);
+                state = (*(this->generate_funcs_[index]))(token_stream, s);
+            }
+        }
+    private:
+        static int state2index(ParserSymbol::CreateIndexState st){
+            return (int)st;
+        }
+
+        ParserSymbol::CreateIndexState (*generate_funcs_[CREATE_INDEX_STATE_CNT])(TokenStream & token_stream, ASTNodeStack & s);
+
+        static ParserSymbol::CreateIndexState wait_index_name(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::CreateIndexState wait_on(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::CreateIndexState wait_table_in_create_index(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::CreateIndexState begin_of_column_set(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::CreateIndexState wait_column_set(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::CreateIndexState reduce_column_set(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::CreateIndexState reduce_create_index(TokenStream & token_stream, ASTNodeStack & s);
+    };
+
     class UpdateGenerator{
     public:
         UpdateGenerator(){
@@ -211,6 +251,14 @@ namespace Generator{
             this->generate_funcs_[6] = &wait_assign_value;
             this->generate_funcs_[7] = &reduce_assign;
             this->generate_funcs_[8] = &reduce_assign_set;
+            this->generate_funcs_[9] = &wait_where_in_update;
+            this->generate_funcs_[10] = &wait_condition_in_update;
+            this->generate_funcs_[11] = &wait_attr_in_update;
+            this->generate_funcs_[12] = &wait_num_or_str_in_update;
+            this->generate_funcs_[13] = &wait_equality_in_update;
+            this->generate_funcs_[14] = &reduce_condition_in_update;
+            this->generate_funcs_[15] = &reduce_condition_set_in_update;
+            this->generate_funcs_[16] = &reduce_update;
         }
         ~UpdateGenerator(){}
         void Accept(TokenStream & token_stream, ASTNodeStack & s){
@@ -235,6 +283,14 @@ namespace Generator{
         static ParserSymbol::UpdateState wait_assign_value(TokenStream & token_stream, ASTNodeStack & s);
         static ParserSymbol::UpdateState reduce_assign(TokenStream & token_stream, ASTNodeStack & s);
         static ParserSymbol::UpdateState reduce_assign_set(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::UpdateState wait_where_in_update(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::UpdateState wait_condition_in_update(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::UpdateState wait_attr_in_update(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::UpdateState wait_num_or_str_in_update(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::UpdateState wait_equality_in_update(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::UpdateState reduce_condition_in_update(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::UpdateState reduce_condition_set_in_update(TokenStream & token_stream, ASTNodeStack & s);
+        static ParserSymbol::UpdateState reduce_update(TokenStream & token_stream, ASTNodeStack & s);
     };
 };
 

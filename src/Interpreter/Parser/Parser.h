@@ -38,6 +38,7 @@ private:
     Generator::InsertGenerator insert_generator_;
     Generator::CreateTableGenerator create_table_generator_;
     Generator::UpdateGenerator update_generator_;
+    Generator::CreateIndexGenerator create_index_generator_;
 
     ASTree astree_;
 };
