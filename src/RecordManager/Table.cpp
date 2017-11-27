@@ -41,6 +41,7 @@ Table::Table(const std::string & table_name,
     memcpy(this->attr_type, based_table->attr_type, sizeof(DBenum) * this->attr_num);
 	this->tuple_size = tupleLen(this->attr_type, this->attr_num);
 	this->attr_name = new string[this->attr_num];
+    this->key_index = based_table->key_index;
     for(int i = 0; i < this->attr_num; i++){
         this->attr_name[i] = based_table->attr_name[i];
     }

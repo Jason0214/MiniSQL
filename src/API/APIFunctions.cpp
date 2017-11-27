@@ -151,6 +151,8 @@ void ExeProject(const TableAliasMap& tableAlias, const string& sourceTableName,
 	sort(attr_alias.begin(), attr_alias.end(), AttrAliasSort);
 	
 	Table* dst_table = new Table(resultTableName, src_table, attr_alias);
+	record_manager.addTable(dst_table);
+
 	const void** tuple_data_ptr = new const void*[dst_table->getAttrNum()];
 
 	TableIterator* begin = src_table->begin();
