@@ -30,7 +30,7 @@ void ExeDelete(const std::string& tableName, const ComparisonVector& cmpVec);
 
 void ExeDropIndex(const std::string& indexName);
 
-void ExeDropTable(const std::string& tableName, bool echo = false);
+void ExeDropTable(const std::string& tableName);
 
 void ExeCreateIndex(const std::string& tableName, const std::string& attrName, const std::string& indexName);
 

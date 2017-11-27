@@ -43,8 +43,8 @@ void RecordManager::doubleBlockNestedNaturalJoin(Table* src_table1, Table* src_t
 							else{
 								tuple_data_list[k] = src_table1_block->GetDataPtr(i, origin_index);
 							}
-							dst_table->insertTuple(tuple_data_list);
 						}
+                        dst_table->insertTuple(tuple_data_list);
 					}
 				}
 			}
@@ -88,8 +88,8 @@ void RecordManager::singleBlockNestedNaturalJoin(Table* src_table1, Table* src_t
 						else{
 							tuple_data_list[k] = src_table1_block->GetDataPtr(i, origin_index);
 						}
-						dst_table->insertTuple(tuple_data_list);
 					}
+                    dst_table->insertTuple(tuple_data_list);
 				}
 			}		
 		}
@@ -128,8 +128,8 @@ void RecordManager::tupleNestedLoopNaturalJoin(Table* src_table1, Table* src_tab
 					else{
 						tuple_data_list[k] = iter1->getAttrData(origin_index);
 					}
-					dst_table->insertTuple(tuple_data_list);
 				}
+                dst_table->insertTuple(tuple_data_list);
 			}
 		}
 	}
@@ -166,8 +166,8 @@ void RecordManager::doubleBlockNestedJoin(Table* src_table1, Table* src_table2, 
 						else{
 							tuple_data_list[k] = src_table1_block->GetDataPtr(i, origin_index);
 						}
-						dst_table->insertTuple(tuple_data_list);
 					}
+                    dst_table->insertTuple(tuple_data_list);
 				}
 			}
 			buffer_manager.ReleaseBlock(src_table2_block);
@@ -199,8 +199,8 @@ void RecordManager::singleBlockNestedJoin(Table* src_table1, Table* src_table2, 
 					else{
 						tuple_data_list[k] = src_table1_block->GetDataPtr(i, origin_index);
 					}
-					dst_table->insertTuple(tuple_data_list);
 				}
+                dst_table->insertTuple(tuple_data_list);
 			}		
 		}
 	}
@@ -227,8 +227,8 @@ void RecordManager::tupleNestedLoopJoin(Table* src_table1, Table* src_table2, Ta
 				else{
 					tuple_data_list[k] = iter1->getAttrData(origin_index);
 				}
-				dst_table->insertTuple(tuple_data_list);
-			}					
+			}
+            dst_table->insertTuple(tuple_data_list);
 		}
 	}
 	delete src_table1_begin;

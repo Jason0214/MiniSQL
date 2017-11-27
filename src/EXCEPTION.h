@@ -41,30 +41,26 @@ public:
     FalseCondition():Exception(""){}
 };
 
-
-
-
-
 class DuplicatedTableName :public Exception {
 public:
 	DuplicatedTableName(const std::string & table_name) 
-		:Exception("Table `" + table_name + "` already exist.") {}
+		:Exception("Table `" + table_name + "` already exist") {}
 };
 
 class AttrNumberUnmatch : public Exception{
 public:
-	AttrNumberUnmatch() : Exception("Attributs number didn't much with table schema."){}
+	AttrNumberUnmatch(): Exception("Attributs number does not much with table schema"){}
 };
 
 class AttrTypeUnmatch : public Exception{
 public:
 	AttrTypeUnmatch(const std::string & value) 
-		: Exception("Attribute with value`" + value + "` has the wrong type."){}
+		: Exception("Attribute with value`" + value + "` has the wrong type"){}
 };
 
 class TableNotFound : public Exception {
 public:
-	TableNotFound(const std::string & msg) :Exception(msg){}
+	TableNotFound(const std::string & table) :Exception("Table `"+table+"` not found"){}
 };
 
 class IndexNotFound: public Exception{
@@ -75,45 +71,54 @@ public:
 
 class DuplicatedPrimaryKey : public Exception {
 public:
-	DuplicatedPrimaryKey():Exception("Didn't satisfy primary key." ) {}
+	DuplicatedPrimaryKey()
+	:Exception("Updated record against primary key constrain") {}
 };
 
 class DuplicatedIndexName : public Exception{
 public:
-	DuplicatedIndexName(const std::string & msg) :Exception(msg){}
+	DuplicatedIndexName(const std::string & index_name) 
+	:Exception("index named `"+index_name+"` already exist"){}
 };
 
 class DuplicatedIndex: public Exception{
 public:
-	DuplicatedIndex(const std::string & msg, int key) :Exception(msg){}
+	DuplicatedIndex(const std::string & table_name, const std::string & attr) 
+	:Exception("Secondary index on `"+table_name+"`("+attr+") already exist"){}
 };
 
 class AttributeNotFound : public Exception {
 public:
-	AttributeNotFound(const std::string & msg) :Exception(msg){}
+	AttributeNotFound(const std::string & attr) 
+	:Exception("Attribute named `"+attr+"` not found"){}
 };
 
 class DiscFailure : public Exception {
 public:
-	DiscFailure(const std::string & msg) :Exception(msg){}
+	DiscFailure(const std::string & msg) 
+	:Exception("Disk failure"){}
 };
 
 class DatabaseNotFound : public Exception {
 public:
-	DatabaseNotFound(const std::string & msg) :Exception(msg){}
+	DatabaseNotFound(const std::string & db_name) 
+	:Exception("Database named `" + db_name + "` not found"){}
 };
 
 class DatabaseNotSelected : public Exception {
 public:
-	DatabaseNotSelected(const std::string & msg) :Exception(msg){}
+	DatabaseNotSelected(const std::string & msg)
+	 :Exception("Database not selected"){}
 };
 
 class TableAliasNotFound : public Exception {
 public:
-	TableAliasNotFound(const std::string & msg) :Exception(msg) {}
+	TableAliasNotFound(const std::string & alias) 
+	:Exception("Table alias `"+alias+"` not found") {}
 };
 
 class SameAttrNameWithDifferType : public Exception{
 public:
-	SameAttrNameWithDifferType(const std::string & msg) : Exception(msg){}
+	SameAttrNameWithDifferType(const std::string & msg) 
+	: Exception("Inexplicit attribute name in join"){}
 };

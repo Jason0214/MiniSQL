@@ -409,7 +409,7 @@ void Catalog::UpdateTablePrimaryIndex(const std::string & table_name, uint32_t n
 
 	int row = table_block_ptr->FindRecordIndex(table_name.c_str());
 	if(row < 0 || strcmp(table_name.c_str(), (char*)table_block_ptr->GetTableInfoPtr(row)) != 0){
-		throw TableNotFound( table_name);
+		throw TableNotFound(table_name);
 	}
 	*(uint32_t*)(table_block_ptr->GetTableInfoPtr(row) + 40) = new_addr;
 	table_block_ptr->is_dirty = true;
@@ -503,7 +503,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	uint32_t index_block_addr;
 	if(result_ptr.raw_ptr){
 		if(compare(table_name_mix_key.c_str(), result_ptr->node->getKey(result_ptr->index), type_list[0]) == 0){
-			throw DuplicatedIndex(table_name, secondary_key_index);			
+			throw DuplicatedIndex(table_name, table_meta->attr_name_list[secondary_key_index]);			
 		}
 		else{
 			if(result_ptr->index == 0){

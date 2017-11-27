@@ -214,8 +214,9 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 	//attr_num is sorted
 	vector<pair<int, int> > commonDstAttrIndex;
 	AttributesAliasVector attr_alias;
-	for (int i = 0, j = 0;i < src_table1->getAttrNum() && j < src_table2->getAttrNum();) {
-		AliasStructure buf;
+    AliasStructure buf;
+    int i,j;
+	for (i = 0, j = 0;i < src_table1->getAttrNum() && j < src_table2->getAttrNum();) {
 		if (src_table1->getAttrName(i) > src_table2->getAttrName(j)){
 			// use inverse of origin index when attribute is in src table 2
 			buf.AttrName = src_table2->getAttrName(j);
@@ -238,10 +239,24 @@ void ExeNaturalJoin(const TableAliasMap& tableAlias, const string& sourceTableNa
 			buf.OriginIndex = i;
 			attr_alias.push_back(buf);			
 			
-			commonDstAttrIndex.push_back(make_pair(i, j));
+			commonDstAttrIndex.emplace_back(make_pair(i, j));
 			i++;j++;
 		}
 	}
+    while(i < src_table1->getAttrNum()){
+        buf.AttrName = src_table1->getAttrName(i);
+        buf.OriginIndex = i;
+        attr_alias.push_back(buf);
+        i++;
+    }
+    while(j < src_table2->getAttrNum()){
+        buf.AttrName = src_table2->getAttrName(j);
+        buf.OriginIndex = ~j;
+        attr_alias.push_back(buf);
+        j++;
+    }
+
+
 	sort(attr_alias.begin(), attr_alias.end(), AttrAliasSort);
 	Table* dst_table = new Table(resultTableName, src_table1, src_table2, attr_alias);
 	record_manager.addTable(dst_table);
@@ -300,10 +315,12 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 		record_manager.addTable(src_table2);
 	}
 
+    // generate new table attributes name
 	IndirectAttrMap indirect_attr_map;
 	AttributesAliasVector attr_alias;
-	for (int i = 0, j = 0;i < src_table1->getAttrNum() && j < src_table2->getAttrNum();) {
-		AliasStructure buf;
+    AliasStructure buf;
+    int i,j;
+	for (i = 0, j = 0; i < src_table1->getAttrNum() && j < src_table2->getAttrNum(); ) {
 		if (src_table1->getAttrName(i) > src_table2->getAttrName(j)){
 			// use inverse of origin index when attribute is in src table 2
 			buf.AttrName = src_table2->getAttrName(j);
@@ -332,6 +349,18 @@ void ExeCartesian(const TableAliasMap& tableAlias, const string& sourceTableName
 			i++;j++;
 		}
 	}
+    while(i < src_table1->getAttrNum()){
+        buf.AttrName = src_table1->getAttrName(i);
+        buf.OriginIndex = i;
+        attr_alias.push_back(buf);
+        i++;
+    }
+    while(j < src_table2->getAttrNum()){
+        buf.AttrName = src_table2->getAttrName(j);
+        buf.OriginIndex = ~j;
+        attr_alias.push_back(buf);
+        j++;
+    }
 
 	sort(attr_alias.begin(), attr_alias.end(), AttrAliasSort);
 	Table* dst_table = new Table(resultTableName, src_table1, src_table2, attr_alias, indirect_attr_map);
@@ -701,16 +730,16 @@ void ExeDropIndex(const string& indexName)
 	cout << "Drop Index Named `" << indexName << "` Successfully" << endl;
 }
 
-void ExeDropTable(const string& tableName, bool echo)
+void ExeDropTable(const string& tableName)
 {
 	try {
 		catalog.DropTable(tableName);
 	}
 	catch (const TableNotFound) {
-		if (echo) cout << "Table `" << tableName << "` Not Found" << endl;
+		cout << "Table `" << tableName << "` Not Found" << endl;
 		return;
 	}
-	if (echo) cout << "Drop Table `" << tableName << "` Successfully" << endl;
+	cout << "Drop Table `" << tableName << "` Successfully" << endl;
 	return;
 }
 
