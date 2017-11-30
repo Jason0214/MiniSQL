@@ -26,7 +26,7 @@ int TokenProto::regexMatch(const char *str){
     size_t nmatch = 1;
     regmatch_t pmatch[1];
 
-    regcomp(&preg, this->regex_pattern.c_str(), REG_EXTENDED);
+    regcomp(&preg, this->regex_pattern.c_str(), REG_EXTENDED|REG_ICASE);
 
     int error = regexec(&preg, str, nmatch, pmatch, 0);
 

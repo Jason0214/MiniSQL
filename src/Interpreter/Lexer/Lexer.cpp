@@ -35,9 +35,7 @@ void Lexer::toLower(std::string & text){
 
 void Lexer::loadText(string & raw_text){
     int scan_index = 0;
-    toLower(raw_text);
     while(scan_index < raw_text.size()){
-
         // try to find the longest match
         int max_match_len = 0;
         int match_proto_index = 0;
@@ -53,7 +51,12 @@ void Lexer::loadText(string & raw_text){
         }
         else{
             Token::TokenType match_type = this->token_protos[match_proto_index]->target_token_type;
-            if(match_type != Token::NONE){
+            if(match_type == Token::KEYWORD){
+                std::string buf = raw_text.substr(scan_index, max_match_len);
+                toLower(buf);
+                this->result.push_back(Token(match_type, buf));
+            }
+            else if(match_type != Token::NONE){
                 this->result.push_back(Token(match_type, raw_text.substr(scan_index, max_match_len)));
             }
             scan_index += max_match_len;    
