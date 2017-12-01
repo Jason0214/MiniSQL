@@ -37,7 +37,6 @@ set(SOURCE_FILES
         src/Interpreter/Parser/ParserSymbol.h
         src/Interpreter/Parser/Reducer.cpp
         src/Interpreter/Parser/Reducer.h
-        src/Interpreter/test.cpp
         src/RecordManager/RecordManager.cpp
         src/RecordManager/RecordManager.h
         src/RecordManager/RecordStructures.cpp
