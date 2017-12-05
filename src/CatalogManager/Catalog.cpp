@@ -489,8 +489,7 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	}
 /* do finding */
 	// mix table name and index key, the combination is distinct
-	string table_name_mix_key = table_name;
-	table_name_mix_key.append((char*)&secondary_key_index);
+    string table_name_mix_key = table_name + (char)(secondary_key_index+1);
 
 	DBenum type_list[3];
 	type_list[0] = (DBenum)(DB_TYPE_CHAR + 32);
@@ -533,8 +532,15 @@ void Catalog::CreateIndex(const string & index_name, const string & table_name, 
 	while (next_block_addr != 0) {
 		RecordBlock* data_block_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next_block_addr));	
 		data_block_ptr->Format(table_meta->attr_type_list, table_meta->attr_num, table_meta->key_index);
-		record_index_root = index_manager.insertEntry(DB_BPTREE_INDEX, record_index_root, table_meta->attr_type_list[table_meta->key_index],
-											data_block_ptr->GetDataPtr(0, table_meta->key_index), data_block_ptr->BlockIndex());
+        if(data_block_ptr->RecordNum() > 0){
+            record_index_root = index_manager.insertEntry(
+                    DB_BPTREE_INDEX,
+                    record_index_root,
+                    table_meta->attr_type_list[table_meta->key_index],
+                    data_block_ptr->GetDataPtr(0, table_meta->key_index),
+                    data_block_ptr->BlockIndex()
+            );
+        }
 		next_block_addr = data_block_ptr->NextBlockIndex();
 		buffer_manager.ReleaseBlock(data_block_ptr);
 	}
@@ -608,13 +614,13 @@ void Catalog::DropIndex(const string & index_name){
 	uint32_t next_block_addr = this->index_data_addr;
 	RecordBlock* index_data_ptr = NULL;
 	while(next_block_addr != 0){
-		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(this->index_data_addr));
+		index_data_ptr = dynamic_cast<RecordBlock*>(buffer_manager.GetBlock(next_block_addr));
 		index_data_ptr->Format(type_list, 3, 0);
 		int record_num = index_data_ptr->RecordNum();
 		for(int i = record_num - 1; i >=0; i--){
 			if(strcmp((char*)index_data_ptr->GetDataPtr(i, 1), index_name.c_str()) == 0){
 				index_root_block = *(uint32_t*)index_data_ptr->GetDataPtr(i, 2);
-				table_name_mix_key = string((char*)(index_data_ptr->GetDataPtr(i, 1)));
+				table_name_mix_key = string((char*)(index_data_ptr->GetDataPtr(i, 0)));
 				if(i == 0 && index_data_ptr->RecordNum() > 1){
 					//update primary index
 					uint32_t index_root = this->index_index_addr;
@@ -757,8 +763,7 @@ void Catalog::UpdateTableSecondaryIndex(const std::string & table_name, int8_t k
 
 
 uint32_t Catalog::GetIndex(const string & table_name, int8_t secondary_key_index){
-	string table_name_mix_key = table_name;
-	table_name_mix_key.append((char*)&secondary_key_index);
+	string table_name_mix_key = table_name + (char)(secondary_key_index+1);
 	uint32_t record_block_addr;
 	try {
 		 record_block_addr = this->FindIndexBlock(table_name_mix_key);

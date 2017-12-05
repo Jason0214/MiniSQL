@@ -9,7 +9,8 @@ class BlockPtr: public SmartPtr{
 public:
 	BlockPtr(T* t_ptr):raw_ptr(t_ptr){}
 	~BlockPtr(){
-		BufferManager::Instance().ReleaseBlock(this->raw_ptr);
+		if(this->raw_ptr)
+			BufferManager::Instance().ReleaseBlock(this->raw_ptr);
 	}
 	T* operator->(){
 		return this->raw_ptr;
